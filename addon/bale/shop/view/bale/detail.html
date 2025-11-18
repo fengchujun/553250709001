@@ -1,0 +1,84 @@
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>活动名称：</label>
+				<span>{$info.name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>开始时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.start_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>结束时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.end_time)}</span>
+			</div>
+
+			<div class="promotion-view-item">
+				<label>活动规则：</label>
+				<span>{$info.price} 元任选 {$info.num} 件</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>运费承担：</label>
+				<span>{if $info.shipping_fee_type == 0} 卖家承担运费 {else /} 卖家承担运费 {/if}</span>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">活动商品</span>
+	</div>
+	<div class="layui-card-body">
+		<div class='promotion-view-list'>
+			<table id="promotion_list"></table>
+		</div>
+	</div>
+</div>
+
+<script type='text/html' id="promotion_list_item_box_html">
+	<div class="promotion-list-item-title">
+		<div class="promotion-list-item-title-icon">
+			<img src="{{ ns.img(d.sku_image) }}" alt="">
+		</div>
+		<p class="promotion-list-item-title-name multi-line-hiding">{{ d.sku_name }}</p>
+	</div>
+</script>
+<script>
+	var promotion_list = {:json_encode($info.sku_list, JSON_UNESCAPED_UNICODE)};
+	new Table({
+		elem: '#promotion_list',
+		cols: [
+			[{
+				field: 'sku_name',
+				title: '商品名称',
+				unresize: 'false',
+				width: '60%',
+				templet:'#promotion_list_item_box_html',
+			}, {
+				field: 'price',
+				title: '商品价格(元)',
+				unresize: 'false',
+				align: 'right',
+				width: '20%',
+				templet: function(data) {
+					return '￥' + data.price;
+				}
+			}, {
+				field: 'stock',
+				title: '库存',
+				unresize: 'false',
+				align: 'center',
+				width: '20%'
+			}],
+		],
+		data: promotion_list,
+	});
+</script>

@@ -1,0 +1,356 @@
+<style>
+	.img-list{
+		display: flex;
+	}
+	.img-list .img-item{
+		width: 100px;
+		height: 100px;
+		margin-right: 10px;
+		border: 1px dashed #ccc;
+		position: relative;
+	}
+	.img-list .img-item img{
+		position: absolute;
+		left:50%;
+		top:50%;
+		transform: translate(-50%, -50%);
+		max-width: 90%;
+		max-height: 90%;
+	}
+</style>
+<!-- 搜索框 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">用户搜索</label>
+					<div class="layui-input-inline">
+						<select name="search_field" lay-filter="search_field">
+							<option value="m.nickname">昵称</option>
+							<option value="m.mobile">手机号</option>
+							<option value="po.out_trade_no">外部交易号</option>
+							<option value="p.pay_detail">支付信息</option>
+						</select>
+					</div>
+					<div class="layui-form-mid">&nbsp;</div>
+					<div class="layui-input-inline">
+						<input type="text" name="search_field_value" autocomplete="off" class="layui-input" placeholder="请输入"/>
+					</div>
+				</div>
+			</div>
+
+			<input type="hidden" name="status" value="{$status_list[0]['id']}"/>
+			<input type="hidden" name="out_trade_no" value="">
+			<div class="form-row">
+				<button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="table_list_tab" id="table_list_tab">
+	<ul class="layui-tab-title">
+		{foreach $status_list as $key=>$status_info}
+			<li class="{$key == 0 ? 'layui-this' : ''}" lay-id="{$status_info.id}">{$status_info.name}<span class="status-num layui-hide">(<span style="color:red;">0</span>)</span></li>
+		{/foreach}
+		<li class="" lay-id="all" data-type="goods_state">全部</li>
+	</ul>
+	<div class="layui-tab-content">
+		<table id="table_list" lay-filter="table_list"></table>
+	</div>
+</div>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		{{# if(d.status_info && d.status_info.const == 'WAIT_AUDIT'){ }}
+		<a class="layui-btn" lay-event="audit">审核</a>
+		{{# }else{ }}
+		<a class="layui-btn" lay-event="info">查看</a>
+		{{# } }}
+	</div>
+</script>
+
+<script type="text/html" id="offline_pay_info">
+	<div class="layui-form form-wrap">
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">支付凭证：</label>
+			<div class="layui-input-block mid img-list" id="offline_pay_imgs">
+				{{# var imgs = d.imgs.split(','); }}
+				{{# imgs.forEach((img)=>{ }}
+				<div class="img-item"><img layer-src src="{{ns.img(img)}}"/></div>
+				{{# }) }}
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">支付说明：</label>
+			<div class="layui-input-block mid">
+				{{d.desc}}
+			</div>
+		</div>
+		<div class="{{d.action_type == 'info' ? 'layui-hide' : ''}}">
+			<div class="layui-form-item">
+				<label class="layui-form-label mid">审核结果：</label>
+				<div class="layui-input-block mid">
+					<input type="radio" name="audit_res" checked value="PASS" title="通过" lay-filter="audit_res">
+					<input type="radio" name="audit_res" value="REFUSE" title="拒绝" lay-filter="audit_res">
+				</div>
+			</div>
+			<div class="layui-form-item layui-hide" id="audit_remark">
+				<label class="layui-form-label mid"><span class="required">*</span>审核备注：</label>
+				<div class="layui-input-inline mid">
+					<textarea class="layui-textarea len-long" name="audit_remark" maxlength="500" lay-verify="audit_remark" placeholder="请输入审核备注"></textarea>
+				</div>
+			</div>
+			<input type="hidden" name="id" value="{{d.id}}"/>
+			<div class="form-row layui-hide">
+				<button class="layui-btn" lay-submit lay-filter="offlinepay_audit_save">保存</button>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script>
+	var laytpl, form, table, element;
+	var repeat_flag = false; //防重复标识
+	layui.use(['form', 'laytpl'], function() {
+		laytpl = layui.laytpl;
+		form = layui.form;
+		element = layui.element;
+		form.render();
+
+		$(".layui-btn-primary").click(function (){
+			setTimeout(()=>{
+				searchFieldChange();
+			}, 50);
+		})
+
+		element.on('tab(table_list_tab)', function () {
+			var status = this.getAttribute('lay-id');
+			$('input[name="status"]').val(status);
+			$("button[lay-filter=search]").click();
+		});
+
+		form.on('select(search_field)', function (data){
+			searchFieldChange();
+		})
+
+		function searchFieldChange(){
+			var search_field_name = $("select[name=search_field]").find('option:selected').text();
+			$("input[name='search_field_value']").attr('placeholder', '请输入'+search_field_name);
+		}
+
+		searchFieldChange();
+
+		//状态统计数量
+		function showStatusNumData(num_data) {
+			$("#table_list_tab .layui-tab-title li").each(function (){
+				let status = $(this).attr('lay-id');
+				if(status !== ''){
+					let num = num_data[status] || 0;
+					let num_dom = $(this).find('.status-num span');
+					num_dom.html(num);
+					if(num > 0){
+						num_dom.parent().removeClass('layui-hide');
+					}else{
+						num_dom.parent().addClass('layui-hide');
+					}
+				}
+			})
+		}
+
+		table = new Table({
+			elem: '#table_list',
+			url: ns.url("offlinepay://shop/pay/lists", {out_trade_no:'{$out_trade_no}'}),
+			beforeParseData: function (res){
+				showStatusNumData(res.data.status_num_data);
+			},
+			cols: [
+				[ {
+					field: 'pay_detail',
+					title: '支付信息',
+					unresize: 'false',
+					width:'18%',
+					templet: function (data){
+						return '<div class="text">'+data.pay_detail+'</div>';
+					}
+				},{
+					field: 'out_trade_no',
+					title: '外部交易号',
+					unresize: 'false',
+					width:'12%',
+					templet: function (data){
+						return '<div class="text">'+data.out_trade_no+'</div>';
+					}
+				},{
+					field: 'pay_money',
+					title: '支付金额',
+					unresize: 'false',
+					width:'10%',
+					templet: function (data){
+						return '￥'+data.pay_money;
+					}
+				}, {
+					field: 'name',
+					title: '用户信息',
+					width: '12%',
+					align: 'center',
+					templet: function (data) {
+						let html = '';
+						html += '<div style="line-height: 20px;"><a class="text-color" target="_blank" href="' + ns.href("shop/member/editmember?member_id=") + data.member_id + '">' + data.nickname + '</a></div>';
+						html += '<div style="line-height: 20px;">'+ data.mobile +'</div>';
+						return html;
+					}
+				},{
+					field: 'create_time',
+					title: '支付时间',
+					unresize: 'false',
+					width:'14%',
+					templet: function (data){
+						return ns.time_to_date(data.create_time);
+					}
+				},{
+					field: 'desc',
+					title: '支付说明',
+					unresize: 'false',
+					width:'18%',
+					templet: function (data){
+						return '<div class="text">'+data.desc+'</div>';
+					}
+				},{
+					field: 'status',
+					title: '支付状态',
+					unresize: 'false',
+					templet: function (data){
+						return data.status_info ? data.status_info.name : '';
+					}
+				}, {
+					title: '操作',
+					toolbar: '#operation',
+					unresize: 'false',
+					align : 'right'
+				}]
+			]
+		});
+
+		/**
+		 * 监听工具栏操作
+		 */
+		table.tool(function(obj) {
+			var data = obj.data;
+			switch (obj.event) {
+				case 'audit':
+                    offlinePayAudit(data);
+					break;
+				case 'info':
+					offlinePayInfo(data);
+					break;
+			}
+		});
+
+		/**
+		 * 搜索功能
+		 */
+		form.on('submit(search)', function(data) {
+			table.reload({
+				page: {
+					curr: 1
+				},
+				where: data.field
+			});
+			return false;
+		});
+
+		function offlinePayAudit(data){
+			data.action_type = 'audit';
+			laytpl($("#offline_pay_info").html()).render(data, function(html) {
+				layer_index_offlinpay = layer.open({
+					type: 1,
+					shadeClose: true,
+					shade: 0.3,
+					fixed: false,
+					scrollbar: false,
+					title: "支付审核",
+					area: '800px',
+					btn: ['提交','取消'],
+					content: html,
+					yes: function (index, layero) {
+						$('button[lay-filter="offlinepay_audit_save"]').click();
+					},
+					cancel: function (index, layero) {
+						layer.close(index);
+					},
+					success: function (layero, index) {
+						form.render();
+						loadImgMagnify();
+						form.on('radio(audit_res)', function (data){
+							let audit_res = data.value;
+							if(audit_res === 'PASS'){
+								$("#audit_remark").addClass('layui-hide');
+							}else{
+								$("#audit_remark").removeClass('layui-hide');
+							}
+						})
+						form.verify({
+							audit_remark: function (value){
+								var audit_res = $("input[name='audit_res']:checked").val();
+								if(audit_res === 'REFUSE' && !value){
+									return '请输入审核备注';
+								}
+							}
+						})
+						form.on('submit(offlinepay_audit_save)', function (data){
+							var url = ns.url('offlinepay://shop/pay/auditpass');
+							if(data.field.audit_res === 'REFUSE'){
+								url = ns.url('offlinepay://shop/pay/auditrefuse');
+							}
+
+							if(repeat_flag) return;
+							repeat_flag = true;
+							$.ajax({
+								url: url,
+								data: data.field,
+								dataType: 'json',
+								type: 'post',
+								beforeSend: function () {layer_index = layer.load();},
+								complete: function () {layer.close(layer_index);},
+								success: function (res) {
+									repeat_flag = false;
+									layer.msg(res.message);
+									if (res.code == 0) {
+										listenerHash();
+										layer.close(layer_index_offlinpay);
+									}
+								}
+							});
+						})
+					}
+				})
+
+			})
+		}
+
+		function offlinePayInfo(data){
+			data.action_type = 'info';
+			laytpl($("#offline_pay_info").html()).render(data, function(html) {
+				layer_index_offlinpay = layer.open({
+					type: 1,
+					shadeClose: true,
+					shade: 0.3,
+					fixed: false,
+					scrollbar: false,
+					title: "支付信息",
+					area: '800px',
+					content: html,
+					success: function (layero, index) {
+						form.render();
+						loadImgMagnify();
+					}
+				})
+
+			})
+		}
+	});
+</script>

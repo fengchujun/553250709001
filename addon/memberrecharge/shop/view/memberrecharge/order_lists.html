@@ -1,0 +1,293 @@
+<link rel="stylesheet" href="MEMBERRECHARGE_CSS/order_list.css"/>
+<div class="layui-card card-common card-brief panel-content">
+	<div class="layui-card-header simple">
+        <span class="card-title">充值概况</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="content">
+			<p class="title">累计充值金额</p>
+			<p class="money">{$order_money}</p>
+		</div>
+		<div class="content">
+			<p class="title">累计充值次数</p>
+			<p class="money">{$order_num}</p>
+		</div>
+	</div>
+</div>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-form layui-colla-content layui-form layui-show"  lay-filter="order_list" action="javascript:;">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">订单号</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="order_no" placeholder="请输入订单号">
+					</div>
+				</div>
+
+				<div class="layui-inline">
+					<label class="layui-form-label">客户昵称</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="nickname" placeholder="请输入客户昵称">
+					</div>
+				</div>
+
+				{if addon_is_exit('store') == 1}
+				<div class="layui-inline">
+					<label class="layui-form-label">来源门店</label>
+					<div class="layui-input-inline">
+						<select name="store_id" lay-filter="store_id">
+							<option value="">全部</option>
+							{foreach $store_list as $k => $v}
+							<option value="{$v.store_id}">{$v.store_name}</option>
+							{/foreach}
+						</select>
+					</div>
+				</div>
+				{/if}
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">支付时间</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<button class="layui-btn layui-btn-primary date-picker-btn" onclick="datePick(7, this);return false;">近7天</button>
+					<button class="layui-btn layui-btn-primary date-picker-btn" onclick="datePick(30, this);return false;">近30天</button>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab " lay-filter="order_tab">
+	<div class="layui-tab-content">
+		<div id="order_list"></div>
+	</div>
+	<div id="order_page"></div>
+</div>
+
+<script src="MEMBERRECHARGE_JS/order_list.js"></script>
+<script>
+	var form,laypage,element,laydate;
+	var is_refresh = false;
+	var printer_addon_is_exit = '{$printer_addon_is_exit}';
+
+	layui.use(['laypage','laydate','form', 'element'], function(){
+		form = layui.form;
+		laypage = layui.laypage;
+		element = layui.element;
+		laydate = layui.laydate;
+		form.render();
+
+		// 支付时间
+		laydate.render({
+			elem: '#start_time'
+			,type: 'datetime'
+			,change: function(value, date, endDate){
+				$(".date-picker-btn").removeClass("selected");
+			}
+		});
+		laydate.render({
+			elem: '#end_time'
+			,type: 'datetime'
+			,change: function(value, date, endDate){
+				$(".date-picker-btn").removeClass("selected");
+			}
+		});
+
+		//监听Tab切换，以改变地址hash值
+		element.on('tab(order_tab)', function(){
+			$(".all-selected-checkbox input").prop("checked",false);
+			var hash_data = getHashList();
+			hash_data.page = 1;
+			setHashOrderList(hash_data);
+		});
+
+		//监听筛选事件
+		form.on('submit(search)', function(data){
+			is_refresh = true;
+			data.field.page = 1;
+			setHashOrderList(data.field);
+			return false;
+		});
+		getHashData();
+		getOrderList();//筛选
+	});
+
+	function setHashOrderList(data){
+		localStorage.setItem('formSubmit','search'); // 表单搜索标识，防止页面重新加载
+		var hash = ['url=memberrecharge://shop/memberrecharge/orderlists'];
+		for (let key in data) {
+			if (data[key] != '' && data[key] != 'all') {
+				hash.push(`${key}=${data[key]}`)
+			}
+		}
+		location.hash = hash.join('&');
+		getOrderList();
+	}
+
+	var order = new Order();
+	function getOrderList(){
+		var url = ns.url("memberrecharge://shop/memberrecharge/orderlists", getHashArr().join('&'));
+		$.ajax({
+			type : 'get',
+			dataType: 'json',
+			url :url,
+			success : function(res){
+				if(res.code == 0){
+					order.setData(res.data);
+					$("#order_list").html(order.fetch());
+					form.render();
+
+					laypage_util = new Page({
+						elem: 'order_page',
+						count: res.data.count,
+						curr: getHashPage(),
+						limit:getHashData()['page_size'] || 10,
+						callback: function(obj){
+							var hash_data = getHashData();
+							hash_data.page = obj.curr;
+							hash_data.page_size = obj.limit;
+							setHashOrderList(hash_data);
+						}
+					});
+
+				}else{
+					layer.msg(res.message);
+				}
+			}
+		});
+	}
+
+	// 通过hash获取页数
+	function getHashPage(){
+		var page = 1;
+		var startTime = '';
+		var endTime = '';
+		var hash_arr = getHashArr();
+		$.each(hash_arr,function(index, itemobj){
+			var item_arr = itemobj.split("=");
+			if(item_arr.length == 2){
+				switch(item_arr[0]){
+					case "page":
+						page = item_arr[1];
+						break;
+					case "start_time":
+						startTime = ns.date_to_time(item_arr[1].split("%")[0]);
+						break;
+					case "end_time":
+						endTime = ns.date_to_time(item_arr[1].split("%")[0]);
+						break;
+				}
+			}
+		});
+
+		var _time = (endTime - startTime) / (24 * 60 * 60);
+		if (_time == 6) {
+			$(".date-picker-btn-seven").addClass("selected");
+			$(".date-picker-btn-thirty").removeClass("selected");
+		} else if (_time == 29) {
+			$(".date-picker-btn-thirty").addClass("selected");
+			$(".date-picker-btn-seven").removeClass("selected");
+		} else {
+			$(".date-picker-btn-seven").removeClass("selected");
+			$(".date-picker-btn-thirty").removeClass("selected");
+		}
+		return page;
+	}
+
+	//从hash中获取数据
+	function getHashData(){
+		var hash_arr = getHashArr();
+		var form_json = {
+			"start_time" : "",
+			"end_time" : "",
+			"nickname" : "",
+			"order_no" : "",
+			'page_size':'',
+			"page" : ""
+		};
+		if(hash_arr.length > 0){
+			$.each(hash_arr,function(index, itemobj){
+				var item_arr = itemobj.split("=");
+				if(item_arr.length == 2){
+					$.each(form_json,function(key, form_val){
+						if(item_arr[0] == key){
+							form_json[key] = item_arr[1];
+						}
+					})
+				}
+			})
+		}
+
+		return form_json;
+	}
+	function getHashList(){
+		var hash_arr = getHashArr();
+		var form_json = {
+			"start_time" : "",
+			"end_time" : "",
+			"nickname" : "",
+			"order_no" : "",
+			'page_size':'',
+			"page" : ""
+		};
+		if(hash_arr.length > 0){
+			$.each(hash_arr,function(index, itemobj){
+				var item_arr = itemobj.split("=");
+				if(item_arr.length == 2){
+					$.each(form_json,function(key, form_val){
+						if(item_arr[0].indexOf(key) != "-1"){
+							form_json[key] = item_arr[1];
+						}
+					})
+				}
+			})
+		}
+
+		return form_json;
+	}
+
+	/**
+	 * 七天时间
+	 */
+	function datePick(date_num,event_obj){
+		$(".date-picker-btn").removeClass("selected");
+		$(event_obj).addClass('selected');
+		Date.prototype.Format = function (fmt,date_num) { //author: meizz
+			this.setDate(this.getDate()-date_num);
+			var o = {
+				"M+": this.getMonth() + 1, //月份
+				"d+": this.getDate(), //日
+				"H+": this.getHours(), //小时
+				"m+": this.getMinutes(), //分
+				"s+": this.getSeconds(), //秒
+				"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+				"S": this.getMilliseconds() //毫秒
+			};
+			if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+			for (var k in o)
+				if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+			return fmt;
+		};
+		var now_time =  new Date().Format("yyyy-MM-dd 23:59:59",0);//当前日期
+		var before_time =  new Date().Format("yyyy-MM-dd 00:00:00",date_num-1);//前几天日期
+		$("input[name=start_time]").val(before_time,0);
+		$("input[name=end_time]").val(now_time,date_num-1);
+	}
+
+</script>

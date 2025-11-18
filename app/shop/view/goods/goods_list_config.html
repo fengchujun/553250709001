@@ -1,0 +1,229 @@
+<link rel="stylesheet" href="STATIC_EXT/colorPicker/css/colorpicker.css" />
+<link rel="stylesheet" href="STATIC_EXT/diyview/css/diyview.css?time=20240316" />
+<link rel="stylesheet" href="SHOP_CSS/goods_list_config.css"/>
+
+<div id="diyView" v-if="lazyLoad">
+
+	<div class="preview-wrap">
+
+		<div class="preview-restore-wrap">
+
+			<div class="div-wrap">
+
+				<div class='diy-view-wrap layui-form' :style="{ backgroundColor : global.pageBgColor }">
+
+					<div class="preview-head">
+						<tabbar :global="global"></tabbar>
+					</div>
+
+					<div class="preview-block">
+
+						<div class="preview-draggable">
+							<div class="goods-list row1-of2 style-2">
+								<div class="goods-item" v-for="(index) in [1,2,3,4]" :key="index">
+									<div class="goods-img">
+										<img :src="changeImgUrl('public/static/img/default_img/square.png')" />
+									</div>
+
+									<div class="info-wrap">
+
+										<div class="goods-name">商品名称</div>
+
+<!--										<div class="tag-wrap">-->
+<!--											<span class="hollow-tag text-color border-color">商品标签</span>-->
+<!--										</div>-->
+
+										<div class="pro-info">
+											<div class="discount-price">
+												<div class="price-wrap">
+													<span class="unit text-color">¥</span>
+													<span class="price text-color">{{ index * 100 }}</span>
+													<span class="unit text-color">.00</span>
+												</div>
+												<div class="delete-price">¥198</div>
+												<div class="sale">已售63件</div>
+											</div>
+
+											<template v-if="data.control">
+
+												<!-- 购物车图标 -->
+												<div v-if="data.style == 'icon-cart'" class="cart shopping-cart-btn iconfont icongouwuche" :style="{ color : data.textColor }"></div>
+
+												<!--加号图标 -->
+												<div v-else-if="data.style == 'icon-add'" class="cart plus-sign-btn iconfont iconjia2" :style="{ color : data.textColor }"></div>
+
+												<!-- 按钮 -->
+												<div v-else-if="data.style == 'button'" class="cart buy-btn" :style="{fontWeight: (data.fontWeight ? 'bold' : 'normal'), backgroundColor : data.bgColor, color : data.textColor,borderRadius : data.aroundRadius + 'px',padding : ('0 '+  data.padding + 'px') }">{{ data.text }}</div>
+
+												<!-- 自定义图标 -->
+												<div v-else-if="data.style == 'icon-diy'" class="icon-diy">
+													<iconfont :icon="data.iconDiy.icon" v-if="data.iconDiy.icon" :value="data.iconDiy.style ? data.iconDiy.style : ''"></iconfont>
+												</div>
+
+											</template>
+
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="edit-attribute">
+							<div class="attr-wrap">
+								<div class="restore-wrap">
+
+									<div class="attr-title">
+										<span class="title">商品列表</span>
+										<div class="tab-wrap">
+											<span class="active bg-color" data-type="content">内容</span>
+											<span data-type="style">样式</span>
+										</div>
+									</div>
+
+									<div class="edit-content-wrap">
+
+										<div class="template-edit-title">
+											<h3>购买按钮</h3>
+											<div class="layui-form-item">
+												<label class="layui-form-label sm">是否显示</label>
+												<div class="layui-input-block">
+													<div class="layui-unselect layui-form-checkbox" lay-skin="primary" @click="data.control = !data.control" :class="{ 'layui-form-checked' : data.control }">
+														<span>{{ data.control ? '显示' : '隐藏' }}</span>
+														<i class="layui-icon layui-icon-ok"></i>
+													</div>
+												</div>
+											</div>
+
+											<template v-if="data.control">
+												<div class="layui-form-item">
+													<label class="layui-form-label sm">购物车事件</label>
+													<div class="layui-input-block">
+														<div @click="data.cartEvent='detail'" :class="{ 'layui-unselect layui-form-radio' : true,'layui-form-radioed' : (data.cartEvent=='detail') }">
+															<i class="layui-anim layui-icon">{{ data.cartEvent=='detail' ? "&#xe643;" : "&#xe63f;" }}</i>
+															<div>跳转商品详情</div>
+														</div>
+														<div @click="data.cartEvent='cart'" :class="{ 'layui-unselect layui-form-radio' : true,'layui-form-radioed' : (data.cartEvent=='cart') }">
+															<i class="layui-anim layui-icon">{{ data.cartEvent=='cart' ? "&#xe643;" : "&#xe63f;" }}</i>
+															<div>加入购物车</div>
+														</div>
+													</div>
+													<p class="word-aux" style="margin-left: 100px;" v-if="data.cartEvent=='cart'">只有实物商品才能加入购物车，虚拟商品会跳转到商品详情</p>
+												</div>
+												<div class="layui-form-item btn-style">
+													<label class="layui-form-label sm">样式</label>
+													<div class="layui-input-block">
+														<div class="item" :class="{ 'border-color' : data.style == 'button' }" @click="data.style = 'button';data.textColor= data.textColor == '#FF6A00' ? '#FFFFFF' : data.textColor">
+															<span class="buy-btn bg-color">按钮</span>
+														</div>
+														<div class="item" :class="{ 'border-color' : data.style == 'icon-cart' }" @click="data.style = 'icon-cart';data.textColor= data.textColor == '#FFFFFF' ? '#FF6A00' : data.textColor">
+															<span class="shopping-cart-btn iconfont icongouwuche text-color border-color"></span>
+														</div>
+														<div class="item" :class="{ 'border-color' : data.style == 'icon-add' }" @click="data.style = 'icon-add';data.textColor= data.textColor == '#FFFFFF' ? '#FF6A00' : data.textColor">
+															<span class="plus-sign-btn iconfont iconjia2 text-color border-color"></span>
+														</div>
+														<div class="item" :class="{ 'border-color' : data.style == 'icon-diy' }" @click="data.style = 'icon-diy';data.textColor= data.textColor == '#FFFFFF' ? '#FF6A00' : data.textColor">
+															<span class="diy-btn text-color border-color">自定义</span>
+														</div>
+													</div>
+
+													<div class="layui-input-block diy-icon" v-show="data.style == 'icon-diy'">
+														<img-icon-upload :data="{data : data.iconDiy, displayType : 'icon'}"></img-icon-upload>
+														<div class="action-box">
+															<div class="action" @click="iconStyle($event)"><i class="iconfont iconpifu"></i></div>
+															<div class="action" id="goods-list-color"><i class="iconfont iconyanse"></i></div>
+														</div>
+													</div>
+
+												</div>
+
+												<div class="layui-form-item" v-show="data.style == 'button'">
+													<label class="layui-form-label sm">文字</label>
+													<div class="layui-input-block">
+														<input type="text" v-model="data.text" maxlength="6" placeholder="请输入按钮文字" class="layui-input">
+													</div>
+												</div>
+
+											</template>
+										</div>
+
+									</div>
+
+									<div class="edit-style-wrap" style="display: none;">
+
+										<div class="template-edit-title">
+											<h3>商品样式</h3>
+											<div class="layui-form-item">
+												<label class="layui-form-label sm">商品名称</label>
+												<div class="layui-input-block">
+													<div v-for="(item,nameLineIndex) in nameLineModeList" :key="nameLineIndex" @click="data.nameLineMode=item.value" :class="{ 'layui-unselect layui-form-radio' : true,'layui-form-radioed' : (data.nameLineMode==item.value) }">
+														<i class="layui-anim layui-icon">{{ data.nameLineMode == item.value ? "&#xe643;" : "&#xe63f;" }}</i>
+														<div>{{item.text}}</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="template-edit-title">
+											<h3>购买按钮</h3>
+											<template v-if="data.style == 'button'">
+												<div class="layui-form-item">
+													<label class="layui-form-label sm">是否加粗</label>
+													<div class="layui-input-block">
+														<div class="layui-unselect layui-form-checkbox" lay-skin="primary" @click="data.fontWeight = !data.fontWeight" :class="{ 'layui-form-checked' : data.fontWeight }">
+															<span>{{ data.fontWeight ? '加粗' : '常规' }}</span>
+															<i class="layui-icon layui-icon-ok"></i>
+														</div>
+													</div>
+												</div>
+												<slide :data="{ field : 'padding', label : '按钮边距', min: 0, max : 20 }"></slide>
+												<slide :data="{ field : 'aroundRadius', label: '圆角', min:0, max: 50 }"></slide>
+											</template>
+
+											<div class="layui-form-item">
+												<label class="layui-form-label sm">色调</label>
+												<div class="layui-input-block">
+													<div @click="data.theme='default'" :class="{ 'layui-unselect layui-form-radio' : true,'layui-form-radioed' : (data.theme == 'default') }">
+														<i class="layui-anim layui-icon">{{ data.theme == 'default' ? "&#xe643;" : "&#xe63f;" }}</i>
+														<div>跟随主题风格</div>
+													</div>
+													<div @click="data.theme='diy'" :class="{ 'layui-unselect layui-form-radio' : true,'layui-form-radioed' : (data.theme == 'diy') }">
+														<i class="layui-anim layui-icon">{{ data.theme == 'diy' ? "&#xe643;" : "&#xe63f;" }}</i>
+														<div>自定义</div>
+													</div>
+												</div>
+											</div>
+
+											<template v-if="data.theme == 'diy'">
+												<color v-if="data.style == 'button'" :data="{ field : 'bgColor', 'label' : '背景颜色', defaultColor : '#FF6A00' }"></color>
+												<color :data="{ field : 'textColor', 'label' : '文字颜色', defaultColor : '#FFFFFF' }"></color>
+											</template>
+										</div>
+									</div>
+
+								</div>
+
+							</div>
+						</div>
+
+					</div>
+
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="custom-save js-bottom-custom-save">
+		<button class="layui-btn save" lay-submit lay-filter="save">保存</button>
+	</div>
+</div>
+
+<input id="goodsListConfig" type="hidden" value="{$config|json_encode}">
+
+<script>
+	var storeIsExit = '{$store_is_exit}';
+</script>
+<script src="STATIC_JS/vue.js"></script>
+<script src="STATIC_EXT/colorPicker/js/colorpicker.js"></script>
+<script src="STATIC_EXT/diyview/js/components.js"></script>
+<script src="SHOP_JS/goods_list_config.js"></script>
+{include file="app/shop/view/diy/iconfont_component.html"/}

@@ -1,0 +1,652 @@
+<style>
+	.contraction span{cursor: pointer;display: inline-block;width: 17px;height: 17px;text-align: center;line-height: 14px;user-select: none;}
+    .sku-list{overflow: hidden;padding: 0 45px;max-width: 100%;}
+    .sku-list li .img-wrap{vertical-align: middle;margin-right: 8px;width: 20%;height: 80px;text-align: center;line-height: 70px;}
+    .sku-list li .img-wrap img{max-width: 100%;max-height: 100%;}
+    .sku-list li .info-wrap span.sku-name{-webkit-line-clamp: 2;margin-bottom: 5px;}
+    .sku-list li .info-wrap span{display: -webkit-box;margin-bottom: 5px;overflow: hidden;text-overflow: ellipsis;white-space: normal;word-break: break-all;-webkit-box-orient: vertical;-webkit-line-clamp: 1;}
+    .sku-list li{float: left;display: flex;padding: 10px;margin-right: 10px;margin-bottom: 10px;border: 1px solid #EFEFEF;width: 294px;height: 180px;align-items: center;}
+    #time_label_dl span{margin: 3px 5px 3px 0;color: white;padding: 0 5px;border-radius: 5px;line-height: 25px;}
+    #time_label_dl{display: flex;flex-wrap: wrap;}
+    .layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+    .layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+</style>
+
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="clickAdd()">添加秒杀商品</button>
+</div>
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">商品名称：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="goods_name" placeholder="请输入商品名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">参与场次：</label>
+					<div class="layui-input-inline">
+						<select name="seckill_time_id">
+							<option value="">全部</option>
+							{foreach $res as $k => $v}
+							<option value="{$v['id']}" {if $v['id'] == $seckill_time_id}selected{/if}>{$v['name']}</option>
+							{/foreach}
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">秒杀时间：</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="bargain_tab">
+	<ul class="layui-tab-title">
+		<li class="layui-this" data-status="">全部</li>
+		<li data-status="0">未开始</li>
+		<li data-status="1">进行中</li>
+		<li data-status="2">已结束</li>
+		<li data-status="-1">已关闭</li>
+	</ul>
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="good_list" lay-filter="good_list"></table>
+	</div>
+</div>
+
+<!--价格-->
+<script type="text/html" id="price">
+	<div class="layui-elip">{{d.seckill_price}}</div>
+</script>
+
+<!-- 推广 -->
+{include file="app/shop/view/component/promote_show.html"}
+
+<!--时间-->
+<script type="text/html" id="time">
+	<div class="layui-elip">开始时间：{{ns.time_to_date(d.start_time)}}</div>
+	<div class="layui-elip">结束时间：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!--操作-->
+<script type="text/html" id="operation">
+	<div class="operation-wrap" data-seckill-id="{{d.id}}">
+		<div class="popup-qrcode-wrap" style="display: none"><img class="popup-qrcode-loadimg" src="__STATIC__/loading/loading.gif"/></div>
+		<div class="table-btn">
+			{{# if(d.status == 1){ }}
+			<a class="layui-btn text-color" lay-event="select">推广</a>
+			{{# } }}
+			<a class="layui-btn" lay-event="edit">编辑</a>
+			<a class="layui-btn" lay-event="delete">删除</a>
+
+			{{# if(d.status == 1){ }}
+			<a class="layui-btn" lay-event="close">关闭</a>
+			{{# } }}
+		</div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarAction">
+	<button class="layui-btn layui-btn-primary" lay-event="delete">批量删除</button>
+	<button class="layui-btn layui-btn-primary" lay-event="invalid">批量关闭</button>
+</script>
+
+<script type="text/html" id="goods_name">
+	<div class="table-title">
+
+		<div class="contraction" data-id="{{d.id}}" data-open="0">
+			<span>+</span>
+		</div>
+
+		<div class="title-pic">
+			{{# if(d.goods_image){  }}
+			<img layer-src="{{ns.img(d.goods_image.split(',')[0],'big')}}" src="{{ns.img(d.goods_image.split(',')[0],'small')}}" />
+			{{# }  }}
+		</div>
+		<div class="title-content">
+			<a href="javascript:;" class="multi-line-hiding text-color-sub" title="{{d.goods_name}}">{{d.goods_name}}</a>
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="skuList">
+	<tr class="js-list-{{d.index}}" id="sku_img_{{d.index}}">
+		<td colspan="10">
+			<ul class="sku-list">
+				{{# for(var i=0; i<d.list.length; i++){ }}
+				<li>
+					<div class="img-wrap">
+						<img layer-src src="{{ns.img(d.list[i].sku_image)}}">
+					</div>
+					<div class="info-wrap">
+						<span class="sku-name" title="{{d.list[i].sku_name}}">{{d.list[i].sku_name}}</span>
+						<span class="price">商品价格：￥{{d.list[i].price}}</span>
+						<span class="sale_num">秒杀价：{{d.list[i].seckill_price}}</span>
+						<span class="price">库存：{{d.list[i].stock}}</span>
+					</div>
+				</li>
+				{{# } }}
+			</ul>
+		</td>
+	</tr>
+</script>
+
+<!-- 场次 -->
+<script id="time_label" type="text/html">
+	{{# if (d.time_list != []) { }}
+	<div id="time_label_dl">
+		{{# for (var index in d.time_list) { }}
+		{{'<span class="bg-color">' + d.time_list[index]['name'] + '</span>'}}
+		{{# } }}
+	</div>
+	{{# } }}
+</script>
+
+<script type="text/html" id="addTime">
+	<div class="layui-form">
+		<div class="layui-form-item len-mid">
+			<label class="layui-form-label"><span class="required">*</span>秒杀场次名称：</label>
+			<div class="layui-input-block">
+				{{# if(d.name){ }}
+				<input type="text" id="add_time_name" value="{{d.name}}" lay-verify="required" autocomplete="off" class="layui-input len-mid">
+				{{# }else{ }}
+				<input type="text" id="add_time_name" value="" lay-verify="required" autocomplete="off" class="layui-input len-mid">
+				{{# } }}
+			</div>
+		</div>
+		<div class="layui-form-item ">
+			<div class="layui-inline">
+				<label class="layui-form-label"><span class="required">*</span>秒杀时间段：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" id="add_start_time" value="{{d.seckill_start_time_show}}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<span class="layui-form-mid">-</span>
+					<div class="layui-input-inline">
+						<input type="text" id="add_end_time" value="{{d.seckill_end_time_show}}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<!-- 编辑排序 -->
+<script type="text/html" id="editSort">
+	<input name="sort" type="number" onchange="editSort({{d.id}}, this)" value="{{d.sort}}" class="layui-input edit-sort len-short">
+</script>
+
+<script>
+    var form, table, laytpl,
+        repeat_flag = false, //防重复标识
+        arr_id_good = [];
+    $("body").off("click", ".contraction").on("click", ".contraction", function() {
+
+        var seckill_id = $(this).attr("data-id");
+        var open = $(this).attr("data-open");
+        var tr = $(this).parent().parent().parent().parent();
+        var index = tr.attr("data-index");
+        if (open == 1) {
+            $(this).children("span").text("+");
+            $(".js-list-" + index).remove();
+        } else {
+            $(this).children("span").text("-");
+            $.ajax({
+                url: ns.url("seckill://shop/seckill/getSkuList"),
+                data: {
+                    seckill_id: seckill_id
+                },
+                dataType: 'JSON',
+                type: 'POST',
+                async: false,
+                success: function(res) {
+                    var sku_list = $("#skuList").html();
+                    var data = {
+                        list: res.data,
+                        index: index
+                    };
+                    laytpl(sku_list).render(data, function(html) {
+                        tr.after(html);
+                    });
+                    layer.photos({
+                        photos: '.img-wrap',
+                        anim: 5
+                    });
+                }
+            });
+        }
+        $(this).attr("data-open", (open == 0 ? 1 : 0));
+    });
+
+    layui.use(['form', 'laytpl','laydate', 'element'], function() {
+        form = layui.form;
+        element = layui.element;
+        laytpl = layui.laytpl;
+        laydate = layui.laydate;
+        form.render();
+        element.on('tab(bargain_tab)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    'status': this.getAttribute('data-status')
+                }
+            });
+        });
+
+        table = new Table({
+            elem: '#good_list',
+            url: '{:addon_url("seckill://shop/seckill/goodslist")}',
+            async: false,
+            parseData: function(res) {
+                arr_id_good = [];
+                for (var i in res.data.list) {
+                    arr_id_good.push(res.data.list[i].sku_id);
+                }
+                return {
+                    "code": res.code,
+                    "msg": res.message,
+                    "count": res.data.count,
+                    "data": res.data.list,
+                };
+            },
+            where:{"seckill_time_id" : "{$seckill_time_id}"},
+            cols: [
+                [{
+					type: 'checkbox',
+					width: '3%',
+				},{
+                    title: '商品',
+                    unresize: 'false',
+                    width: '18%',
+                    templet: '#goods_name'
+                }, {
+                    title: '秒杀时间',
+                    unresize: 'false',
+                    width: '16%',
+                    templet: '#time'
+                }, {
+                    title: '参与场次',
+                    unresize: 'false',
+                    align:"left",
+                    width: '18%',
+                    templet: '#time_label'
+                }, {
+                    title: '秒杀价',
+                    unresize: 'false',
+                    width: '7%',
+                    templet: '#price'
+                }, {
+                        title: '库存',
+                        unresize: 'false',
+                        width: '6%',
+                        field: 'goods_stock'
+                }, {
+                    title: '销量',
+                    unresize: 'false',
+                    width: '6%',
+                    field: 'sale_num'
+                }, {
+                        field: 'sort',
+                        unresize:'false',
+                        title: `排序<i class="iconfont iconwenhao1 required growth" style="color:#000;" title="后台商品默认排序为排序号正序排列(即排序号越小越靠前)，如果序号相同，那么按照添加顺序排列，越新添加的越靠前"></i>`,
+                        width: '9%',
+                        align: 'center',
+                        templet: '#editSort',
+                        sort: true
+				}, {
+					title: '状态',
+					unresize: 'false',
+					width: '10%',
+					templet: function (data) {
+						if(data.status == 1){
+							return '进行中'
+						}else if(data.status == 0){
+							return '未开始'
+						}else if(data.status == 2){
+							return '已过期'
+						}else if(data.status == -1){
+							return '已关闭（手动）'
+						}
+					}
+				}, {
+					title: '操作',
+					toolbar: '#operation',
+					unresize: 'false',
+					align:'right'
+                }]
+            ],
+			toolbar: '#toolbarAction'
+        });
+
+        table.on("sort",function (obj) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    order:obj.field,
+                    sort:obj.type
+                }
+            });
+        });
+
+        //开始时间
+        laydate.render({
+            elem: '#start_time', //指定元素
+            type: 'datetime'
+        });
+        //结束时间
+        laydate.render({
+            elem: '#end_time', //指定元素
+            type: 'datetime'
+        });
+
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+
+		// 监听工具栏操作
+		table.toolbar(function (obj) {
+			var data = obj.data;
+			if(data.length <= 0) return;
+			var seckillIdAll = [];
+			for (var i in data){
+				seckillIdAll.push(data[i].id);
+			}
+
+			switch (obj.event) {
+				case 'delete':
+					deleteSeckillAll(seckillIdAll)
+					break;
+				case 'invalid':
+					closeSeckillAll(seckillIdAll)
+					break;
+			}
+		})
+
+		//批量删除
+		function deleteSeckillAll(data){
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			layer.confirm('确定要删除商品吗?', function(index) {
+				layer.close(index);
+				$.ajax({
+					url: '{:addon_url("seckill://shop/seckill/deleteGoodsAll")}',
+					data: {
+						"seckill_id": data
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						table.reload({
+							page: {
+								curr: 1
+							},
+						});
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+
+		//批量关闭
+		function closeSeckillAll(data)
+		{
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			layer.confirm('确定要关闭商品吗?', function(index) {
+				layer.close(index);
+				$.ajax({
+					url: '{:addon_url("seckill://shop/seckill/closeSeckillAll")}',
+					data: {
+						"seckill_id": data
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						table.reload();
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function(obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'delete': //查看
+                    delSeckill(data.id);
+                    break;
+                case 'edit': //查看
+                    location.hash = ns.hash("seckill://shop/seckill/updateGoods?id=" + data.id);
+                    break;
+                case 'select': //推广
+                    seckillUrl(data);
+                    break;
+                case 'close': //关闭
+                    closeSeckill(data.id);
+                    break;
+            }
+
+        });
+
+        /**
+         * 删除
+         */
+        function delSeckill(seckill_id) {
+
+            if (repeat_flag) return false;
+			repeat_flag = true;
+
+			layer.confirm('确定要删除该商品吗?', function(index) {
+				layer.close(index);
+				$.ajax({
+					url: '{:addon_url("seckill://shop/seckill/deleteGoods")}',
+					data: {
+						"id": seckill_id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+        }
+
+        /**
+         * 关闭
+         */
+        function closeSeckill(seckill_id) {
+
+            if (repeat_flag) return false;
+            repeat_flag = true;
+
+            layer.confirm('确定要关闭该商品吗?', function(index) {
+				layer.close(index);
+                $.ajax({
+                    url: '{:addon_url("seckill://shop/seckill/closeSeckill")}',
+                    data: {
+                        "seckill_id": seckill_id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+		function seckillUrl(data){
+			new PromoteShow({
+				url:ns.url("seckill://shop/seckill/seckillUrl"),
+				param:{seckill_id:data.id},
+			})
+		}
+    });
+
+    function clickAdd() {
+        location.hash = ns.hash("seckill://shop/seckill/addGoods");
+    }
+
+    function clickAddTime() {
+        var data = {};
+        laytpl($('#addTime').html()).render(data, function(html) {
+            var index = layer.open({
+                type: 1,
+                title: "场次添加",
+                area: ['700px', '300px'],
+                btn: ['保存', '返回'],
+                content: html,
+                yes: function(index, layero) {
+                    var data = {};
+                    data.name = $('#add_time_name').val();
+                    if (!data.name) {
+                        layer.msg("秒杀场次名称不能为空");
+                        return false;
+                    }
+                    if (!$('#add_start_time').val()) {
+                        layer.msg("开始时间不能为空");
+                        return false;
+                    }
+                    if (!$('#add_end_time').val()) {
+                        layer.msg("结束时间不能为空");
+                        return false;
+                    }
+                    data.start_hour = $('#add_start_time').val().split(":")[0];
+                    data.start_minute = $('#add_start_time').val().split(":")[1];
+                    data.start_second = $('#add_start_time').val().split(":")[2];
+
+                    data.end_hour = $('#add_end_time').val().split(":")[0];
+                    data.end_minute = $('#add_end_time').val().split(":")[1];
+                    data.end_second = $('#add_end_time').val().split(":")[2];
+
+                    if (repeat_flag) return;
+                    repeat_flag = true;
+                    $.ajax({
+                        url: ns.url("seckill://shop/seckill/add"),
+                        data: data,
+                        dataType: 'JSON',
+                        type: 'POST',
+                        success: function(res) {
+                            repeat_flag = false;
+                            if (res.code == 0) {
+                                layer.msg(res.message, {}, function() {
+                                    layer.close(index);
+                                });
+                            } else {
+                                layer.msg(res.message);
+                            }
+
+                        }
+                    });
+                }
+            });
+            laydate.render({
+                elem: '#add_end_time',
+                type: 'time'
+            });
+            laydate.render({
+                elem: '#add_start_time',
+                type: 'time'
+            });
+        });
+    }
+
+    // 监听单元格编辑
+    function editSort(id, event){
+        var data = $(event).val();
+
+        if (data == '') {
+            $(event).val(0);
+            data = 0;
+        }
+
+        if(!new RegExp("^-?[0-9]\\d*$").test(data)){
+            layer.msg("排序号只能是整数");
+            return ;
+        }
+        if(data<0){
+            layer.msg("排序号必须大于0");
+            return ;
+        }
+        $.ajax({
+            type: 'POST',
+            url: ns.url("seckill://shop/seckill/seckillSort"),
+            data: {
+                sort: data,
+                id: id
+            },
+            dataType: 'JSON',
+            success: function(res) {
+                layer.msg(res.message);
+                if(res.code==0){
+                    table.reload();
+                }
+            }
+        });
+    }
+</script>

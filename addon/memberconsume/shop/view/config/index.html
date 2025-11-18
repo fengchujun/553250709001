@@ -1,0 +1,158 @@
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否开启：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="is_use" lay-filter="is_use" value="1" lay-skin="switch" {if !empty($config) && $config.is_use==1 } checked {/if} >
+		</div>
+		<div class="word-aux">活动开启后用户在付款完成后将按活动设置发放相关奖励</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">奖励回收：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline">
+				<input type="radio" name="is_recovery_reward" {if !empty($config) && $config.value.is_recovery_reward == 1 } checked {/if} value="1" title="是">
+				<input type="radio" name="is_recovery_reward" {if empty($config) || $config.value.is_recovery_reward == 0 } checked {/if} value="0" title="否">
+			</div>
+		</div>
+		<div class="word-aux">如果开启奖励回收，用户退款维权成功后，已发放的奖励会进行回收</div>
+		<div class="word-aux">回收说明：已使用的优惠券将无法收回，如果会员剩余积分/成长值不足将只扣除至0</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">奖励类型：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="reward_type" lay-filter="reward_type" value="point" lay-skin="primary" {if isset($config.value.is_return_point) && $config.value.is_return_point == 1}checked{/if} title="送积分">
+			<input type="checkbox" name="reward_type" lay-filter="reward_type" value="growth" lay-skin="primary" {if isset($config.value.is_return_growth) && $config.value.is_return_growth == 1}checked{/if} title="送成长值">
+			<input type="checkbox" name="reward_type" lay-filter="reward_type" value="coupon" lay-skin="primary" {if isset($config.value.is_return_coupon) && $config.value.is_return_coupon == 1}checked{/if} title="送优惠券">
+		</div>
+		<input type="hidden" lay-verify="reward_type"/>
+	</div>
+
+	<div class="layui-form-item reward-content point {if !isset($config.value.is_return_point) || $config.value.is_return_point == 0}layui-hide{/if}">
+		<label class="layui-form-label">奖励积分：</label>
+		<div class="layui-input-block">
+		<div class="layui-input-inline">
+			<input type="number" name="return_point_rate" value="{if condition="!empty($config.value)"}{$config.value.return_point_rate}{else/}0{/if}" lay-verify="return_point_rate" autocomplete="off" class="layui-input len-short">
+		</div>
+			<span class="layui-form-mid">%</span>
+		</div>
+		<div class="word-aux">比率必须为0-100的整数，例：当设置为100时，每消费1元奖励1个积分</div>
+	</div>
+
+	<div class="layui-form-item reward-content growth {if !isset($config.value.is_return_growth) || $config.value.is_return_growth == 0}layui-hide{/if}">
+		<label class="layui-form-label">奖励成长值：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline">
+				<input type="number" name="return_growth_rate" value="{if condition="!empty($config.value)"}{$config.value.return_growth_rate ?: 0}{else/}0{/if}" lay-verify="return_growth_rate" autocomplete="off" class="layui-input len-short">
+			</div>
+			<span class="layui-form-mid">%</span>
+		</div>
+		<div class="word-aux">比率必须为0-100的整数，例：当设置为100时，每消费1元奖励1个成长值</div>
+	</div>
+
+	<div class="layui-form-item reward-content coupon {if !isset($config.value.is_return_coupon) || $config.value.is_return_coupon == 0}layui-hide{/if}">
+		<label class="layui-form-label">奖励优惠券：</label>
+		<div class="layui-input-block">
+			<div><a href="javascript:;" class="text-color" id="select_coupon">选择优惠券</a></div>
+			<div class="word-aux" style="margin-left: 0">
+				<p>活动优惠券发放，不受优惠券自身数量和领取数量的限制</p>
+			</div>
+			<div id="coupon_list"></div>
+			<input type="hidden" lay-verify="return_coupon_ids"/>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="back()">返回</button>
+	</div>
+</div>
+<script type="text/javascript" src="STATIC_JS/coupon_select.js"></script>
+<script >
+	var laytpl;
+	var coupon_select = new CouponSelect({
+		tableElem:'#coupon_list',
+		selectElem:'#select_coupon',
+		selectedIds:'{$config.value.return_coupon}',
+	})
+	layui.use(['form','laytpl'], function(){
+		// 监听返积分是否启用
+		var form = layui.form,
+			repeat_flag = false; //防重复标识
+		laytpl = layui.laytpl;
+		form.render();
+
+		form.on('checkbox(reward_type)', function (data){
+			var reward_type = data.value;
+			var dom = $(".reward-content."+reward_type);
+			if(data.elem.checked){
+				dom.removeClass('layui-hide');
+			}else{
+				dom.addClass('layui-hide');
+			}
+		})
+
+		form.on('submit(save)', function(data){
+			if (repeat_flag) return;
+			repeat_flag = true;
+
+			data.field.is_return_point = getRewardTypeIsReturn('point'); 
+			data.field.is_return_growth = getRewardTypeIsReturn('growth');
+			data.field.is_return_coupon = getRewardTypeIsReturn('coupon');
+			if(!data.field.is_return_point) data.field.return_point_rate = 0;
+			if(!data.field.is_return_growth) data.field.return_growth_rate = 0;
+			if(data.field.is_return_coupon) data.field.return_coupon = coupon_select.getSelectedData().selectedIds.toString();
+			
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("memberconsume://shop/config/index"),
+				data: data.field,
+				success: function(res) {
+					layer.msg(res.message);
+					repeat_flag = false;
+				}
+			});
+		});
+
+		form.verify({
+			reward_type:function (value){
+				var checked_num = $("input[name='reward_type']:checked").length;
+				var is_use = $("input[name='is_use']:checked").length;
+				if(is_use && !checked_num){
+					return '请至少设置一种奖励';
+				}
+			},
+			return_point_rate: function(value){
+				return checkReturnRate('point', value);
+			},
+			return_growth_rate: function(value){
+				return checkReturnRate('growth', value);
+			},
+			return_coupon_ids: function (value){
+				var checked = getRewardTypeIsReturn('coupon');
+				if(checked && coupon_select.getSelectedData().selectedIds.length == 0){
+					return '请选择优惠券';
+				}
+			}
+		});
+
+		function checkReturnRate(reward_type, value){
+			var checked = getRewardTypeIsReturn(reward_type);
+			if(checked && !ns.getRegexp('>0num').test(value) || value > 100){
+				return '请输入1-100之间的整数';
+			}
+		}
+
+		function getRewardTypeIsReturn(reward_type){
+			return $("input[name='reward_type'][value='"+reward_type+"']:checked").length ? 1 : 0;
+		}
+	});
+
+	function back(){
+		location.hash = ns.hash("shop/promotion/market");
+	}
+
+</script>

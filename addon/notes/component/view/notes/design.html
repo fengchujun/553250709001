@@ -1,0 +1,196 @@
+<nc-component :data="data[index]" class="component-notes">
+
+	<!-- 预览 -->
+	<template slot="preview">
+		<div class="preview-box">
+			<div class="notes-list-preview" :class="'text-title-'+ nc.style" :style="{ backgroundColor : nc.componentBgColor }">
+				<div class="goods-head">
+					<div class="title-wrap">
+						<span class="name" :style="{color: nc.titleTextColor || 'rgba(0,0,0,0)'}">{{nc.title}}</span>
+					</div>
+					<div class="more red-color" v-if="nc.more">
+						<span :style="{color: nc.moreTextColor || 'rgba(0,0,0,0)'}">{{nc.more}}</span>
+						<i class="iconfont iconyoujiantou" :style="{color: nc.moreTextColor || 'rgba(0,0,0,0)'}"></i>
+					</div>
+				</div>
+
+				<div class="list-wrap" v-if="nc.style==1">
+					<div class="item" :style="{ 
+						backgroundColor : nc.contentBgColor,
+						borderTopLeftRadius: (nc.elementAngle == 'round' ? nc.topElementAroundRadius + 'px' : 0),
+						borderTopRightRadius: (nc.elementAngle == 'round' ? nc.topElementAroundRadius + 'px' : 0),
+						borderBottomLeftRadius: (nc.elementAngle == 'round' ? nc.bottomElementAroundRadius + 'px' : 0),
+						borderBottomRightRadius: (nc.elementAngle == 'round' ? nc.bottomElementAroundRadius + 'px' : 0)
+					}">
+						<div class="item-con">
+							<p class="notes-title multi-line-hiding">这里显示笔记标题最多显示2行</p>
+							<div class="notes-highlights-list" v-show="nc.notesLabel == 1">
+								<span class="bg-color">亮点</span>
+							</div>
+							<div class="notes-intro">
+								<span class="notes-label text-color">#掌柜说#</span>
+								<p>笔记内容介绍</p>
+							</div>
+						</div>
+						<div class="img-wrap">
+							<img :src="changeImgUrl('public/static/img/default_img/figure.png')" />
+						</div>
+						<div class="item-con">
+							<div class="notes-info">
+								<div class="notes-num"><span v-show="nc.uploadTime == 1">2020-01-01</span></div>
+								<div class="notes-num"><span v-show="nc.readNum == 1">阅读 1000</span></div>
+								<!-- <div class="notes-num"><span v-show="nc.thumbsUpNum == 1"><img src="{$resource_path}/img/thumbs_up.png" /><span>1000</span></span></div> -->
+							</div>
+						</div>
+					</div>
+					<div class="item" :style="{ 
+						backgroundColor : nc.contentBgColor,
+						borderTopLeftRadius: (nc.elementAngle == 'round' ? nc.topElementAroundRadius + 'px' : 0),
+						borderTopRightRadius: (nc.elementAngle == 'round' ? nc.topElementAroundRadius + 'px' : 0),
+						borderBottomLeftRadius: (nc.elementAngle == 'round' ? nc.bottomElementAroundRadius + 'px' : 0),
+						borderBottomRightRadius: (nc.elementAngle == 'round' ? nc.bottomElementAroundRadius + 'px' : 0)
+					}">
+						<div class="item-con">
+							<p class="notes-title multi-line-hiding">这里显示笔记标题最多显示2行</p>
+							<div class="notes-highlights-list" v-show="nc.notesLabel == 1">
+								<span class="bg-color">亮点</span>
+							</div>
+							<div class="notes-intro">
+								<span class="notes-label text-color">#掌柜说#</span>
+								<p>笔记内容介绍</p>
+							</div>
+						</div>
+						<div class="img-wrap img-wrap-boxs">
+							<img :src="changeImgUrl('public/static/img/default_img/square.png')" />
+							<img :src="changeImgUrl('public/static/img/default_img/square.png')" />
+							<img :src="changeImgUrl('public/static/img/default_img/square.png')" />
+						</div>
+						<div class="item-con">
+							<div class="notes-info">
+								<div class="notes-num"><span v-show="nc.uploadTime == 1">2020-01-01</span></div>
+								<div class="notes-num"><span v-show="nc.readNum == 1">阅读 1000</span></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</template>
+
+	<!-- 内容编辑 -->
+	<template slot="edit-content">
+		<template v-if="nc.lazyLoad">
+			<notes-set></notes-set>
+			<div class="template-edit-title">
+				<h3>风格选择</h3>
+				<div class="layui-form-item">
+					<label class="layui-form-label sm">风格</label>
+					<div class="layui-input-block" v-if="nc.tempData.methods">
+						<div class="text-color selected-style" @click="nc.tempData.methods.selectStyle()">
+							<span>{{nc.styleName}}</span>
+							<i class="layui-icon layui-icon-right"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="template-edit-title">
+				<h3>笔记数据</h3>
+				<div class="layui-form-item" v-if="nc.tempData.goodsSources">
+					<label class="layui-form-label sm">数据来源</label>
+					<div class="layui-input-block">
+						<div class="source-selected">
+							<div class="source">{{ nc.tempData.goodsSources[nc.sources].text }}</div>
+							<div v-for="(item,sourcesKey) in nc.tempData.goodsSources" :key="sourcesKey" class="source-item" :title="item.text" @click="nc.sources=sourcesKey" :class="{ 'text-color border-color' : (nc.sources == sourcesKey) }">
+								<i class='iconfont' :class='item.icon'></i>
+							</div>
+						</div>
+					</div>
+				</div>
+				<slide v-if="nc.sources != 'diy'" :data="{ field : 'count', label : '显示数量', max: 9, min: 1 }"></slide>
+				<div class="layui-form-item" v-if="nc.sources == 'diy'">
+					<label class="layui-form-label sm">手动选择</label>
+					<div class="layui-input-block">
+						<div class="selected-style" @click="nc.tempData.methods.addNotes()">
+							<span v-if="nc.noteId.length == 0">请选择</span>
+							<span v-if="nc.noteId.length > 0" class="text-color">已选{{ nc.noteId.length }}个</span>
+							<i class="iconfont iconyoujiantou"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="template-edit-title">
+				<h3>顶部标题</h3>
+				<div class="layui-form-item">
+					<label class="layui-form-label sm">标题</label>
+					<div class="layui-input-block">
+						<input type="text" name='title' v-model="nc.title" class="layui-input" />
+					</div>
+				</div>
+				<div class="layui-form-item">
+					<label class="layui-form-label sm">文本内容</label>
+					<div class="layui-input-block">
+						<input type="text" name='title' v-model="nc.more" class="layui-input" />
+					</div>
+				</div>
+			</div>
+
+			<div class="template-edit-title">
+				<h3>显示内容</h3>
+				<div class="layui-form-item" v-for="item in nc.tempData.showContentList">
+					<label class="layui-form-label sm">{{item.title}}</label>
+					<div class="layui-input-block">
+						<div class="layui-unselect layui-form-checkbox" lay-skin="primary" @click="nc.tempData.methods.changeStatus(item.name)" :class="{ 'layui-form-checked' : nc[item.name] }">
+							<span>{{ nc[item.name] ? '显示' : '隐藏' }}</span>
+							<i class="layui-icon layui-icon-ok"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+		</template>
+
+		<!-- 弹框 -->
+		<article class="notes-list-style">
+			<div class="style-list-notes layui-form">
+				<div class="style-list-con-notes">
+					<div class="style-li-notes" :class="{'selected border-color': nc.style == 1}">
+						<img src="{$resource_path}/img/notes_style_1.png" />
+						<span class="layui-hide">风格一</span>
+					</div>
+				</div>
+
+				<input type="hidden" name="style">
+				<input type="hidden" name="style_name">
+			</div>
+		</article>
+
+	</template>
+
+	<!-- 样式编辑 -->
+	<template slot="edit-style">
+		<div class="template-edit-title">
+			<h3>顶部标题</h3>
+			<color :data="{ field : 'titleTextColor', label : '标题颜色', defaultColor : '#333333' }"></color>
+			<color :data="{ field : 'moreTextColor', defaultColor: '#858585' }"></color>
+		</div>
+		<div class="template-edit-title">
+			<h3>笔记内容</h3>
+			<color :data="{ field : 'contentBgColor', 'label' : '背景颜色' , defaultColor : '#FFFFFF'}"></color>
+
+			<slide v-show="nc.elementAngle == 'round'" :data="{ field : 'topElementAroundRadius', label : '上圆角', max : 50 }"></slide>
+			<slide v-show="nc.elementAngle == 'round'" :data="{ field : 'bottomElementAroundRadius', label : '下圆角', max : 50 }"></slide>
+		</div>
+	</template>
+
+	<!-- 资源 -->
+	<template slot="resource">
+		<js>
+			var notesResourcePath = "{$resource_path}"; // http路径
+			var notesRelativePath = "{$relative_path}"; // 相对路径
+		</js>
+		<js src="{$resource_path}/js/design.js"></js>
+		<css src="{$resource_path}/css/design.css"></css>
+	</template>
+
+</nc-component>

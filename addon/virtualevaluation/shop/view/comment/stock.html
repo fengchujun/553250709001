@@ -1,0 +1,311 @@
+<style>
+    .single-filter-box{display: flex; justify-content: space-between}
+    .item-right select {margin-right: 20px;width: 80px; height: 25px;}
+    .layui-form-label{width: 205px}
+	.layui-input-inline>textarea{min-width:462px;max-width: 462px;min-height:20px;max-height: 68px;background:rgba(135,135,135,.2);border:none;}
+	.layui-layer-content{height: auto !important; }
+	.layui-form-item {margin-bottom: 30px;}
+	.layui-layout-admin .single-filter-box {
+		padding-top: 14px !important;
+	}
+</style>
+
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="addStock()">添加评价库</button>
+</div>
+<table id="stock_list" lay-filter="stock_list"></table>
+
+<!-- 创建评论库弹出层 -->
+<script type="text/html" id="create_stock">
+	<div class="goods-service">
+        <div class="layui-form-item">
+            <label class="layui-form-label">评价库名称：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="stock_name" class="layui-input" autocomplete="off">
+            </div>
+        </div>
+        <div class="form-row mid">
+            <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+            <button class="layui-btn layui-btn-primary" onclick="closeAddStockLayer()">返回</button>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="edit_stock">
+	<div class="goods-service">
+        <div class="layui-form-item">
+            <label class="layui-form-label">名称：</label>
+            <div class="layui-input-inline">
+                <input type="text" name="stock_name" class="layui-input" autocomplete="off">
+            </div>
+        </div>
+        <div class="form-row mid">
+            <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+            <button class="layui-btn layui-btn-primary" onclick="closeAddStockLayer()">返回</button>
+        </div>
+    </div>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+        <a class="layui-btn" lay-event="edit">评价管理</a>
+        <a class="layui-btn" lay-event="rename">重命名</a>
+        <a class="layui-btn" lay-event="delete">删除</a>
+    </div>
+</script>
+
+<script>
+	var laytpl, save_flag = false;
+	var layer;
+	var form, table, element, repeat_flag = false;
+	layui.use(['form', 'layer', 'laytpl', 'element'], function() {
+		form = layui.form;
+		laytpl = layui.laytpl;
+		var layer = layui.layer;
+		element = layui.element;
+
+		/**
+		 * 搜索功能
+		 */
+		form.on('submit(search)', function(data) {
+			table.reload({
+				page: {
+					curr: 1
+				},
+				where: data.field
+			});
+		});
+
+		table = new Table({
+			elem: '#stock_list',
+			url: ns.url("virtualevaluation://shop/comment/stock"),
+			cols: [
+				[{
+					title: '评价库名称',
+					unresize: 'false',
+					width: '15%',
+					field: 'stock_name'
+				}, {
+					title: '评价条数',
+					unresize: 'false',
+					width: '15%',
+					field: 'num'
+				}, {
+					title: '创建时间',
+					unresize: 'false',
+					width: '15%',
+					templet: function(data) {
+						return ns.time_to_date(data.create_time);
+					}
+				}, {
+					title: '操作',
+					toolbar: '#operation',
+					unresize: 'false',
+					align:'right'
+				}]
+			]
+		});
+
+		table.tool(function(obj) {
+			var data = obj.data;
+			num=data.num;
+			switch (obj.event) {
+				case 'rename': //重命名
+					rename(data.stock_id);
+					break;
+				case 'delete': //删除
+					deleteStock(data.stock_id,num);
+					break;
+				case 'edit': //编辑
+					editStock(data.stock_id);
+					break;
+			}
+		});
+
+		/**
+		 * 保存添加评价库
+		 */
+		form.on('submit(save)', function(data) {
+			if (save_flag) return;
+			save_flag = true;
+			var stock_name = $("input[name='stock_name']").val();
+			if (stock_name == '') {
+				return layer.msg('请填写名称');
+			}
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("virtualevaluation://shop/comment/addstock"),
+				data: {
+					stock_name: stock_name
+				},
+				success: function(res) {
+					save_flag = false;
+					layer.msg(res.message);
+                    listenerHash(); // 刷新页面
+                    layer.closeAll();
+				}
+			})
+		});
+
+		/**
+		 * 保存添加评价库
+		 */
+		form.on('submit(editSave)', function(data) {
+			if (save_flag) return;
+			save_flag = true;
+			var stock_name = $("input[name='stockname']").val();
+			var stock_id = $("input[name='stock_id']").val();
+			if (stock_id == '') {
+				return layer.msg('必须参数不可少');
+			}
+			if (stock_name == '') {
+				return layer.msg('请填写名称');
+			}
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("virtualevaluation://shop/comment/editstock"),
+				data: {
+					stock_name: stock_name,
+					stock_id: stock_id
+				},
+				success: function(res) {
+					save_flag = false;
+					layer.msg(res.message);
+                    listenerHash(); // 刷新页面
+                    layer.closeAll();
+				}
+			})
+		})
+
+	});
+
+	function closeAddStockLayer() {
+		layer.close(add_stock_layer);
+	}
+
+	/**
+	 * 添加
+	 */
+	function addStock() {
+		laytpl($("#create_stock").html()).render({}, function(html) {
+			add_stock_layer = layer.open({
+				type: 1,
+				title: '添加评价库',
+				area: ['500px', '200px'],
+				content: html,
+				success: function(layero, index) {
+					form.render();
+				}
+			});
+		})
+	}
+
+	function rename(stock_id) {
+		$.ajax({
+			url: ns.url("virtualevaluation://shop/comment/getstockinfo"),
+			data: {
+				stock_id: stock_id
+			},
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res) {
+				repeat_flag = false;
+				var stock_id = res.data.stock_id;
+				var stock_name = res.data.stock_name;
+				var html =
+					`<div class="layui-form form-wrap">
+						<div class="layui-form-item">
+							<label class="layui-form-label" style="width:auto"><span class="required">*</span>评价库名称：</label>
+							<div class="layui-input-block" style="margin-left: 0;">
+							    <input name="stock_id" type="hidden" lay-verify="required" value="` +
+					stock_id +
+					`" class="layui-input len-mid">
+								<input name="stockname" type="text" lay-verify="required" value="` +
+					stock_name +
+					`" class="layui-input len-mid">
+							</div>
+						</div>
+						<div class="form-row mid">
+                           <button class="layui-btn" lay-submit lay-filter="editSave">保存</button>
+                           <button class="layui-btn layui-btn-primary" onclick="closeAddStockLayer()">返回</button>
+                       </div>
+					</div>`;
+				add_stock_layer = layer.open({
+					type: 1,
+					shadeClose: true,
+					shade: 0.3,
+					offset: 'auto',
+					scrollbar: true,
+					fixed: false,
+					title: "编辑评价库",
+					area: ['450px', 'auto'],
+					content: html,
+				});
+			}
+		});
+	}
+
+	/**
+	 * 删除
+	 */
+	function deleteStock(stock_id,num) {
+		if(num>0){
+			layer.confirm('本操作将删除评论库及其评价，确定要删除吗？', function(index) {
+				layer.close(index);
+				$.ajax({
+					url: ns.url("virtualevaluation://shop/comment/deletestock"),
+					data: {
+						stock_id: stock_id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+			
+						if (res.code == 0) {
+							table.reload({
+							    page: {
+							        curr: 1
+							    },
+							});
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+			return false
+		} 
+		if (repeat_flag) return false;
+		repeat_flag = true;
+		layer.confirm('确定要删除该评价库吗?', function(index) {
+			layer.close(index);
+			$.ajax({
+				url: ns.url("virtualevaluation://shop/comment/deletestock"),
+				data: {
+					stock_id: stock_id
+				},
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res) {
+					layer.msg(res.message);
+					repeat_flag = false;
+					if (res.code == 0) {
+						table.reload();
+					}
+				}
+			});
+		}, function() {
+			layer.close();
+			repeat_flag = false;
+		});
+	}
+
+	function editStock(stock_id) {
+		location.hash = ns.hash("virtualevaluation://shop/comment/getContents?stock_id=" + stock_id)
+	}
+</script>

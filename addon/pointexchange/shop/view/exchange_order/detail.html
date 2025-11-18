@@ -1,0 +1,104 @@
+<style>
+	.input-text {
+		height: auto;
+	}
+</style>
+
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">兑换订单信息</span>
+    </div>
+
+	<div class="layui-card-body">
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">订单编号</label>
+			<div class="layui-input-block">
+				<p class="input-text len-long">{$order_info.order_no}</p>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">支付流水号</label>
+			<div class="layui-input-block">
+				<p class="input-text len-long">{$order_info.out_trade_no}</p>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">兑换积分数</label>
+			<div class="layui-input-block">
+				<p class="input-text len-mid">{$order_info.point}</p>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">兑换价格</label>
+			<div class="layui-input-block">
+				<p class="input-text len-mid">{$order_info.exchange_price}</p>
+			</div>
+		</div>
+		{if $order_info.buyer_message != ''}
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">买家留言</label>
+			<div class="layui-input-block">
+				<p class="input-text len-mid">{$order_info.buyer_message}</p>
+			</div>
+		</div>
+		{/if}
+    </div>
+</div>
+
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">商品信息</span>
+    </div>
+   
+	<div class="layui-card-body">
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">兑换商品名称</label>
+			<div class="layui-input-block">
+				<p class="input-text len-long">{$order_info.exchange_name}</p>
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">兑换商品图片</label>
+			<div class="layui-input-block img-upload">
+				<div class="upload-img-block square">
+					<div class="upload-img-box">
+						<img layer-src src="{:img($order_info.exchange_image)}" />
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">兑换数量</label>
+			<div class="layui-input-block">
+				<p class="input-text len-mid">{$order_info.num}</p>
+			</div>
+		</div>
+		
+		<div class="layui-form-item">
+			<label class="layui-form-label mid">类型名称</label>
+			<div class="layui-input-block">
+				<p class="input-text len-mid">{$order_info.type_name}</p>
+			</div>
+        </div>
+        
+        <div class="layui-card card-common card-brief">
+            <div class="form-row mid">
+                <button type="button" class="layui-btn layui-btn-primary" onclick="backPointExchangeList()">返回</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use('form', function() {
+        var form = layui.form;
+		form.render();
+	});
+	
+	function backPointExchangeList() {
+		location.hash = ns.hash("pointexchange://shop/pointexchange/lists")
+	}
+</script>

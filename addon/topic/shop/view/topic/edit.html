@@ -1,0 +1,390 @@
+<style>
+	.layui-form-item .layui-input-inline.end-time{float: none;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;}
+	.goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动标题：</label>
+		<div class="layui-input-block">
+			<input type="text" name="topic_name" value="{$info.topic_name}" lay-verify="required" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline">
+				<input type="text" id="start_time" name="start_time" value="{:date('Y-m-d H:i:s', $info.start_time)}" lay-verify="required" class="layui-input len-mid" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline end-time">
+				<input type="text" id="end_time" name="end_time" value="{:date('Y-m-d H:i:s', $info.end_time)}" lay-verify="required|time" class="layui-input len-mid" autocomplete="off" readonly>
+				<input type="hidden" value="{$info.end_time}" id="old_end_time">
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">横幅图片：</label>
+		<div class="layui-input-inline img-upload">
+			<div class="upload-img-block icon">
+				<div class="upload-img-box {if !empty($info.topic_adv)}hover{/if}">
+					<div class="upload-default" id="webLogoUpload">
+						{if empty($info.topic_adv)}
+							<div class="upload">
+								<i class="iconfont iconshangchuan"></i>
+								<p>点击上传</p>
+							</div>
+						{else/}
+						<div id="preview_webLogoUpload" class="preview_img">
+							<img layer-src src="{:img($info.topic_adv)}" alt="" class="img_prev">
+						</div>
+						{/if}
+					</div>
+					<div class="operation">
+						<div>
+							<i title="图片预览" class="iconfont iconreview js-preview" style="margin-right: 20px;"></i>
+							<i title="删除图片" class="layui-icon layui-icon-delete js-delete"></i>
+						</div>
+						
+						<div class="replace_img js-replace">点击替换</div>
+					</div>
+					<input type="hidden" name="topic_adv" value="{$info.topic_adv}"/>
+				</div>
+			<!-- 	<p id="webLogoUpload" class=" {if condition="$info.topic_adv"} replace {else/} no-replace{/if}">替换</p>
+				<i class="del {if !empty($info.topic_adv)}show{/if}">x</i> -->
+			</div>
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">活动内容：</label>
+		<div class="layui-input-block">
+			<textarea class="layui-textarea len-long" name="remark" maxlength="300">{$info.remark}</textarea>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>商品：</label>
+		<div class="layui-input-block">
+			<table class="layui-table" id="goods" lay-skin="line" lay-size="lg">
+				<colgroup>
+					<col width="40%">
+					<col width="15%">
+					<col width="15%">
+					<col width="15%">
+					<col width="15%">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>商品名称</th>
+						<th>库存</th>
+						<th>价格</th>
+						<th>活动价格</th>
+						<th class="operation">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+					{notempty name="$info['goods_list']"}
+						{foreach name="$info['goods_list']" item="item"}
+						<tr data-id="{$item.id}" data-sku-id="{$item.sku_id}" data-goods-id="{$item.goods_id}">
+							<td>
+								<div class="goods-title">
+									<div class="goods-img">
+										{if $item.sku_image}
+										<img layer-src="" src="{:img($item.sku_image)}" alt="">
+										{else /}
+										<img layer-src="" src="__STATIC__/img/shape.png" alt="">
+										{/if}
+									</div>
+									<p class="multi-line-hiding goods-name">{$item.sku_name}</p>
+								</div>
+							<td>{$item.stock}</td>
+							<td class='goods-price'>{$item.price}</td>
+							<td><input type="number" class="layui-input len-input topic-price" lay-verify="required|topic_price" min="0.00" value="{$item.topic_price}"/></td>
+							<td class='operation'><div class='table-btn '><a href='javascript:;' class='layui-btn' onclick='deleteGoods(this)'>删除商品</a></div></td>
+						</tr>
+						{/foreach}
+					{/notempty}
+					<tr class="goods-empty" {notempty name="$info['goods_list']"}style="display:none;"{/notempty}>
+						<td colspan="5">
+							<div>未添加商品</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<button class="layui-btn" onclick="addGoods()">添加商品</button> <span class="goods_num">已选商品（<span id="goods_num" class="text-color">{$info.goods_list_count}</span>）</span>
+		</div>
+	</div>
+	
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="back()">返回</button>
+		<a id="webLogoUploadImage"></a>
+	</div>
+	<input type="hidden" name="topic_id" value="{$info.topic_id}">
+	<input type="hidden" name="del_id" value="">
+</div>
+
+<script>
+	var selectGoodsSkuId = '{$sku_ids}'.split(',');
+	var saveData = null;
+	var totalUploadNum = 0;
+	var completeUploadNum = 0;
+	var upload;
+
+	layui.use(['form','laydate','colorpicker'], function() {
+		var form = layui.form,
+			laydate = layui.laydate,
+			colorpicker = layui.colorpicker,
+            startTime = {$info.start_time},
+		    endTime = {$info.end_time},
+            minDate = "",
+			repeat_flag = false;//防重复标识
+		form.render();
+
+		upload = new Upload({
+			elem: '#webLogoUpload',
+			auto:false,
+			bindAction:'#webLogoUploadImage',
+			callback: function(res) {
+				uploadComplete('topic_adv', res.data.pic_path);
+			}
+		});
+
+		function uploadComplete(field, pic_path) {
+			saveData.field[field] = pic_path;
+			completeUploadNum += 1;
+			if(completeUploadNum == totalUploadNum){
+				saveFunc();
+			}
+		}
+
+		function saveFunc(){
+			var data = saveData;
+			$.ajax({
+				url: ns.url("topic://shop/topic/edit"),
+				dataType: 'JSON',
+				type: 'POST',
+				data: data.field,
+				success: function(res){
+					repeat_flag = false;
+					if(res.code == 0){
+						layer.confirm('编辑成功',{
+							title: '操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero) {
+								location.hash = ns.hash("topic://shop/topic/lists");
+								layer.close(index);
+							},btn2: function(index, layero) {
+								layer.close(index);
+							}
+						})
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			})
+		}
+
+		/**
+		 * 颜色
+		 */
+		colorpicker.render({
+			elem: '#colorpicker', //绑定元素
+			color: "{$info.bg_color}",
+			done: function(color) {
+				$("#bg_color").val(color);
+			}
+		});
+
+		var now_time = ((new Date()).getTime())/1000;
+		var start_time = ((new Date($("#start_time").val())).getTime())/1000;
+		var old_end_time = ((new Date($("#end_time").val())).getTime())/1000;
+		// if(now_time <= start_time){
+			//开始时间
+			laydate.render({
+				elem: '#start_time', //指定元素
+				type: 'datetime',
+				value: ns.time_to_date(startTime),
+				done: function(value) {
+					minDate = value;
+					reRender();
+				}
+			});
+		// }
+		// if(now_time <= old_end_time){
+			//结束时间
+			laydate.render({
+				elem: '#end_time', //指定元素
+				type: 'datetime',
+				value:  ns.time_to_date(endTime)
+			});
+		// }
+
+        /**
+         * 重新渲染结束时间
+         * */
+        function reRender() {
+            $("#end_time").remove();
+            $(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input len-mid" > ');
+            laydate.render({
+                elem: '#end_time',
+                type: 'datetime',
+                min: minDate
+            });
+        }
+		
+		form.verify({
+           topic_price: function(value, item) {
+				var price = $(item).parents("tr").find(".goods-price").text();
+				if (value.trim() == "") {
+					return '活动价格不能为空';
+				}
+				if (parseFloat(value) <= 0) {
+					return '活动价格必须大于0';
+				}
+				if (parseFloat(value) > parseFloat(price)) {
+					return '活动价格不能大于商品价格';
+				}
+
+			   var pattern = /^[0-9]+(\.[0-9]{1,2})?$/;
+			   if(!pattern.test(value)){
+				   return '请输入正确格式';
+			   }
+
+			   var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '活动价格最多保留两位小数';
+				}
+			},
+			time: function(value) {
+				var now_time = ((new Date()).getTime())/1000;
+				var start_time = ((new Date($("#start_time").val())).getTime())/1000;
+				var end_time = ((new Date(value)).getTime())/1000;
+				var old_end_time = $("#old_end_time").val();
+				if (now_time > end_time) {
+					return '结束时间不能小于当前时间!'
+				}
+				if (start_time > end_time) {
+					return '结束时间不能小于开始时间!';
+				}
+				if (old_end_time > end_time) {
+					return '结束时间不能小于之前设置的结束时间!';
+				}
+			},
+        })
+
+		form.on("submit(save)",function(data){
+			data.field.start_time = ns.date_to_time(data.field.start_time);
+			data.field.end_time = ns.date_to_time(data.field.end_time);
+			// 删除图片
+			if(!data.field.topic_adv) upload.delete();
+			if ($('#goods tbody tr[data-sku-id]').length == 0) {
+				layer.msg('请选择商品', {icon: 5});
+				return;
+			}
+			var goods = {};
+			$('#goods tbody tr[data-sku-id]').each(function(){
+				var item = {
+						id:$(this).attr('data-id'),
+						goods_id : $(this).attr('data-goods-id'),
+						sku_id : $(this).attr('data-sku-id'),
+						topic_price : $(this).find('.topic-price').val()
+					};
+				if (!goods['goods_' + item.goods_id]) goods['goods_' + item.goods_id] = [];
+				goods['goods_' + item.goods_id].push(item);
+			})
+			data.field.goods = JSON.stringify(goods);
+
+			saveData = data;
+			var obj = $("img.img_prev[data-prev='1']");
+			totalUploadNum = obj.length;
+			if(totalUploadNum > 0){
+				obj.each(function(){
+					var actionId = $(this).attr('data-action-id');
+					$(actionId).click();
+				})
+			}else{
+				saveFunc();
+			}
+		})
+	});
+
+	/**
+	 * 添加商品
+	 */
+	function addGoods() {
+		goodsSelect(function (data) {
+			if (Object.keys(data).length == 0) {
+				selectGoodsSkuId = [];
+				$('.goods-empty').show();
+				$("#goods_num").text(selectGoodsSkuId.length);
+				$("#goods tbody tr:not(.goods-empty)").remove();
+				return;
+			}
+
+			var html = '';
+			for (var key in data) {
+				for (var sku in data[key].selected_sku_list) {
+					var item = data[key].selected_sku_list[sku];
+					if(selectGoodsSkuId.indexOf(parseInt(item.sku_id)) != -1){
+						continue;
+					}
+					html += "<tr data-sku-id=" + item.sku_id + " data-goods-id=" + item.goods_id + ">";
+					html += '<td><div class="goods-title"><div class="goods-img"><img layer-src="" src="' + ns.img(item.sku_image) + '" alt=""></div><p class="multi-line-hiding goods-name">' + item.sku_name + '</p></td>';
+					html += "<td>" + item.stock + "</td>";
+					html += "<td class='goods-price'>" + item.price + "</td>";
+					html += '<td><input type="text" class="layui-input topic_pic len-input topic-price" lay-verify="topic_price" min="0.00" value="' + item.price + '"/></td>';
+					html += "<td class='operation'> <div class='table-btn '><a href='javascript:;' class='layui-btn' onclick='deleteGoods(this)'>删除商品</a></div></td>";
+					html += "</tr>";
+					selectGoodsSkuId.push(item.sku_id);
+				}
+			}
+
+			if(selectGoodsSkuId.length) {
+				$('.goods-empty').hide();
+				$("#goods tbody").append(html);
+			} else {
+				$('.goods-empty').show();
+			}
+			$("#goods_num").text(selectGoodsSkuId.length)
+
+		}, selectGoodsSkuId, {mode: "sku"});
+	}
+
+	/**
+	 * 删除商品
+	 */
+	function deleteGoods(data) {
+		var obj = $(data).parent().parent().parent();
+		$(obj).remove();
+		for (var i in selectGoodsSkuId) {
+			if (selectGoodsSkuId[i] == Number($(obj).attr("data-sku-id"))) {
+				selectGoodsSkuId.splice(i, 1);
+			}
+		}
+		var delId = $('input[name="del_id"]').val().length>0 ? $('input[name="del_id"]').val().toString().split(',') : [];
+		delId.push($(obj).attr('data-id'));
+		$('input[name="del_id"]').val(delId);
+
+		$("#goods_num").html(selectGoodsSkuId.length)
+
+		if(selectGoodsSkuId.length) $('.goods-empty').hide();
+		else $('.goods-empty').show();
+
+	}
+
+	function back(){
+		location.hash = ns.hash("topic://shop/topic/lists");
+	}
+</script>

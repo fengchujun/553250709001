@@ -1,0 +1,359 @@
+<style>
+  .rights_interests{
+    line-height: 13px;
+  }
+</style>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+  <div class="layui-colla-item">
+    <h2 class="layui-colla-title">筛选</h2>
+    <form class="layui-colla-content layui-form layui-show">
+
+      <div class="layui-form-item">
+        <div class="layui-inline">
+          <label class="layui-form-label">卡编号</label>
+          <div class="layui-input-inline">
+            <input type="text" name="number" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label">赠与人</label>
+          <div class="layui-input-inline">
+            <input type="text" name="has_keywords" placeholder="请输入账号昵称或手机号" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label">受赠人</label>
+          <div class="layui-input-inline">
+            <input type="text" name="receive_keywords" placeholder="请输入账号昵称或手机号" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="manjian_tab">
+  <div class="layui-tab-content">
+    <!-- 列表 -->
+    <table id="record_list" lay-filter="record_list"></table>
+  </div>
+</div>
+
+<script type="text/html" id="rights_interests">
+  <div class=rights_interests>
+    <p><span>积分：{{d.point}}</span></p><br>
+    <p><span>余额：{{d.balance}}</span></p><br>
+    <!--        <p><span>优惠卷：{{d.coupon_name}}</span></p>-->
+  </div>
+</script>
+<script type="text/html" id="order_status">
+  <div class=rights_interests>
+    {{# if(d.status == 0){ }}待支付{{# }else if(d.status == 1){ }}已完成{{# }else{ }}已取消{{# } }}
+  </div>
+</script>
+<script type="text/html" id="poster_status">
+  <div class='table-title'>
+    {{# if(d.status == 0){ }}
+    <div class='title-pic' style="text-align:left">未激活</div>
+    {{# }else if(d.status == 1){ }}
+    <div class='title-pic text-color' style="text-align:left">已激活</div>
+    {{# }else if(d.status == 2){ }}
+    <div class='title-pic' style="text-align:left">已作废</div>
+    {{# } }}
+  </div>
+</script>
+<!-- 操作 -->
+<script type="text/html" id="operation">
+  <div class="table-btn">
+    {{#if(d.type==1){ }}
+    <a class="layui-btn" lay-event="edit">编辑</a>
+    {{# } }}
+    {{# if(d.type==2){ }}
+    <a class="layui-btn" lay-event="detail">兑换卡列表</a>
+    {{# if(d.status==0){ }}
+    <a class="layui-btn" lay-event="start">批量激活</a>
+    <a class="layui-btn" lay-event="close">批量作废</a>
+    {{# }else if(d.status==0 || d.status==1){ }}
+    <a class="layui-btn" lay-event="close">批量作废</a>
+    {{# } }}
+    <a class="layui-btn" lay-event="exportcard">导出</a>
+    {{#} }}
+  </div>
+</script>
+<!-- 电子卡编辑html -->
+<script type="text/html" id="label_change">
+  <div class="layui-form member-form" id="reset_label" lay-filter="form">
+    <div class="layui-form-item">
+      <label class="layui-form-label sm">数量：</label>
+      <div class="layui-input-block">
+        <input type="number" name="card_count" class="layui-input len-short" autocomplete="off" min="0">
+      </div>
+    </div>
+    <input class="reset-label-id" type="hidden" name="card_id" value="{{d.id}}" />
+    <div class="form-row sm">
+      <button class="layui-btn" lay-submit lay-filter="setlabel">确定</button>
+      <button class="layui-btn layui-btn-primary" onclick="closeLabel()">返回</button>
+    </div>
+  </div>
+</script>
+
+<script>
+  var laytpl,layer_label;
+  layui.use(['form', 'laytpl','laydate'], function () {
+    var table,
+    form = layui.form,
+    repeat_flag = false; //防重复标识
+    form.render();
+    laydate = layui.laydate;
+
+    //渲染时间
+    laydate.render({
+      elem: '#start_time',
+      type: 'datetime'
+    });
+
+    laydate.render({
+      elem: '#end_time',
+      type: 'datetime'
+    });
+
+    laytpl = layui.laytpl;
+    table = new Table({
+      elem: '#record_list',
+      url: ns.url("giftcard://shop/giftcard/transferrecordlist"),
+      cols: [
+        [{
+          field: 'number',
+          title: '卡编号',
+          unresize: 'false',
+          width: '12%',
+        }, {
+          field: 'card_name',
+          title: '礼品卡名称',
+          unresize: 'false',
+          width: '12%',
+        },  {
+          field: 'has_member_name',
+          title: '赠与人',
+          unresize: 'false',
+          width: '10%',
+        },{
+          field: 'receive_member_name',
+          title: '受赠人',
+          unresize: 'false',
+          width: '10%',
+        },{
+          title: '转赠时间',
+          unresize: 'false',
+          width: '20%',
+          templet: function (data) {
+            return ns.time_to_date(data.create_time);
+          }
+        }
+          //   {
+          //   title: '操作',
+          //   toolbar: '#operation',
+          //   unresize: 'false',
+				      // align:'right'
+          // }
+        ]
+      ]
+    });
+
+    /**
+     * 监听工具栏操作
+     */
+    table.tool(function (obj) {
+      var data = obj.data;
+      switch (obj.event) {
+        case 'edit':
+          location.hash = ns.hash("giftcard://shop/giftcard/editgiftcard?id="+data.id);
+          break;
+        case 'detail':
+          location.hash = ns.hash("giftcard://shop/giftcard/recordlist?id="+data.id);
+          break;
+        case 'close': //关闭
+          close(data.id);
+          break;
+        case 'start': //启用
+          start(data.id);
+          break;
+        case 'exportcard'://导出
+          exportcard(data.id,data.code);
+          break;
+      }
+    });
+
+    /**
+     * 关闭
+     */
+    function close(id) {
+      if (repeat_flag) return false;
+      repeat_flag = true;
+
+      layer.confirm('确定作废吗?',{
+        btn: ['确定','取消'] //按钮
+        ,cancel: function(index, layero){
+          repeat_flag = false;
+          layer.close(index);
+        }
+      }, function () {
+        $.ajax({
+          url: ns.url("giftcard://shop/giftcard/editstatus"),
+          data: {
+            id: id, status: 2
+          },
+          dataType: 'JSON',
+          type: 'POST',
+          success: function (res) {
+            layer.msg(res.message);
+            repeat_flag = false;
+            if (res.code == 0) {
+              table.reload();
+            }
+          }
+        });
+      }, function(){
+        repeat_flag = false;
+      });
+    }
+
+    /**
+     * 开启
+     */
+    function start(id) {
+      if (repeat_flag) return false;
+      repeat_flag = true;
+      layer.confirm('确定激活吗?', {
+        btn: ['确定','取消'] //按钮
+        ,cancel: function(index, layero){
+          repeat_flag = false;
+		  layer.close(index);
+        }
+      },function (index) {
+		layer.close(index);
+        $.ajax({
+          url: ns.url("giftcard://shop/giftcard/editstatus"),
+          data: {
+            id: id, status: 1
+          },
+          dataType: 'JSON',
+          type: 'POST',
+          success: function (res) {
+            layer.msg(res.message);
+            repeat_flag = false;
+            if (res.code == 0) {
+              table.reload();
+            }
+          }
+        });
+      }, function(index){
+        repeat_flag = false;
+		layer.close(index);
+      });
+    }
+
+    function edit(data){
+      laytpl($("#label_change").html()).render(data, function(html) {
+        layer_label = layer.open({
+          title: '编辑数量',
+          skin: 'layer-tips-class',
+          type: 1,
+          area: ['450px'],
+          content: html,
+          success: function(){
+            form.render();
+          }
+        });
+      });
+
+      form.render();
+    }
+    function exportcard(id,name){
+      var param = {request_mode: 'download','id':id,'name':name};
+      location.href = ns.url("giftcard://shop/giftcard/exportcard",param);
+      return false;
+    }
+    form.on('submit(setlabel)', function(obj) {
+      if (repeat_flag) return false;
+      repeat_flag = true;
+
+      var field = obj.field;
+      $.ajax({
+        type: "POST",
+        url: ns.url("giftcard://shop/giftcard/editGiftCard"),
+        data: {
+          'card_id': field.card_id,
+          'card_count': field.card_count
+        },
+        dataType: 'JSON',
+        success: function(res) {
+          layer.msg(res.message);
+          repeat_flag = false;
+          if (res.code == 0) {
+            table.reload();
+            layer.closeAll('page');
+          }
+        }
+      });
+    });
+
+    /**
+     * 搜索功能
+     */
+    form.on('submit(search)', function (data) {
+      table.reload({
+        page: {
+          curr: 1
+        },
+        where: data.field
+      });
+      return false;
+    });
+  });
+
+  /**
+   * 七天时间
+   */
+  function datePick(date_num,event_obj){
+    $(".date-picker-btn").removeClass("selected");
+    $(event_obj).addClass('selected');
+    // alert(new Date().format("yyyy-MM-dd hh:mm"));
+    var now_date = new Date();
+
+    Date.prototype.Format = function (fmt,date_num) { //author: meizz
+      this.setDate(this.getDate()-date_num);
+      var o = {
+        "M+": this.getMonth() + 1, //月份
+        "d+": this.getDate(), //日
+        "H+": this.getHours(), //小时
+        "m+": this.getMinutes(), //分
+        "s+": this.getSeconds(), //秒
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+        "S": this.getMilliseconds() //毫秒
+      };
+      if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+      for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+      return fmt;
+    };
+    // var now_time =  new Date().Format("yyyy-MM-dd HH:mm:ss",0);//当前日期
+    var now_time =  new Date().Format("yyyy-MM-dd 23:59:59",0);//当前日期
+    var before_time =  new Date().Format("yyyy-MM-dd 00:00:00",date_num-1);//前几天日期
+    $("input[name=start_time]").val(before_time,0);
+    $("input[name=end_time]").val(now_time,date_num-1);
+
+  }
+  function closeLabel() {
+    layer.close(layer_label);
+  }
+  function add() {
+    location.hash = ns.hash("giftcard://shop/giftcard/addelectgiftcard");
+  }
+</script>

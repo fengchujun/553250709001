@@ -1,0 +1,213 @@
+<link rel="stylesheet" type="text/css" href="GIFTCARD_CSS/media_manager.css" />
+<style>
+	body{background-color: #fff;}
+	.media-box .media-list-box{height: 380px;margin-right: 20px;display: flex;flex-direction: column;}
+	.media-box .media-list-box .media-list {flex: 1;height: 0;overflow-y: scroll}
+	.media-box .media-list-box .media-list::-webkit-scrollbar{display: none;}
+	.media-box .media-img{max-height: 336px;}
+	.media-box .media-img li{width: 185px;height: auto; margin: 0 7px 15px;}
+	.media-box .media-img li div{height: 119.7px;line-height: 119.7px;background-size: cover;background-repeat: no-repeat;background-position: center;cursor: pointer;}
+	.media-box .media-img li:nth-child(5n){margin-right: 0;}
+	.layui-tab-content{padding: 0;height: 449px;}
+	.layui-tab{margin: 5px 0 0;}
+	.layui-tab .layui-tab-item{height: 449px;}
+	.layui-laypage{margin: 10px 0 0;}
+	.layui-tab-title {margin: 0 20px}
+	#media {padding: 20px 20px 0;}
+	.page {text-align: right}
+</style>
+
+<div class="layui-tab layui-tab-brief media-tab select-media-wrap">
+	<ul class="layui-tab-title layui-hide">
+		<li class="layui-this">选择图片</li>
+	</ul>
+	<div class="layui-tab-content">
+		<div id="media" class="layui-tab-item">
+			<div class="media-box">
+				<div class="media-content">
+					<ul class="media-img"></ul>
+					<div id="paged" class="page"></div>
+				</div>
+			</div>
+		</div>
+		<input type="hidden" name="media_ids" value="{$media_ids}" />
+	</div>
+</div>
+
+<!-- 图片展示 -->
+<script type="text/html" id="mediaList">
+	{{# layui.each(d.list,function(index,item){ }}
+	<li data-media-id="{{item.media_id}}" data-json_data='{{JSON.stringify(item)}}' class="media-list-item">
+		<div class="bg-color-gray" style="background-image:url({{ ns.img(item.media_path) }})">
+			{{#  if( getActiveArrayIndex(item.media_id) != "-1"){ }}
+			<div class="image-box-active border-color"><i class="active-index">{{ getActiveArrayIndex(item.media_id) }}</i></div>
+			{{#  } }}
+		</div>
+	</li>
+	{{# }) }}
+	{{#  if(d.list.length === 0){ }}
+	<div class="empty-data">暂无数据</div>
+	{{#  } }}
+</script>
+
+<script>
+	var form, laytpl, laypage, upload,element,
+			limit = 10,
+			active_array = [],
+			repeat_flag = false;
+	layui.use(['form', 'laytpl', 'laypage', 'upload', 'element'], function() {
+		form = layui.form;
+		laytpl = layui.laytpl;
+		laypage = layui.laypage;
+		element = layui.element;
+		upload = layui.upload;
+
+		form.render();
+		//初始化数据
+		init();
+
+		//监听搜索事件
+		form.on('submit(search)', function() {
+			mediaImgList(1, limit);
+		});
+	});
+
+	/**
+	 * 素材图片加载
+	 * @param page
+	 * @param limit
+	 */
+	function mediaImgList(page, limit) {
+		$.ajax({
+			url: ns.url("giftcard://shop/media/media"),
+			type: "POST",
+			dataType: "JSON",
+			async: false,
+			data: {
+				limit,
+				page,
+				media_name: $(".media-img-sreach").val(),
+				app_module:ns_url.appModule,
+				site_id:ns_url.siteId
+			},
+			success: function(res) {
+				laytpl($("#mediaList").html()).render(res.data, function(data) {
+					$(".media-img").html(data);
+				});
+				laypage.render({
+					elem: 'paged',
+					count: res.data.count,
+					limit,
+					curr: page,
+					jump: function(obj, first) {
+						if (!first) {
+							mediaImgList(obj.curr, obj.limit);
+						}
+					}
+				})
+			}
+		})
+	}
+
+	/**
+	 * 选择个体
+	 */
+	function checkItem() {
+		$("#media").unbind('click').on("click", ".media-list-item", function() {
+			var json_data = $(this).data("json_data");
+			json_data.id = parseInt(json_data.media_id);
+
+			if ($(this).find(".image-box-active").length > 0) {
+				var active_index = getDeleteActiveArrayIndex(json_data.id);
+				sortActiveArrayIndex(active_index);
+				$(this).find(".image-box-active").remove();
+			} else {
+				json_data.index = active_array.length + 1;
+				if (json_data.index > imgNum) {
+					$(".media-box .media-img li").each((index,item) => {
+						if(active_array.length > 0 && $(item).attr("data-media-id") == active_array[0].media_id) $(item).find(".image-box-active").remove();
+					});
+					var active_index = active_array.length > 0 ? getDeleteActiveArrayIndex(active_array[0].media_id) : 0;
+					sortActiveArrayIndex(active_index);
+					--json_data.index;
+				}
+				active_array.push(json_data);
+				var active_html = '<div class="image-box-active border-color"><i class="active-index">' + active_array.length + '</i></div>';
+				$(this).find("div").append(active_html);
+			}
+		});
+	}
+
+	//获取选择图片信息
+	function selectGiftCardMediaListener(callback) {
+		if (typeof callback != "function") return false;
+		if($(".select-media-wrap .layui-tab-content .layui-tab-item").eq(0).hasClass("layui-show")){
+			callback(active_array);
+		}
+
+	}
+
+	//获取选中
+	function getActiveArrayIndex(id) {
+		var delete_index = -1;
+		$.each(active_array, function(i, item) {
+			if (item.media_id == id) {
+				delete_index = item.index;
+				return false;
+			}
+		});
+		return delete_index;
+	}
+
+	//删除选中
+	function getDeleteActiveArrayIndex(id) {
+		var delete_index;
+		$.each(active_array, function(i, item) {
+			if (item.id == id) {
+				delete_index = item.index;
+				active_array.splice(i, 1);
+				return false;
+			}
+		});
+		return delete_index;
+	}
+
+	//重新排序
+	function sortActiveArrayIndex(index) {
+		$.each(active_array, function(i, item) {
+			var item_index = item.index;
+			if (item_index > index) {
+				active_array[i]["index"] = item_index - 1;
+				if ($("#media").find(".media-list-item[data-media-id = '" + item["id"] + "']").length > 0) {
+					$("#media").find(".media-list-item[data-media-id = '" + item["id"] + "']").find(".image-box-active i ").text(item["index"]);
+				}
+			}
+		})
+	}
+
+	/**
+	 * 初始化数据
+	 */
+	function init() {
+		mediaImgList(1, limit); //分组图像
+		checkItem(); //选择个体
+		$(".select-media-wrap .layui-tab-content .layui-tab-item").eq(0).addClass('layui-show').siblings().removeClass('layui-show');
+	}
+
+	var search = window.location.search,
+		imgNum = parseInt(getSearchString('imgNum', search));
+	function getSearchString(key, Url) {
+		var str = Url;
+		str = str.substring(1, str.length); // 获取URL中?之后的字符（去掉第一位的问号）
+		// 以&分隔字符串，获得类似name=xiaoli这样的元素数组
+		var arr = str.split("&");
+		var obj = new Object();
+		// 将每一个数组元素以=分隔并赋给obj对象
+		for (var i = 0; i < arr.length; i++) {
+			var tmp_arr = arr[i].split("=");
+			obj[decodeURIComponent(tmp_arr[0])] = decodeURIComponent(tmp_arr[1]);
+		}
+		return obj[key];
+	}
+
+</script>

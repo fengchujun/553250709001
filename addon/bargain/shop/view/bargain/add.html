@@ -1,0 +1,729 @@
+<style>
+	.len-input {width: 100%;max-width: 120px;}
+	.layui-form-item .layui-input-inline.end-time{float: none;}
+	.desc{margin-bottom: 15px;border:1px dashed #ff8143;padding: 5px 10px;background: #fff0e9;color: #ff8143;width: 65%;}
+	.layui-table-body{max-height: 480px !important;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;}
+	.layui-carousel { position: absolute; top: 90px; left: 1350px; background: #fff;}
+	.goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="desc">
+		请自觉遵守微信关于规范外部链接内容管理的规范，防止由于微信封号导致不必要的损失。<a href="http://weixin.qq.com/cgi-bin/readtemplate?t=weixin_external_links_content_management_specification" target="_blank">点击查看详情</a>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="bargain_name" value="{$bargain_name}" lay-verify="required" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="start_time" name="start_time" lay-verify="required" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="end_time" name="end_time" lay-verify="required|time" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>砍价有效期：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline len-short">
+				<input type="number" name="bargain_time" value="" lay-verify="required|int" data-min="4" data-max="48" data-unit="小时" placeholder="4-48小时" autocomplete="off" class="layui-input len-short">
+			</div>
+			<div class="layui-form-mid">小时</div>
+		</div>
+		<div class="word-aux">
+			<p>自用户发起砍价到砍价截止的时间</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否参与分销：</label>
+		<div class="layui-input-block">
+			<input type="radio" name="is_fenxiao" value="0" title="不参与" checked>
+			<input type="radio" name="is_fenxiao" value="1" title="参与">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">购买方式：</label>
+		<div class="layui-input-block">
+			<input type="radio" name="buy_type" value="0" title="任意金额可购买" checked>
+			<input type="radio" name="buy_type" value="1" title="砍到指定价格才可购买">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">帮砍金额：</label>
+		<div class="layui-input-block">
+			<input type="radio" name="bargain_type" lay-filter='bargain_type' value="1" title="随机金额" checked >
+			<input type="radio" name="bargain_type" lay-filter='bargain_type' value="0" title="固定金额" >
+		</div>
+		<div class="word-aux">
+			<p>设置每位帮砍用户的砍价金额规则</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否允许自己砍价：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="is_own" lay-filter="" value="1" lay-skin="switch" />
+		</div>
+	</div>
+
+	<div class="layui-form-item bargain_num">
+		<label class="layui-form-label"><span class="required">*</span>最少帮砍人数：</label>
+		<div class="layui-input-block">
+			<input type="number" name="bargain_num" value="" lay-verify="required|int" data-min="2" data-max="100" data-unit="人" placeholder="2-100人" autocomplete="off" class="layui-input len-short">
+		</div>
+		<div class="word-aux">
+			<p>最少帮砍人数为该砍价订单最少人数</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item bargain_max_num">
+		<label class="layui-form-label"><span class="required">*</span>砍成人数：</label>
+		<div class="layui-input-block">
+			<input type="number" name="bargain_max_num" value="0" lay-verify="bargain_max_num" data-min="2" data-max="100" data-unit="人" placeholder="" autocomplete="off" class="layui-input len-short">
+		</div>
+		<div class="word-aux">
+			<p>由于帮砍金额为随机金额，实际砍成人数可能小于设置的砍成人数，但是达到砍成人数时砍价必然成功</p>
+			<p>若砍成人数设置为0，表示不限制砍成人数，累计帮砍金额达到最低砍价金额时砍价成功</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>最大帮砍次数：</label>
+		<div class="layui-input-block">
+			<input type="number" name="help_bargain_num" value="0" lay-verify="help_bargain_num"  data-unit="人" placeholder="" autocomplete="off" class="layui-input len-short">
+		</div>
+		<div class="word-aux">
+			<p>每个会员针对当前活动商品最多帮砍次数，0为不限制</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item" style="display: none">
+		<label class="layui-form-label">是否区分新老用户：</label>
+		<div class="layui-input-block">
+			<input type="radio" lay-filter="is_differ_new_user" name="is_differ_new_user" value="1" title="是" >
+			<input type="radio" lay-filter="is_differ_new_user" name="is_differ_new_user" value="0" title="否" checked>
+		</div>
+	</div>
+	
+	<div name="distinguish" style="display: none">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>新用户区分标准：</label>
+			<div class="layui-input-block">
+				<input type="number" name="distinguish" value="1" lay-verify="required|int" data-min="1" data-max="100" data-unit="人" placeholder="1-100天" autocomplete="off" class="layui-input len-short"  min="1">
+				<span class="layui-form-label label-time">天内新注册且未砍过价的</span>
+			</div>
+		</div>
+
+		<div name='random' style="display: none">
+
+			<div class="layui-form-item">
+				<label class="layui-form-label">新用户最低随机金额：</label>
+				<div class="layui-input-block">
+					<input type="number" name="new_low" lay-verify="flo" autocomplete="off" class="layui-input combined-price len-short" value="0.00" step="1" min="0.00">
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<label class="layui-form-label">老用户最高随机金额：</label>
+				<div class="layui-input-block">
+					<input type="number" name="aged_tall" autocomplete="off" class="layui-input combined-price len-short" value="0.00" step="1" min="0.00">
+				</div>
+			</div>
+
+		</div>
+
+		<div name='fixed' class="layui-form-item layui-hide" style="display: none">
+			<label class="layui-form-label">老用户固定砍价：</label>
+			<div class="layui-input-block">
+				<input type="number" name="aged_fixation" autocomplete="off" class="layui-input combined-price len-short" value="0.00" step="1" min="0.00">
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label">活动商品：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"></label>
+		<div class="layui-input-block">
+			<button class="layui-btn" onclick="addGoods()">选择商品</button> <span class="goods_num">已选商品（<span id="goods_num" class="text-color">0</span>）</span>
+		</div>
+	</div>
+	<input type="hidden" name="sku_ids">
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label">活动规则说明：</label>
+		<div class="layui-input-inline">
+			<textarea name="remark" class="layui-textarea len-long" maxlength="300"></textarea>
+		</div>
+	</div>
+	
+<!--	<div class="layui-carousel" >
+		  <img src="__STATIC__/img/bargain.png" >
+	</div>-->
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backBargainList()">返回</button>
+	</div>
+</div>
+
+
+<script type="text/html" id="toolbarOperation">
+	<button class="layui-btn layui-btn-primary" lay-event="money">首刀金额</button>
+	<button class="layui-btn layui-btn-primary" lay-event="bargain-stock">砍价库存</button>
+	<button class="layui-btn layui-btn-primary" lay-event="floor-price">底价</button>
+</script>
+
+<script type="text/html" id="bargainFirst">
+	<input type="number" class="layui-input len-input bargain-first" value="{{d.first_bargain_price ? d.first_bargain_price : ''}}" lay-verify="bargain_first" min="0.00" oninput="bargainFirst({{ d.sku_id }},event)" onporpertychange="bargainFirst({{ d.sku_id }},event)" />
+</script>
+
+<script type="text/html" id="bargainStock">
+	<input type="number" class="layui-input len-input bargain-stock" value="{{d.bargain_stock ? d.bargain_stock : d.stock }}" lay-verify="bargain_stock" min="0" oninput="bargainStock({{ d.sku_id }},event)" onporpertychange="bargainStock({{ d.sku_id }},event)"/>
+</script>
+
+<script type="text/html" id="minPrice">
+	<input type="number" class="layui-input len-input min-price" lay-verify="min_price" min="0.00" value="{{d.floor_price ? d.floor_price : 0.00}}" oninput="bargainMinPrice({{ d.sku_id }},event)" onporpertychange="bargainMinPrice({{ d.sku_id }},event)"/>
+</script>
+
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" onclick="delRow(this,{{d.sku_id}})">删除</a>
+	</div>
+</script>
+
+<script>
+    var goodsId = {}, selectedGoodsId = [], sku_list = [],
+		form,laydate,repeat_flag,currentDate,minDate,
+		is_differ_new_user = 1,bargain_type = 1;
+    layui.use(['form', 'laydate'], function() {
+        form = layui.form;
+		laydate = layui.laydate;
+		repeat_flag = false;
+		currentDate = new Date();
+		minDate = "";
+        currentDate.setDate(currentDate.getDate() + 30);
+        form.render();
+		
+		/**
+		 * 新老客户单选框选择
+		 */
+		
+		form.on("radio(is_differ_new_user)", function(data){
+			is_differ_new_user = data.value;
+			if(data.value == '1'){
+				$("div[name='distinguish']").removeClass('layui-hide')
+			}else{
+				$("div[name='distinguish']").addClass('layui-hide')
+			}
+		});
+
+		/**
+		 * 帮砍金额单选框选择
+		 */
+		form.on("radio(bargain_type)",function(data){
+			bargain_type = data.value;
+			if(data.value == '1'){
+				$("div[name='random']").removeClass('layui-hide');
+				$("div[name='fixed']").addClass('layui-hide');
+				$(".bargain_max_num").removeClass('layui-hide');
+				$('.bargain_num .layui-form-label').html('<span class="required">*</span>最少帮砍人数：');
+				$('.bargain_num .word-aux').html('<p>最少帮砍人数为该砍价订单最少人数</p>');
+			}else{
+				$("div[name='random']").addClass('layui-hide');
+				$("div[name='fixed']").removeClass('layui-hide');
+				$(".bargain_max_num").addClass('layui-hide');
+				$('.bargain_num .layui-form-label').html('<span class="required">*</span>砍成人数：');
+				$('.bargain_num .word-aux').html('');
+			}
+		});
+		
+        renderTable(sku_list); // 初始化表格
+
+        for (var i = 0; i <= 30; i++) {
+            if (i < 10) {
+                var html = '<option value="' + i + '">0' + i + '</option>';
+            } else {
+                var html = '<option value="' + i + '">' + i + '</option>';
+            }
+            if (i == 1) {
+                var html = '<option value="' + i + '" selected>0' + i + '</option>';
+            }
+            $(".bargain-day").append(html);
+        }
+        for (var i = 0; i <= 23; i++) {
+            if (i < 10) {
+                var html = '<option value="' + i + '">0' + i + '</option>';
+            } else {
+                var html = '<option value="' + i + '">' + i + '</option>';
+            }
+            $(".bargain-hour").append(html);
+        }
+        for (var i = 0; i <= 59; i++) {
+            if (i < 10) {
+                var html = '<option value="' + i + '">0' + i + '</option>';
+            } else {
+                var html = '<option value="' + i + '">' + i + '</option>';
+            }
+            $(".bargain-minute").append(html);
+        }
+        form.render('select');
+
+        //开始时间
+        laydate.render({
+            elem: '#start_time', //指定元素
+            type: 'datetime',
+            value: new Date(),
+            done: function(value) {
+                minDate = value;
+                reRender();
+            }
+        });
+
+        //结束时间
+        laydate.render({
+            elem: '#end_time', //指定元素
+            type: 'datetime',
+            value: new Date(currentDate)
+        });
+
+        /**
+         * 重新渲染结束时间
+         * */
+        function reRender() {
+            $("#end_time").remove();
+            $(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input len-mid" autocomplete="off"> ');
+            laydate.render({
+                elem: '#end_time',
+                type: 'datetime',
+                min: minDate
+            });
+        }
+
+        /**
+         * 表单验证
+         */
+        form.verify({
+			int: function(value, item) {
+				var str = $(item).parents(".layui-form-item").find("label").text().split("*").join("");
+				str = str.substring(0, str.length - 1);
+				
+				var min = $(item).attr("data-min");
+				var max = $(item).attr("data-max");
+				var unit = $(item).attr("data-unit");
+				
+				if (value < Number(min)) {
+					return str + '不能小于' + min + unit;
+				}
+				if (value > Number(max)) {
+					return str + '不能大于' + max + unit;
+				}
+				if (value % 1 != 0) {
+					return str + '必须为整数';
+				}
+			},
+            time: function(value) {
+                var now_time = (new Date()).getTime();
+                var start_time = (new Date($("#start_time").val())).getTime();
+                var end_time = (new Date(value)).getTime();
+                if (now_time > end_time) {
+                    return '结束时间不能小于当前时间!'
+                }
+                if (start_time > end_time) {
+                    return '结束时间不能小于开始时间!';
+                }
+            },
+            num: function(value) {
+                if (value < 1 || value % 1 != 0) {
+                    return '请输入大于0的正整数！';
+                }
+            },
+            sum: function(value) {
+                if (value < 2 || value % 1 != 0) {
+                    return '参团人数不能小于2，且必须是整数！';
+                }
+            },
+			bargain_first: function(value, item) {
+				var price = $(item).parents("tr").find(".bargain-price").text();
+				var min_price = $(item).parents("tr").find("input[lay-verify='min_price']").val();
+				
+				if (value == "" || value == 0) {
+					return;
+				}
+				if (value < 0) {
+					return '首刀金额不能小于0';
+				}
+				if (Number(value) >= Number(price)) {
+					return '首刀金额必须小于商品价格';
+				}
+				if ((Number(value) + Number(min_price)) >= Number(price)) {
+					return '首刀金额与底价之和必须小于商品价格';
+				}
+				
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+				    val = arrMen[1];
+				}
+				if (val.length > 2) {
+				    return '首刀金额最多保留两位小数';
+				}
+			},
+			bargain_stock: function(value, item) {
+			    var stock = $(item).parents("tr").find(".stock").text();
+				if (value == "" || value == 0) {
+					return;
+				}
+			    if (Number(value) < 0) {
+			        return '砍价库存不能小于0';
+			    }
+			    if (Number(value) > Number(stock)) {
+			        return '砍价库存不能大于商品总库存';
+			    }
+			    if (value % 1 != 0) {
+			        return '砍价库存必须为整数';
+			    }
+			},
+			min_price: function(value, item) {
+			    var price = $(item).parents("tr").find(".bargain-price").text();
+				
+				if (value == "" || value == 0) {
+					return;
+				}
+			    if (Number(value) < 0) {
+			        return '商品底价不能小于0';
+			    }
+			    if (Number(value) > Number(price)) {
+			        return '商品底价不能大于商品价格';
+			    }
+			
+			    var arrMen = value.split(".");
+			    var val = 0;
+			    if (arrMen.length == 2) {
+			        val = arrMen[1];
+			    }
+			    if (val.length > 2) {
+			        return '商品底价最多保留两位小数';
+			    }
+			},
+			bargain_max_num: function(value, item) {
+				var bargain_type = $('input[name="bargain_type"]:checked').val();
+				if(bargain_type == 1) {
+					if (value == "" || value == 0) {
+						return;
+					}
+					if (Number(value) < 0) {
+						return '砍成人数不能小于0';
+					}
+					if (value % 1 != 0) {
+						return '砍成人数必须为整数';
+					}
+					var bargain_num = $('input[name="bargain_num"]').val();
+
+					if (Number(value) <= Number(bargain_num)) {
+						return '砍成人数不能小于最少帮砍人数';
+					}
+				}
+			},
+			help_bargain_num: function (value, item){
+				if (value == "" || value == 0) {
+					return;
+				}
+				if (Number(value) < 0) {
+					return '最大帮砍次数不能小于0';
+				}
+				if (value % 1 != 0) {
+					return '最大帮砍次数必须为整数';
+				}
+
+			}
+        });
+
+        /**
+         * 监听提交
+         */
+        form.on('submit(save)', function(data){
+
+            if (!Object.keys(goodsId).length) {
+                layer.msg("请选择活动商品！", {icon: 5, anim: 6});
+                return;
+            }
+
+			data.field.goods_ids = selectedGoodsId.split(',');
+
+            var skuId = [];
+			Object.values(goodsId).forEach(function (item,index) {
+				Object.values(item.sku_id).forEach(function (skuItem,skuIndex) {
+					skuId.push(skuItem.sku);
+				});
+			});
+			data.field.sku_ids = skuId;
+
+			var skuLisArr = [];
+			sku_list.forEach(function(item,index) {
+                var sku_detail = {};
+                sku_detail.sku_id = item.sku_id;
+				sku_detail.goods_id = item.goods_id;
+                sku_detail.first_bargain_price = item.first_bargain_price || 0.00;
+                sku_detail.bargain_stock = item.bargain_stock || item.stock;
+                sku_detail.floor_price = item.floor_price || 0.00;
+				skuLisArr.push(sku_detail);
+            });
+			data.field.sku_list = skuLisArr;
+
+			if(repeat_flag) return;
+            repeat_flag = true;
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("bargain://shop/bargain/add"),
+                data: data.field,
+                async: false,
+                success: function(res){
+                    repeat_flag = false;
+                    if (res.code == 0) {
+						location.hash = ns.hash("bargain://shop/bargain/lists");
+                    }else{
+                        layer.msg(res.message);
+                    }
+                }
+            })
+        });
+    });
+	
+	// 表格渲染
+	function renderTable(sku_list) {
+	    //展示已知数据
+	    table = new Table({
+	        elem: '#selected_goods_list',
+			page: false,
+			limit: Number.MAX_VALUE,
+	        cols: [
+	            [{
+					width: "3%",
+					type: 'checkbox',
+					unresize: 'false'
+				},{
+	                title: '商品名称',
+					width: '23%',
+	                unresize: 'false',
+					templet: function(data) {
+	                	var html = '';
+						html += `
+							<div class="goods-title">
+								<div class="goods-img">
+									<img layer-src src="${data.sku_image ? ns.img(data.sku_image) : ''}" alt="">
+								</div>
+								<p class="multi-line-hiding goods-name" data-goods_id="${data.goods_id}" data-sku_id="${data.sku_id}" title="${data.sku_name}">${data.sku_name}</p>
+							</div>
+						`;
+						return html;
+					}
+	            }, {
+	                field: 'price',
+	                title: '商品价格',
+	                unresize: 'false',
+					width: '12%',
+	                templet: function(data) {
+	                    return '<p class="line-hiding" title="'+ data.price +'">￥<span class="bargain-price">' + data.price +'</span></p>';
+	                }
+	            }, {
+	                field: 'stock',
+	                title: '库存',
+	                unresize: 'false',
+					width: '10%',
+					templet: function(data) {
+						return '<p class="stock">' + data.stock +'</p>';
+					}
+	            }, {
+	                title: '<span title="首刀金额自定义">首刀金额自定义</span>',
+	                unresize: 'false',
+					width: '16%',
+					templet: '#bargainFirst'
+	            }, {
+	                title: '砍价库存',
+	                unresize: 'false',
+					width: '13%',
+					templet: '#bargainStock'
+	            }, {
+	                title: '底价',
+	                unresize: 'false',
+					width: '13%',
+					templet: '#minPrice'
+	            }, {
+	                title: '操作',
+	                toolbar: '#operation',
+	                unresize: 'false'
+	            }]
+	        ],
+	        data: sku_list,
+			toolbar: '#toolbarOperation'
+	    });
+
+		/**
+		 * 批量操作
+		 */
+		table.toolbar(function(obj) {
+			if (obj.data.length < 1) {
+				layer.msg('请选择要操作的数据');
+				return;
+			}
+			switch (obj.event) {
+				case "money":
+					editInput(0,obj);
+					break;
+				case "bargain-stock":
+					editInput(1,obj);
+					break;
+				case "floor-price":
+					editInput(2,obj);
+					break;
+			}
+		});
+	}
+
+	function editInput(textIndex=0,data) {
+		var text = [{
+			name: '首刀金额',
+			value: 'first_bargain_price'
+		}, {
+			name: '砍价库存',
+			value: 'bargain_stock'
+		}, {
+			name: '底价',
+			value: 'floor_price'
+		}];
+		layer.open({
+			type: 1,
+			title: "修改" + text[textIndex].name,
+			area: ['600px'],
+			btn: ["保存", "返回"],
+			content: `
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>${text[textIndex].name}：</label>
+				<div class="layui-input-block">
+					<input type="text" name="bargain_edit_input" lay-verify="required" autocomplete="off" class="layui-input len-mid" placeholder="请输入${text[textIndex].name}">
+				</div>
+			</div>
+		`,
+			yes: function (index, layero) {
+				var val = $("input[name='bargain_edit_input']").val();
+				if (!val) {
+					layer.msg("请输入" + text[textIndex].name);
+					return false;
+				}
+				data.data.forEach(function (item, index) {
+					sku_list.forEach(function (skuItem, skuIndex) {
+						if (item.sku_id == skuItem.sku_id) {
+							sku_list[skuIndex][text[textIndex].value] = val;
+						}
+					})
+				});
+				renderTable(sku_list);
+				layer.closeAll();
+			}
+		});
+	}
+
+    /**
+     * 添加商品
+     */
+    function addGoods() {
+		goodsSelect(function (data) {
+
+			sku_list = [];
+			goodsId = [];
+
+			for (var key in data) {
+
+				goodsId['goods_' + data[key].goods_id] = {};
+				goodsId['goods_' + data[key].goods_id].sku_id = {};
+				goodsId['goods_' + data[key].goods_id].spu_id = data[key].goods_id;
+
+				for (var sku in data[key].sku_list) {
+					var item = data[key].sku_list[sku];
+					goodsId['goods_' + data[key].goods_id].sku_id['sku_' + item.sku_id] = {};
+					goodsId['goods_' + data[key].goods_id].sku_id['sku_' + item.sku_id].sku = item.sku_id;
+					sku_list.push(item);
+				}
+			}
+
+			renderTable(sku_list);
+			$("input[name='sku_ids']").val(JSON.stringify(goodsId));
+
+			var spuId = [];
+			Object.values(goodsId).forEach(function (item, index) {
+				spuId.push(item.spu_id);
+			});
+			selectedGoodsId = spuId.toString();
+			$("#goods_num").html(sku_list.length)
+		}, selectedGoodsId);
+	}
+	
+	function delRow(obj,id) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].sku_id == parseInt(id)){
+				sku_list.splice(i,1);
+			}
+		}
+		Object.values(goodsId).forEach(function (item,index) {
+			delete item.sku_id['sku_'+id];
+			if (!Object.keys(item.sku_id).length){
+				delete goodsId['goods_'+item.spu_id];
+			}
+		});
+
+		var spuId = [];
+		Object.values(goodsId).forEach(function (item,index) {
+			spuId.push(item.spu_id);
+		});
+		selectedGoodsId = spuId.toString();
+		$(obj).parents("tr").remove();
+		$("#goods_num").html(sku_list.length)
+	}
+
+	function bargainFirst(index,event) {
+    	for (var i = 0; i < sku_list.length; i++){
+    		if (sku_list[i].sku_id == index) sku_list[i].first_bargain_price = event.srcElement.value;
+		}
+	}
+
+	function bargainStock(index,event) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].sku_id == index) sku_list[i].bargain_stock = event.srcElement.value;
+		}
+	}
+
+	function bargainMinPrice(index,event) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].sku_id == index) sku_list[i].floor_price = event.srcElement.value;
+		}
+	}
+
+    function backBargainList() {
+        location.hash = ns.hash("bargain://shop/bargain/lists");
+    }
+
+</script>

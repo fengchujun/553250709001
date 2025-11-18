@@ -1,0 +1,261 @@
+<style>
+	.good-name, .good-price {
+		line-height: 34px;
+	}
+	.layui-form-item .layui-input-inline.end-time{
+		float: none;
+	}
+	.form-wrap {position: relative; height: 650px;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label">商品图：</label>
+		<div class="layui-input-inline img-upload">
+			<div class="upload-img-block icon square">
+				<div class="upload-img-box">
+					{if condition="$groupbuy_info.goods_image"}
+					<img layer-src src="{:img(explode(',', $groupbuy_info.goods_image)[0])}" alt="">
+					{else/}
+					<img src="" alt="">
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">商品名称：</label>
+		<div class="layui-input-inline good-name">{$groupbuy_info.goods_name}</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">商品原价：</label>
+		<div class="layui-input-inline good-price">
+			￥<span>{$groupbuy_info.price}</span>
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>团购价：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline">
+				<input type="number" name="groupbuy_price" lay-verify="required|group_price" autocomplete="off" class="layui-input len-short" value="{$groupbuy_info.groupbuy_price}" min="0.00">
+			</div>
+			<div class="layui-form-mid">元</div>
+		</div>
+		<div class="word-aux">
+			<p>如商品存在多规格，则所有规格均是此价售卖，请谨慎设置</p>
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>最低购买数量：</label>
+		<div class="layui-input-block">
+			<input type="number" name="buy_num" lay-verify="required|buy_num" autocomplete="off" class="layui-input len-short primary_price" value="{$groupbuy_info.buy_num}">
+		</div>
+		<div class="word-aux">
+			<p>最低购买数量不能小于2</p>
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline">
+				<input type="text" id="start_time" name="start_time" value="{:date('Y-m-d H:i:s', $groupbuy_info.start_time)}"  lay-verify="required" class="layui-input len-mid" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline end-time">
+				<input type="text" id="end_time" name="end_time" value="{:date('Y-m-d H:i:s', $groupbuy_info.end_time)}" lay-verify="required|time" class="layui-input len-mid" autocomplete="off" readonly>
+				<input type="hidden" id="old_end_time" value="{$groupbuy_info.end_time}">
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label">活动规则说明：</label>
+		<div class="layui-input-inline">
+			<textarea name="rule" class="layui-textarea len-long" maxlength="300">{$groupbuy_info.rule ?? ''}</textarea>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backGroupbuyList()">返回</button>
+	</div>
+	
+	<input type="hidden" name="goods_id" value="{$groupbuy_info.goods_id}" />
+	<input type="hidden" name="groupbuy_id" value="{$groupbuy_info.groupbuy_id}" />
+	<input type="hidden" class="start-time-hide" value="{$groupbuy_info.start_time}" />
+	<input type="hidden" class="end-time-hide" value="{$groupbuy_info.end_time}" />
+</div>
+
+<script>
+	var goods_id = $("input[name=goods_id]").val();
+	layui.use(['form', 'laydate'], function() {
+		var form = layui.form,
+			laydate = layui.laydate,
+			repeat_flag = false,
+			minDate = "";
+		form.render();
+
+		var goodsImgstr = "{$groupbuy_info.goods_image}";
+
+		if(goodsImgstr){
+			var goodsImgArr = goodsImgstr.split(",");
+			$("#goodImg").html(`<img src="${ns.img(goodsImgArr[0])}" />`);
+		}
+
+		var now_time = ((new Date()).getTime())/1000;
+		var start_time = ((new Date($("#start_time").val())).getTime())/1000;
+		var old_end_time = ((new Date($("#end_time").val())).getTime())/1000;
+		if(now_time <= start_time){
+			//开始时间
+			laydate.render({
+				elem: '#start_time', //指定元素
+				type: 'datetime',
+				value: ns.time_to_date($(".start-time-hide").val()),
+				done: function(value) {
+					minDate = value;
+					reRender();
+				}
+			});
+		}
+		if(now_time <= old_end_time){
+			//结束时间
+			laydate.render({
+				elem: '#end_time', //指定元素
+				type: 'datetime',
+				value: ns.time_to_date($(".end-time-hide").val())
+			});
+		}
+
+		/**
+		 * 重新渲染结束时间
+		 * */
+		function reRender() {
+			$("#end_time").remove();
+			$(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input len-mid" autocomplete="off" readonly> ');
+			laydate.render({
+				elem: '#end_time',
+				type: 'datetime',
+				min: minDate
+			});
+		}
+
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			time: function(value) {
+				var now_time = ((new Date()).getTime())/1000;
+				var start_time = ((new Date($("#start_time").val())).getTime())/1000;
+				var end_time = ((new Date(value)).getTime())/1000;
+				var old_end_time = $("#old_end_time").val();
+				if(old_end_time > end_time){
+					return '结束时间不能小于之前设置的结束时间!'
+				}
+				if (now_time > end_time) {
+					return '结束时间不能小于当前时间!'
+				}
+				if (start_time > end_time) {
+					return '结束时间不能小于开始时间!';
+				}
+			},
+			flnum: function(value) {
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '保留小数点后两位！'
+				}
+				if (Number(value) < 0){
+					return '价格不能小于0！';
+				}
+			},
+			buy_num: function(value,item) {
+				var stock = {$groupbuy_info.goods_stock};
+				if (Number(value) < 2) {
+					return '最低购买数量不能小于2'
+				}
+				if (Number(value) > Number(stock)) {
+					return '最低购买数量不能大于库存数！'
+				}
+			},
+			group_price: function(value, item) {
+				var price = {$groupbuy_info.price};
+				if (parseFloat(value) > parseFloat(price)) {
+					return '团购价格不能大于商品价格';
+				}
+				if (value.trim() == "") {
+					return '团购价格不能为空';
+				}
+				if (parseFloat(value) <= 0) {
+					return '团购价格必须大于0';
+				}
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '团购价格最多保留两位小数';
+				}
+			},
+		});
+		
+		/**
+		 * 表单提交
+		 */
+		form.on('submit(save)', function(data){
+			if (goods_id.length == 0) {
+				layer.msg('请选择参与活动的商品！', {icon: 5, anim: 6});
+				return;
+			}
+			
+			var groupbuy_price = $(".groupbuy_price").val();
+			var primary_price = $(".good-price span").text();
+			if (primary_price < groupbuy_price) {
+				layer.msg('团购价不能大于原价！', {icon: 5, anim: 6});
+			}
+			
+			if(repeat_flag) return;
+			repeat_flag = true;
+			
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("groupbuy://shop/groupbuy/edit"),
+				data: data.field,
+				async: false,
+				success: function(res){
+					repeat_flag = false;
+					
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续编辑'],
+							yes: function(index, layero) {
+								location.hash = ns.hash("groupbuy://shop/groupbuy/lists");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			})
+		});
+	});
+
+	function backGroupbuyList() {
+		location.hash = ns.hash("groupbuy://shop/groupbuy/lists");
+	}
+</script>

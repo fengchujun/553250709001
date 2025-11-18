@@ -1,0 +1,324 @@
+<style>
+	.layui-form-item .layui-input-inline.end-time{float: none;}
+	.layui-table-body{max-height: 330px !important;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;}
+	.form-wrap {position: relative;}
+	.goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>接龙名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="jielong_name" lay-verify="required" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="start_time" name="start_time" lay-verify="required" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="end_time" name="end_time" lay-verify="required|etime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>自提时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="take_start_time" name="take_start_time" lay-verify="required|take_stime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="take_end_time" name="take_end_time" lay-verify="required|take_etime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label"><span class="required">*</span>活动说明：</label>
+		<div class="layui-input-inline">
+			<textarea name="desc" class="layui-textarea len-long" lay-verify="required" maxlength="150"></textarea>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label">活动商品：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+			<button class="layui-btn" onclick="addGoods()">选择商品</button>
+			<span class="goods_num">已选商品（<span id="goods_num" class="text-color">0</span>）</span>
+		</div>
+	</div>
+
+	<input type="hidden" name="sku_ids">
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">提交</button>
+		<button class="layui-btn layui-btn-primary" onclick="backJielongList()">返回</button>
+	</div>
+	
+</div>
+
+<script>
+    var goodsId = {}, selectedGoodsId = [], sku_list = [],
+		form,laydate,repeat_flag,currentDate,minDate;
+    layui.use(['form', 'laydate'], function() {
+        form = layui.form;
+		laydate = layui.laydate;
+		repeat_flag = false;
+		currentDate = new Date();
+		minDate = "";
+        currentDate.setDate(currentDate.getDate() + 30);
+        form.render();
+        renderTable(sku_list); // 初始化表格
+
+        form.render('select');
+
+		//开始时间
+		laydate.render({
+			elem: '#start_time', //指定元素
+			type: 'datetime',
+			value: new Date(),
+			done: function(value) {
+				minDate = value;
+			}
+		});
+		//结束时间
+		laydate.render({
+			elem: '#end_time', //指定元素
+			type: 'datetime',
+			value: new Date(currentDate)
+		});
+
+		//提货开始时间
+		laydate.render({
+			elem: '#take_start_time', //指定元素
+			type: 'date',
+			value: new Date(),
+			done: function(value) {
+				minDate = value;
+			}
+		});
+		//提货结束时间
+		laydate.render({
+			elem: '#take_end_time', //指定元素
+			type: 'date',
+			value: new Date(currentDate)
+		});
+
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			etime: function(value) {
+				var now_time = (new Date()).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+				var end_time = (new Date(value)).getTime();
+				if (now_time > end_time) {
+					return '结束时间不能小于当前时间!'
+				}
+				if (start_time > end_time) {
+					return '结束时间不能小于开始时间!';
+				}
+			},
+			take_stime: function(value) {
+				var now_time = (new Date()).getTime();
+				var take_start_time = (new Date($("#take_start_time").val()+' 00:00:00')).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+
+				if (take_start_time < start_time) {
+					return '自提开始时间不能小于活动开始时间!';
+				}
+			},
+			take_etime: function(value) {
+				var now_time = (new Date()).getTime();
+				var take_start_time = (new Date($("#take_start_time").val()+' 00:00:00')).getTime();
+				var take_end_time = (new Date(value+' 23:59:59')).getTime();
+				console.log(take_end_time)
+				if (now_time > take_end_time) {
+					return '自提结束时间不能小于当前时间!'
+				}
+				if (take_start_time > take_end_time) {
+					return '自提结束时间不能小于开始时间!';
+				}
+				var end_time = (new Date($("#end_time").val())).getTime();
+				if (take_end_time < end_time) {
+					return '自提结束时间不能小于活动结束时间!';
+				}
+			},
+		});
+
+        /**
+         * 监听提交
+         */
+        form.on('submit(save)', function(data){
+
+			var field = data.field;
+            if (!Object.keys(goodsId).length) {
+                layer.msg("请选择活动商品！", {icon: 5, anim: 6});
+                return;
+            }
+			if(field.take_start_time){
+				field.take_start_time = field.take_start_time+' 00:00:00';
+			}
+			if(field.take_end_time){
+				field.take_end_time = field.take_end_time+' 23:59:59';
+			}
+
+			field.goods_ids = selectedGoodsId;
+
+			if(repeat_flag) return;
+            repeat_flag = true;
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("jielong://shop/jielong/add"),
+                data: field,
+                async: false,
+                success: function(res){
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        layer.confirm('添加成功', {
+							title: '操作提示',
+							btn: ['返回列表', '继续添加'],
+							closeBtn: 0,
+							yes: function(index, layero) {
+								location.hash = ns.hash("jielong://shop/jielong/lists");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								listenerHash(); // 刷新页面
+								layer.close(index);
+							}
+						});
+                    }else{
+                        layer.msg(res.message);
+                    }
+                }
+            })
+        });
+    });
+	
+	// 表格渲染
+	function renderTable(sku_list) {
+
+		//展示已知数据
+	    table = new Table({
+	        elem: '#selected_goods_list',
+			page: false,
+			limit: Number.MAX_VALUE,
+	        cols: [
+	            [{
+	                title: '商品信息',
+					width: '50%',
+	                unresize: 'false',
+					templet: function(data) {
+	                	var html = '';
+						html += `
+							<div class="goods-title">
+								<div class="goods-img">
+									<img layer-src src="${data.goods_image ? ns.img(data.goods_image).split(',')[0] : ''}" alt="">
+								</div>
+								<p class="multi-line-hiding goods-name" data-goods_id="${data.goods_id}" title="${data.goods_name}">${data.goods_name}</p>
+							</div>
+						`;
+						return html;
+					}
+	            }, {
+	                field: 'price',
+	                title: '商品价格',
+	                unresize: 'false',
+					width: '18%',
+	                templet: function(data) {
+	                    return '<p class="line-hiding" title="'+ data.price +'">￥<span>' + data.price +'</span></p>';
+	                }
+	            }, {
+	                title: '商品库存',
+	                unresize: 'false',
+					width: '13%',
+					templet: function(data) {
+						return '<p class="line-hiding" title="'+ data.goods_stock +'"><span>' + data.goods_stock +'</span></p>';
+					}
+	            }, {
+	                title: '操作',
+	                toolbar: '#operation',
+	                unresize: 'false',
+					align:'right'
+	            }]
+	        ],
+	        data: sku_list
+	    });
+
+	}
+
+    /**
+     * 添加商品
+     */
+    function addGoods(){
+		goodsSelect(function (data) {
+
+			sku_list = [];
+			goodsId = {};
+
+			for (var key in data) {
+				var item = data[key];
+				sku_list.push(item);
+            	goodsId['goods_'+ item.goods_id] = {};
+				goodsId['goods_'+ item.goods_id].sku_id = {};
+				goodsId['goods_'+ item.goods_id].spu_id = item.goods_id;
+            }
+            renderTable(sku_list);
+			$("input[name='sku_ids']").val(JSON.stringify(goodsId));
+
+			var spuId = [];
+			Object.values(goodsId).forEach(function (item,index) {
+				spuId.push(item.spu_id);
+			});
+			$("#goods_num").html(spuId.length);
+			selectedGoodsId = spuId.toString();
+		}, selectedGoodsId,{is_virtual: 0,sale_channel:'all,online'});
+    }
+	
+	function delRow(obj,id) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].goods_id == parseInt(id)){
+				sku_list.splice(i,1);
+			}
+		}
+
+		delete goodsId['goods_'+id];
+
+		var spuId = [];
+		Object.values(goodsId).forEach(function (item,index) {
+			spuId.push(item.spu_id);
+		});
+		$("#goods_num").html(spuId.length);
+		selectedGoodsId = spuId.toString();
+		$(obj).parents("tr").remove();
+	}
+
+    function backJielongList() {
+        location.hash = ns.hash("jielong://shop/jielong/lists");
+    }
+	
+</script>
+
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" onclick="delRow(this,{{d.goods_id}})">删除</a>
+	</div>
+</script>

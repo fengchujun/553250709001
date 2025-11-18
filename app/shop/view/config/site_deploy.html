@@ -1,0 +1,1136 @@
+<style>
+	.input-text span{margin-right: 15px;}
+	.form-wrap {margin-top: 0; position: relative;background: none;}
+	.layui-layout-admin .layui-body .body-content{margin: 0 !important;}
+	.form-wrap .top{background: #f5f5f5;}
+	.layui-form-item.top .layui-form-label{text-align: left;font-weight: bold;padding-left: 15px;}
+	.layui-form-label{width: 110px;}
+	.layui-form-label + .layui-input-block{margin-left: 94px ;}
+	.layui-form-item.top .border-left{border-left: 3px solid;padding-right: 5px;}
+	.layui-unselect.layui-form-radio.layui-form-radioed.layui-radio-disbaled i:after{background:#eee !important;}
+	.shop-information{width: 100%;background: white;padding: 20px;box-sizing: border-box;margin-bottom: 20px;}
+	.shop-information .layui-input-block{margin-left: 0 !important;}
+	.layui-layout-admin .layui-body .body-content{background: none;}
+	.form-wrap .form-box{width: 100%;margin-bottom: 20px !important;display: flex;flex-wrap:wrap;}
+	.form-wrap .form-box .box-item{width: 32%;border-radius: 5px;margin-left: 20px;margin-bottom: 20px;background: #fff}
+	.form-wrap .form-box .box-item:nth-child(1){margin-left: 0;}
+	.form-wrap .form-box .box-item:nth-child(3n+1){margin-left: 0;}
+	.layui-layout-admin .layui-body .body-content{padding: 0 !important;}
+	.href{padding-left: 66px;box-sizing: border-box;}
+	.word-aux{margin-left: 110px}
+	.all-box-left{margin-left: 110px;}
+
+	.layui-layout-admin .body-content{margin: 15px !important;}
+	.layui-layout-admin .form-wrap{padding-top: 0;}
+	.all-box-item{width:100%;background: #FFFFFF;height: 250px;}
+
+	/* 域名跳转配置 */
+	.whole-set-up .layui-form-label{width: 220px !important;}
+	.whole-set-up .layui-form-item .whole-set-tips {font-size: 14px;color: #999;margin:14px  0  0 220px;}
+
+	/* H5 */
+	.form-row p {margin:8px 0 0 110px !important;font-size: 12px;color: #979897;}
+	.all-shop-information{width: 100%;background: white;padding: 15px;box-sizing: border-box;margin-top: 15px;margin-bottom: 30px;}
+	.all-shop-information .all-content{margin-top: 30px;}
+	.all-shop-information .layui-card-body{padding: 0;}
+	.all-shop-information .all-top{display: flex;align-items: center;justify-content: space-between;}
+	.all-shop-information .all-top .title{display: flex; color:#333333;margin-bottom: 0;width: 80%;height: 16px;line-height: 16px;padding-left: 10px;border-left: 3px solid var(--base-color);box-sizing: border-box;font-size: 17px;}
+	.all-shop-information .all-top .title .prompt{font-size: 1px;}
+	.all-shop-information .all-top .edit{cursor: pointer;}
+	.all-shop-information .all-top a{font-size: 14px;margin-left: 10px;}
+	.all-shop-information .all-item{display: flex;align-items: center;margin-bottom: 18px;}
+	.all-shop-information .all-item p{width: 140px;text-align: right;font-size: 14px;margin-right: 10px;}
+
+	/* 微信小程序 */
+	.new-version-tips{margin-top: 10px;border:1px dashed;padding: 5px 10px;font-weight: bold;}
+	.weapp .all-content{text-align: center;margin-top: 0;}
+	.qrcode {width: 100px;height: 100px;margin: 20px auto;}
+	.not-config{line-height: 110px;}
+	.weapp .word-aux{font-size: 14px;}
+	.js-weapp-edit-open{display: none;}
+	.js-weapp-info{display: none;}
+	.js-weapp-not-config{display: none;}
+
+	/* 收银端 */
+	.tips-wrap .layui-colla-content li{line-height: 20px;font-size: 13px;}
+	.tips-wrap .layui-colla-title{line-height: 24px;height: 28px;font-size: 15px;}
+
+	/* 支付宝小程序 */
+	.aliapp .all-content{text-align: center;margin-top: 0;}
+	.aliapp .word-aux{font-size: 14px;}
+	.js-aliapp-edit-open{display: none;}
+	.js-aliapp-info{display: none;}
+    .js-aliapp-not-config{display: none;}
+    
+    /* 主色调 */ 
+    .dominant-tone .layui-input-block, .cashier-theme-conf .cashier-theme-conf-content, .cashregister-dominant-tone .layui-input-block{display: flex;margin-top: 0;}
+    .dominant-tone .layui-input-block .tone-item, .cashier-theme-conf .cashier-theme-conf-content .tone-item, .cashregister-dominant-tone .layui-input-block .tone-item{ margin-bottom: 10px;cursor: pointer;display: flex;justify-content: center;align-items: center;border: 1px solid #ededed;height: 35px;width: 80px;margin-right: 10px;border-radius: 4px;}
+    .dominant-tone .layui-input-block .tone-item div, .cashier-theme-conf .cashier-theme-conf-content .tone-item div, .cashregister-dominant-tone .layui-input-block .tone-item div{ width: 25px;height: 16px;margin-right: 5px; border-radius: 2px; }
+    .cashregister-dominant-tone .layui-input-block{flex-wrap: wrap;}
+
+	.all-shop-information .tone-item{margin-bottom: 0 !important;}
+</style>
+
+<div class="layui-form form-wrap card-common">
+
+    <div class="layui-card card-common card-brief shop-information whole-set-up">
+        <div class="layui-card-header">
+            <span class="card-title">整体设置</span>
+        </div>
+        <div class="layui-card-body layui-form-item">
+            <label class="layui-form-label">访问主域名跳转类型：</label>
+            <div class="layui-input-block">
+                <input type="radio" name="jump_type" value="1" lay-filter="jump_type" title="用户前台" {if $config.jump_type eq '1'}checked{/if} />
+                <input type="radio" name="jump_type" value="2" lay-filter="jump_type" title="商家后台" {if $config.jump_type eq '2'}checked{/if} />
+                <input type="radio" name="jump_type" value="3" lay-filter="jump_type" title="引导页" {if $config.jump_type eq '3'}checked{/if} />
+            </div>
+            <div class="whole-set-tips">
+                <div>1、设置为用户前台，如果手机访问则跳转手机端域名；如果电脑访问，已部署电脑端则跳转电脑端域名，未部署电脑端则跳转手机端域名。</div>
+                <div>2、设置为商家后台，访问主域名则跳转商家管理端。</div>
+                <div>3、设置为引导页，访问主域名则跳转引导页面。</div>
+            </div>
+        </div>
+        <div class="layui-card-body layui-form-item dominant-tone">
+            <label class="layui-form-label">主色调：</label>
+            <div class="layui-input-block">
+                {foreach name="theme_list" item="vo"}
+                <div class="tone-item {if $theme_config.name == $vo.name } border-color {/if}" data-str='{:json_encode($vo)}'>
+                    <div style="background-color:{$vo.color};"></div>
+                    <span>{$vo.title}</span>
+                </div>
+                {/foreach}
+            </div>
+        </div>
+    </div>
+
+	<!-- 各端设置手机、电脑、商家 -->
+	<div class="form-box">
+		<!-- H5 -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">手机端设置</span>
+                    <span class="edit text-color" onclick="editOpenH5()">编辑</span>
+                </div>
+                <div class="layui-card-body all-content">
+                    <div class="all-item">
+                        <p>部署方式：</p>
+                        <span class="js-h5-deploy-way"></span>
+                    </div>
+                    <div class="all-item">
+                        <p>手机端域名：</p>
+                        <a class="text-color js-h5-domain" target="_blank"></a>
+                    </div>
+                </div>
+            </div>
+		</div>
+
+		{if addon_is_exit("pc") == 1 }
+		<!-- PC -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">电脑端设置</span>
+                    <span class="edit text-color" onclick="editOpenPc()">编辑</span>
+                </div>
+                <div class="layui-card-body all-content">
+                    <div class="all-item">
+						<p>部署方式：</p>
+						<span class="js-pc-deploy-way"></span>
+					</div>
+					<div class="all-item">
+						<p>电脑端域名：</p>
+						<a class="text-color js-pc-domain" target="_blank"></a>
+					</div>
+                </div>
+            </div>
+		</div>
+		{/if}
+
+		{if addon_is_exit("weapp") == 1 }
+		<!-- 微信小程序 -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information weapp js-weapp-deploy">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">
+                        微信小程序设置<a href="{:href_url('weapp://shop/weapp/config')}" target="_blank" class="text-color">配置</a>
+                    </span>
+                    <a class="edit text-color js-weapp-edit-open" onclick="editOpenWeapp()">编辑</a>
+                </div>
+                <div class="all-content js-weapp-info">
+                    <img class="qrcode js-weapp-qrcode">
+                    <div class="all-item">
+                        <p>小程序名称：</p>
+                        <span class="js-weapp-name"></span>
+                    </div>
+                    <div class="all-item">
+                        <p>小程序ID：</p>
+                        <span class="js-weapp-appid"></span>
+                    </div>
+                    <div class="all-item">
+                        <p>小程序原始ID：</p>
+                        <span class="js-weapp-original"></span>
+                    </div>
+                </div>
+                <p class="not-config js-weapp-not-config">
+                    <span>小程序尚未配置，请先配置您的小程序</span>
+                    <a href="{:href_url('weapp://shop/weapp/config')}" target="_blank" class="text-color">去配置</a>
+                </p>
+            </div>
+		</div>
+		{/if}
+
+		{if addon_is_exit("mobileshop") == 1 }
+		<!-- 商家手机管理端 -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">
+                        商家端设置
+                        <a href="{:href_url('mobileshop://shop/config/weapp')}" target="_blank" class="text-color">微信小程序设置</a>
+                    </span>
+                    <span class="edit text-color" onclick="editOpenMshop()">编辑</span>
+                </div>
+                <div class="layui-card-body all-content">
+                    <div class="all-item">
+						<p>部署方式：</p>
+						<span class="js-mobile-shop-deploy-way"></span>
+					</div>
+					<div class="all-item">
+						<p>商家端域名：</p>
+						<a class="text-color js-mobile-shop-domain" target="_blank"></a>
+					</div>
+                </div>
+            </div>
+		</div>
+		{/if}
+
+		{if addon_is_exit("cashier") == 1 }
+		<!-- 收银端 -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">收银端设置</span>
+					<span class="edit text-color" onclick="editOpenCashier()">编辑</span>
+                </div>
+                <div class="layui-card-body all-content">
+                    <div class="all-item">
+						<p>部署方式：</p>
+						<a>默认部署</a>
+					</div>
+					<div class="all-item">
+						<p>收银端域名：</p>
+						<a class="text-color" href="{$root_url}/cashregister" target="_blank">{$root_url}/cashregister</a>
+                    </div>
+                    <div class="all-item cashier-theme-conf"></div>
+                </div>
+            </div>
+		</div>
+		{/if}
+
+		{if addon_is_exit("aliapp") == 1 }
+		<!-- 支付宝小程序 -->
+		<div class="box-item">
+            <div class="layui-card card-common card-brief layui-form all-box-item all-shop-information aliapp js-aliapp-deploy">
+                <div class="layui-card-header all-top">
+                    <span class="card-title">
+                        支付宝小程序设置<a href="{:href_url('aliapp://shop/aliapp/config')}" target="_blank" class="text-color">配置</a>
+                    </span>
+					<span class="edit text-color js-aliapp-edit-open" onclick="editOpenAliapp()">编辑</span>
+                </div>
+                <div class="all-content js-aliapp-info">
+					<img class="qrcode js-aliapp-qrcode">
+					<div class="all-item">
+						<p>小程序名称：</p>
+						<span class="js-aliapp-name"></span>
+					</div>
+					<div class="all-item">
+						<p>小程序ID：</p>
+						<span class="js-aliapp-appid"></span>
+					</div>
+				</div>
+				<p class="not-config js-aliapp-not-config">
+					<span>小程序尚未配置，请先配置您的小程序</span>
+					<a href="{:href_url('aliapp://shop/aliapp/config')}" target="_blank" class="text-color">去配置</a>
+				</p>
+            </div>
+		</div>
+		{/if}
+
+	</div>
+</div>
+
+<script type="text/html" id="contentH5">
+	<div class="layui-collapse tips-wrap">
+		<div class="layui-colla-item">
+			<h2 class="layui-colla-title">操作提示</h2>
+			<ul class="layui-colla-content layui-show">
+				<li>为满足不同用户的需求，方便快速搭建手机端，增加以下三种部署方式供其选择，易上手难度递增。</li>
+				<li>（难度：简单）默认部署：无需下载，一键刷新，API接口请求地址默认为当前域名，编译代码存放到h5文件夹中。</li>
+				<li>（难度：中等）独立部署：下载编译代码包后，放到网站根目录下运行。</li>
+				<li>（难度：较高）独立部署：下载uniapp代码包，可进行二次开发。</li>
+			</ul>
+		</div>
+	</div>
+	<div class="layui-form form-wrap">
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">部署方式：</label>
+			<div class="layui-input-block">
+				<input type="radio" name="deploy_way" value="default" lay-filter="deploy_way" title="默认部署" data-desc="无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到h5文件夹中" {{# if(d.config.deploy_way == 'default'){ }}checked{{# } }} />
+				<input type="radio" name="deploy_way" value="separate" lay-filter="deploy_way" title="独立部署" data-desc="可下载编译包或源码包进行独立部署" {{# if(d.config.deploy_way == 'separate'){ }}checked{{# } }} />
+			</div>
+			<div class="word-aux js-desc">
+				{{# if(d.config.deploy_way == 'default'){ }}
+				无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到h5文件夹中
+				{{# }else{ }}
+				可下载编译包或源码包进行独立部署
+				{{# } }}
+			</div>
+		</div>
+
+		<div class="deploy-way default {{# if(d.config.deploy_way != 'default'){ }}layui-hide{{# } }}">
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">手机端域名：</label>
+				<div class="layui-input-block">
+					<a href="{{d.root_url}}/h5" target="_blank" class="text-color">{{d.root_url}}/h5</a>
+				</div>
+			</div>
+			<div class="form-row" style="margin: 0;">
+				<label class="layui-form-label">部署操作：</label>
+				<button class="layui-btn js-save" onclick="refreshh5()">重新编译</button>
+				<p>以下几种情况，需重新编译</p>
+				<p>在线升级后，如果是默认部署，则需点击重新编译</p>
+				<p>SSL证书变更后，由于http协议变更，则需点击重新编译</p>
+			</div>
+		</div>
+
+		<div class="deploy-way separate {{# if(d.config.deploy_way != 'separate'){ }}layui-hide{{# } }}">
+			<div class="layui-form-item">
+				<label class="layui-form-label">手机端域名：</label>
+				<div class="layui-input-block">
+					<input type="text" name="domain" lay-verify="domain" {{# if(d.config.deploy_way == 'separate'){ }} value="{{ d.config.domain_name_h5 ? d.config.domain_name_h5 : '' }}" {{# } }} autocomplete="off" class="layui-input len-long">
+				</div>
+				<div class="word-aux">域名必须以http://或https://为开头</div>
+			</div>
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">源码下载：</label>
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="downloadseparate">H5编译包下载</button>
+					{{# if({$is_auth}){ }}
+					<button class="layui-btn" onclick="window.open(ns.url('shop/h5/downloaduniapp',{ request_mode: 'download' }));">UNIAPP源码包下载</button>
+					{{# } }}
+				</div>
+				<div class="word-aux">H5编译包下载之后直接解压到手机端域名根目录即部署完成。</div>
+				<div class="word-aux">UNIAPP源码包下载之后可进行二次开发，可自行发行H5进行部署。</div>
+			</div>
+		</div>
+
+		<div class="form-row all-box-left">
+			<button class="layui-btn js-save" lay-submit lay-filter="h5Save">保存</button>
+		</div>
+
+	</div>
+</script>
+
+<script type="text/html" id="contentPc">
+	<div class="layui-collapse tips-wrap">
+		<div class="layui-colla-item">
+			<h2 class="layui-colla-title">操作提示</h2>
+			<ul class="layui-colla-content layui-show">
+				<li>为满足不同用户的需求，方便快速搭建Web端，增加以下三种部署方式供其选择，易上手难度递增。</li>
+				<li>（难度：简单）默认部署：无需下载，一键刷新，API接口请求地址默认为当前域名，编译代码存放到web文件夹中。</li>
+				<li>（难度：中等）独立部署：下载编译代码包，参考开发文档进行配置。</li>
+				<li>（难度：较高）独立部署：下载开源代码包，参考开发文档进行配置，结合业务需求进行二次开发。</li>
+				<li>开发文档参考：<a href="https://docs.qq.com/doc/DUW9XeE5sTllOSWxj" target="_blank" class="text-color">NiuShop单商户PC端开发文档</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="layui-form form-wrap">
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">部署方式：</label>
+			<div class="layui-input-block">
+				<input type="radio" name="deploy_way" value="default" lay-filter="deploy_way" title="默认部署" data-desc="无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到web文件夹中" {{# if(d.config.deploy_way == 'default'){ }}checked{{# } }} />
+				<input type="radio" name="deploy_way" value="separate" lay-filter="deploy_way" title="独立部署" data-desc="下载编译包或源码包进行独立部署"  {{# if(d.config.deploy_way == 'separate'){ }}checked{{# } }} />
+			</div>
+			<div class="word-aux js-desc">
+				{{# if(d.config.deploy_way == 'default'){ }}
+				无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到web文件夹中
+				{{# }else{ }}
+				可下载编译包或源码包进行独立部署
+				{{# } }}
+			</div>
+		</div>
+
+		<div class="deploy-way default {{# if(d.config.deploy_way != 'default'){ }}layui-hide{{# } }}">
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">电脑端域名：</label>
+				<div class="layui-input-block">
+					<a href="{{d.root_url}}/web" target="_blank" class="text-color">{{d.root_url}}/web</a>
+				</div>
+			</div>
+			<div class="form-row" style="margin: 0;">
+				<label class="layui-form-label">部署操作：</label>
+				<button class="layui-btn js-save" onclick="refreshPc()">重新编译</button>
+				<p>以下几种情况，需重新编译</p>
+				<p>在线升级后，如果是默认部署，则需点击重新编译</p>
+				<p>SSL证书变更后，由于http协议变更，则需点击重新编译</p>
+			</div>
+		</div>
+
+		<div class="deploy-way separate {{# if(d.config.deploy_way != 'separate'){ }}layui-hide{{# } }}"">
+			<div class="layui-form-item">
+				<label class="layui-form-label">电脑端域名：</label>
+				<div class="layui-input-block">
+					<input type="text" name="domain" lay-verify="domain" {{# if(d.config.deploy_way == 'separate'){ }} value="{{ d.config.domain_name_pc ? d.config.domain_name_pc : '' }}" {{# } }} autocomplete="off" class="layui-input len-long">
+				</div>
+				<div class="word-aux">域名必须以http://或https://为开头</div>
+			</div>
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">源码下载：</label>
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="downloadseparatePc">编译包下载</button>
+					<button class="layui-btn" onclick="window.open(ns.url('pc://shop/pc/downloados',{ request_mode: 'download' }));">源码包下载</button>
+				</div>
+				<div class="word-aux">编译包下载之后直接解压到电脑端域名根目录即部署完成。</div>
+				<div class="word-aux">源码包下载之后可进行二次开发，可自行发行进行部署。</div>
+			</div>
+		</div>
+
+		<div class="form-row all-box-left">
+			<button class="layui-btn js-save" lay-submit lay-filter="pcSave">保存</button>
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="contentWeapp">
+	<div class="layui-collapse tips-wrap">
+		<div class="layui-colla-item">
+			<h2 class="layui-colla-title">操作提示</h2>
+			<ul class="layui-colla-content layui-show">
+				<li>下载之后需使用微信开发者工具上传代码，微信开发者工具下载地址: <a href="https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html" target="_blank" class="text-color">https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html</a></li>
+				<li>上传之后登录<a href="https://mp.weixin.qq.com" target="_blank" class="text-color">微信公众平台</a>，在版本管理中选择刚上传的版本提交审核，审核通过之后即可发布小程序。</li>
+				<li>UNIAPP源码包授权后可下载，可很好的进行二次开发，可通过<a href="https://www.dcloud.io/hbuilderx.html" target="_blank" class="text-color">HBuilder X</a>编译为H5、微信小程序、支付宝小程序、头条小程序等</li>
+				<li>小程序代码包是由UNIAPP源码包编译出来的微信小程序版下载后可直接通过微信开发者工具上传使用，但是无法进行二次开发。</li>
+			</ul>
+		</div>
+	</div>
+	<div class="layui-form form-wrap weapp">
+		<div class="layui-form-item">
+			<label class="layui-form-label"></label>
+			<div class="layui-input-block">
+				<img src="{{ ns.img(d.config.qrcode) }}" class="qrcode" style="margin: 0;">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">小程序名称：</label>
+			<div class="layui-input-block">
+				<span>{{ d.config.weapp_name}}</span>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">小程序ID：</label>
+			<div class="layui-input-block">
+				<span>{{ d.config.appid }}</span>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">小程序原始ID：</label>
+			<div class="layui-input-block">
+				<span>{{ d.config.weapp_original }}</span>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">源码下载：</label>
+			<div class="layui-input-block">
+				<button class="layui-btn" onclick="window.open(ns.url('weapp://shop/weapp/download',{ request_mode: 'download' }));">下载小程序代码包</button>
+				{{# if({$is_auth}){ }}
+				<button class="layui-btn" onclick="window.open(ns.url('weapp://shop/weapp/downloaduniapp',{ request_mode: 'download' }));">下载UNIAPP源码包</button>
+				{{# }else{ }}
+				<button class="layui-btn" onclick="authLayer()">下载UNIAPP源码包</button>
+				{{# } }}
+			</div>
+			{{# if(d.is_new_version){ }}
+			<div class="word-aux new-version-tips text-color bg-color-light-9 border-color">小程序已更新，为了不影响您的使用请尽快下载小程序上传更新。</div>
+			{{# } }}
+			<div class="word-aux text-color">下载完成之后，使用微信开发工具进行上传代码。</div>
+			<div class="word-aux text-color">上传之后提交审核，审核通过发布小程序。</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="contentMshop">
+	<div class="layui-collapse tips-wrap">
+		<div class="layui-colla-item">
+			<h2 class="layui-colla-title">操作提示</h2>
+			<ul class="layui-colla-content layui-show">
+				<li>为满足不同用户的需求，方便快速搭建手机版商家端，增加以下三种部署方式供其选择，易上手难度递增。</li>
+				<li>（难度：简单）默认部署：无需下载，一键刷新，API接口请求地址默认为当前域名，编译代码存放到mshop文件夹中。</li>
+				<li>（难度：中等）独立部署：下载编译代码包后，放到网站根目录下运行。</li>
+				<li>（难度：较高）源码下载：下载uni-app代码包，可进行二次开发。</li>
+			</ul>
+		</div>
+	</div>
+	<div class="layui-form form-wrap">
+		<div class="layui-form-item">
+			<label class="layui-form-label">部署方式：</label>
+			<div class="layui-input-block">
+				<input type="radio" name="deploy_way" value="default" lay-filter="deploy_way" title="默认部署" data-desc="无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到mshop文件夹中" {{# if(d.config.deploy_way == 'default'){ }}checked{{# } }} />
+				<input type="radio" name="deploy_way" value="separate" lay-filter="deploy_way" title="独立部署" data-desc="下载编译代码包后，放到网站根目录下运行" {{# if(d.config.deploy_way == 'separate'){ }}checked{{# } }} />
+			</div>
+			<div class="word-aux js-desc">
+				{{# if(d.config.deploy_way == 'default'){ }}
+				无需下载，一键刷新，API接口请求地址为当前域名，编译代码存放到mshop文件夹中
+				{{# }else{ }}
+				下载编译代码包后，放到网站根目录下运行
+				{{# } }}
+			</div>
+		</div>
+		<div class="deploy-way default {{# if(d.config.deploy_way != 'default'){ }}layui-hide{{# } }}"">
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">域名地址：</label>
+				<div class="layui-input-block">
+					<a href="{{d.root_url}}/mshop" target="_blank" class="text-color">{{d.root_url}}/mshop</a>
+				</div>
+			</div>
+			<div class="form-row" style="margin: 0;">
+				<label class="layui-form-label">部署操作：</label>
+				<button class="layui-btn js-save" onclick="refreshMb()">重新编译</button>
+				<p>以下几种情况，需重新编译</p>
+				<p>在线升级后，如果是默认部署，则需点击重新编译</p>
+				<p>SSL证书变更后，由于http协议变更，则需点击重新编译</p>
+			</div>
+		</div>
+		<div class="deploy-way separate {{# if(d.config.deploy_way != 'separate'){ }}layui-hide{{# } }}">
+			<div class="layui-form-item">
+				<label class="layui-form-label">商家端域名：</label>
+				<div class="layui-input-block">
+					<input type="text" name="domain" lay-verify="domain" {{# if(d.config.deploy_way == 'separate'){ }} value="{{ d.config.domain_name_mobileshop ? d.config.domain_name_mobileshop : '' }}" {{# } }} autocomplete="off" class="layui-input len-long">
+				</div>
+				<div class="word-aux">域名必须以http://或https://为开头</div>
+			</div>
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">源码下载：</label>
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="downloadseparateMb">编译包下载</button>
+					<button class="layui-btn" onclick="window.open(ns.url('mobileshop://shop/config/downloados',{ request_mode: 'download' }));">源码包下载</button>
+				</div>
+				<div class="word-aux">编译包下载之后直接解压到电脑端域名根目录即部署完成。</div>
+				<div class="word-aux">源码包下载之后可进行二次开发，可自行发行进行部署。</div>
+			</div>
+		</div>
+		<div class="form-row all-box-left">
+			<button class="layui-btn js-save" lay-submit lay-filter="mShopSave">保存</button>
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="contentCashier">
+	<div class="layui-form form-wrap">
+		<div class="deploy-way default">
+			<div class="layui-form-item web-url">
+				<label class="layui-form-label">域名地址：</label>
+				<div class="layui-input-block">
+					<a href="{$root_url}/cashregister" target="_blank" class="text-color">{$root_url}/cashregister</a>
+				</div>
+			</div>
+			<div class="form-row" style="margin: 0;">
+				<label class="layui-form-label">部署操作：</label>
+				<button class="layui-btn js-save" onclick="refreshCashier()">重新编译</button>
+				<button class="layui-btn" onclick="window.open(ns.url('cashier://shop/index/downloadcashier',{ request_mode: 'download' }));">源码包下载</button>
+				<p>以下几种情况，需重新编译</p>
+				<p>在线升级后，需点击重新编译</p>
+				<p>SSL证书变更后，由于http协议变更，则需点击重新编译</p>
+            </div>
+            <div class="form-row cashregister-dominant-tone" style="margin-left: 0;">
+                <label class="layui-form-label">主色调：</label>
+                <div class="layui-input-block">
+                    {{# layui.each(d.list, function(index, item){ }}
+                    <div class="tone-item {{# if(d.config.name == item.name){ }} border-color {{# } }}" data-str='{{JSON.stringify(item)}}'>
+                        <div style="background-color:{{item.color}};"></div>
+                        <span>{{item.title}}</span>
+                    </div>
+                    {{# }) }}
+                </div>
+            </div>
+		</div>
+	</div>
+</script>
+
+<script type="text/html" id="contentAliapp">
+	<div class="layui-collapse tips-wrap">
+		<div class="layui-colla-item">
+			<h2 class="layui-colla-title">操作提示</h2>
+			<ul class="layui-colla-content layui-show">
+				<li>下载之后需使用支付宝小程序开发者工具上传代码，开发者工具下载地址: <a href="https://opendocs.alipay.com/mini/ide/download" target="_blank" class="text-color">https://opendocs.alipay.com/mini/ide/download</a></li>
+				<li>上传之后登录<a href="https://open.alipay.com/" target="_blank" class="text-color">支付宝开放平台</a>，在版本管理中选择刚上传的版本提交审核，审核通过之后即可发布小程序。</li>
+				<li>UNIAPP源码包授权后可下载，可很好的进行二次开发，可通过<a href="https://www.dcloud.io/hbuilderx.html" target="_blank" class="text-color">HBuilder X</a>编译为H5、支付宝小程序、支付宝小程序、头条小程序等</li>
+				<li>小程序代码包是由UNIAPP源码包编译出来的支付宝小程序版下载后可直接通过微信开发者工具上传使用，但是无法进行二次开发。</li>
+			</ul>
+		</div>
+	</div>
+	<div class="layui-form form-wrap aliapp">
+		<div class="layui-form-item">
+			<label class="layui-form-label"></label>
+			<div class="layui-input-block">
+				<img src="{{ ns.img(d.config.qrcode) }}" class="qrcode" style="margin: 0;">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">小程序名称：</label>
+			<div class="layui-input-block">
+				<span>{{ d.config.name}}</span>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">小程序ID：</label>
+			<div class="layui-input-block">
+				<span>{{ d.config.app_id }}</span>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">源码下载：</label>
+			<div class="layui-input-block">
+				<button class="layui-btn" onclick="window.open(ns.url('aliapp://shop/aliapp/download',{ request_mode: 'download' }))">下载小程序代码包</button>
+				{{# if({$is_auth}){ }}
+				<button class="layui-btn" onclick="window.open(ns.url('aliapp://shop/aliapp/downloaduniapp',{ request_mode: 'download' }))">下载UNIAPP源码包</button>
+				{{# }else{ }}
+				<button class="layui-btn" onclick="authLayer()">下载UNIAPP源码包</button>
+				{{# } }}
+			</div>
+			{{# if(d.is_new_version){ }}
+			<div class="word-aux new-version-tips text-color bg-color-light-9 border-color">小程序已更新，为了不影响您的使用请尽快下载小程序上传更新。</div>
+			{{# } }}
+			<div class="word-aux text-color">下载完成之后，使用支付宝小程序开发工具进行上传代码。</div>
+			<div class="word-aux text-color">上传之后提交审核，审核通过发布小程序。</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/javascript">
+	var form,laytpl,repeat_flag = false; //防重复标识
+	var h5DeployData,pcDeployData,weappDeployData,mobileShopDeployData,aliappDeployData;
+	var pc_addon_is_exist = '{:addon_is_exit("pc")}';
+	var weapp_addon_is_exist = '{:addon_is_exit("weapp")}';
+	var mobileshop_addon_is_exist = '{:addon_is_exit("mobileshop")}';
+	var aliapp_addon_is_exist = '{:addon_is_exit("aliapp")}';
+
+	layui.use(['form','laytpl'], function() {
+		form = layui.form;
+		laytpl = layui.laytpl;
+		form.render();
+
+		init();
+
+		form.on('radio(deploy_way)', function(data){
+			var value = $(data.elem).val();
+			$('.deploy-way').addClass('layui-hide');
+			$('.deploy-way.' + value).removeClass('layui-hide');
+
+			var desc = $(data.elem).attr("data-desc");
+			$(".js-desc").text(desc);
+		});
+
+		form.verify({
+			domain : function(value, item) {
+				var reg = /^([hH][tT]{2}[pP]:\/\/|[hH][tT]{2}[pP][sS]:\/\/)(([A-Za-z0-9-~]+)\.)+([A-Za-z0-9-~\/])+$/; //正则表达式验证域名
+				if($("input[name='deploy_way']:checked").val() == "separate") {
+					if (value === '') {
+						return "请输入域名地址";
+					} else if (!(reg.test(value))) {
+						return '请输入正确的域名地址';
+					}
+				}
+			}
+		});
+
+		form.on("radio(jump_type)",function(res){
+			if (repeat_flag) return false;
+			repeat_flag = true;
+			$.ajax({
+				url: ns.url("shop/config/domainJumpConfig"),
+				data: {
+					jump_type:res.value
+				},
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res){
+					repeat_flag = false;
+					layer.msg(res.message);
+				}
+			});
+		});
+
+		// H5
+
+		form.on("submit(h5Save)",function(data){
+			if (repeat_flag) return false;
+			repeat_flag = true;
+			$.ajax({
+				url: ns.url("shop/h5/h5domainname"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res){
+					repeat_flag = false;
+					layer.msg(res.message);
+				}
+			});
+		});
+
+		form.on("submit(downloadseparate)",function(data){
+			window.open(ns.url('shop/h5/downloadseparate', {request_mode: 'download',domain: data.field.domain}));
+		});
+
+		// PC
+
+		form.on("submit(pcSave)",function(data){
+			if (repeat_flag) return false;
+			repeat_flag = true;
+			$.ajax({
+				url: ns.url("pc://shop/pc/pcdomainname"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res){
+					repeat_flag = false;
+					layer.msg(res.message);
+				}
+			});
+		});
+
+		form.on("submit(downloadseparatePc)",function(data){
+			window.open(ns.url('pc://shop/pc/downloadcsseparate', {request_mode: 'download',domain: data.field.domain}));
+		});
+
+		// 商家手机管理端
+		form.on("submit(downloadseparateMb)",function(data){
+			window.open(ns.url('mobileshop://shop/config/downloadcsseparate', {request_mode: 'download',domain: data.field.domain}));
+		});
+
+		form.on("submit(mShopSave)", function (data) {
+			if (repeat_flag) return false;
+			repeat_flag = true;
+			$.ajax({
+				url: ns.url("mobileshop://shop/config/setMShopDomainName"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function (res) {
+					repeat_flag = false;
+					layer.msg(res.message);
+				}
+			});
+		});
+
+	});
+
+	function init() {
+		getH5Deploy();
+		if(pc_addon_is_exist == 1){
+			getPcDeploy();
+		}
+		if(weapp_addon_is_exist == 1) {
+			getWeappDeploy();
+		}
+		if(mobileshop_addon_is_exist ==1){
+			getMobileShopDeploy();
+		}
+		if(aliapp_addon_is_exist == 1) {
+			getAliappDeploy();
+		}
+
+        getCashregisterThemeListFn();
+        getCashregisterThemeConfigFn();
+	}
+
+	function getH5Deploy() {
+		$.ajax({
+			url: ns.url("shop/h5/getDeploy"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				if(res.code == 0){
+					h5DeployData = res.data;
+					if(h5DeployData.config.deploy_way == 'default'){
+						$('.js-h5-deploy-way').text('默认部署');
+						$('.js-h5-domain').text(`${h5DeployData.root_url}/h5`).attr('href',`${h5DeployData.root_url}/h5`);
+					}else if(h5DeployData.config.deploy_way == 'separate'){
+						$('.js-h5-deploy-way').text('独立部署');
+						$('.js-h5-domain').text(h5DeployData.config.domain_name_h5 ? h5DeployData.config.domain_name_h5 : '').attr('href',h5DeployData.config.domain_name_h5 ? h5DeployData.config.domain_name_h5 : '');
+					}
+
+				}
+			}
+		});
+	}
+
+	function refreshh5(){
+		if (repeat_flag) return false;
+		repeat_flag = true;
+		$.ajax({
+			url: ns.url("shop/h5/refreshh5"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				repeat_flag = false;
+				layer.msg(res.message);
+			}
+		});
+	}
+
+	// 打开手机端编辑弹窗
+	function editOpenH5(){
+		if(!h5DeployData) return;
+		laytpl($("#contentH5").html()).render(h5DeployData, function (html) {
+			layer.open({
+				title:'手机端设置',
+				type:1,
+				area: 'auto',
+				maxWidth:700,
+				maxHeight:540,
+				content:html,
+				success:function(res){
+					form.render()
+				}
+			})
+		});
+	}
+
+	function getPcDeploy() {
+		$.ajax({
+			url: ns.url("pc://shop/pc/getDeploy"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				if(res.code == 0){
+					pcDeployData = res.data;
+
+					if(pcDeployData.config.deploy_way == 'default'){
+						$('.js-pc-deploy-way').text('默认部署');
+						$('.js-pc-domain').text(`${pcDeployData.root_url}/web`).attr('href',`${pcDeployData.root_url}/web`);
+					}else if(pcDeployData.config.deploy_way == 'separate'){
+						$('.js-pc-deploy-way').text('独立部署');
+						$('.js-pc-domain').text(pcDeployData.config.domain_name_pc ? pcDeployData.config.domain_name_pc : '').attr('href',pcDeployData.config.domain_name_pc ? pcDeployData.config.domain_name_pc : '');
+					}
+				}
+			}
+		});
+	}
+
+	function refreshPc(){
+		if (repeat_flag) return false;
+		repeat_flag = true;
+		$.ajax({
+			url: ns.url("pc://shop/pc/downloadcsdefault"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				repeat_flag = false;
+				layer.msg(res.message);
+			}
+		});
+	}
+
+	//打开电脑端编辑弹窗
+	function editOpenPc(){
+		if(!pcDeployData) return;
+		laytpl($("#contentPc").html()).render(pcDeployData, function (html) {
+			layer.open({
+				title: '电脑端设置',
+				type: 1,
+				area: 'auto',
+				maxWidth: 700,
+				maxHeight: 610,
+				content: html,
+				success: function (res) {
+					form.render()
+				}
+
+			})
+		});
+	}
+
+	function getWeappDeploy() {
+		$.ajax({
+			url: ns.url("weapp://shop/weapp/getDeploy"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				if(res.code == 0){
+					weappDeployData = res.data;
+
+					if(weappDeployData.config && Object.keys(weappDeployData.config).length){
+						$('.js-weapp-deploy').css('height','300px');
+						$('.js-weapp-edit-open').show();
+
+						$('.js-weapp-qrcode').attr('src',ns.img(weappDeployData.config.qrcode))
+						$('.js-weapp-name').text(weappDeployData.config.weapp_name);
+						$('.js-weapp-appid').text(weappDeployData.config.appid);
+						$('.js-weapp-original').text(weappDeployData.config.weapp_original);
+
+						$('.js-weapp-info').show();
+						$('.js-weapp-not-config').hide();
+					}else{
+						$('.js-weapp-edit-open').hide();
+						$('.js-weapp-info').hide();
+						$('.js-weapp-not-config').show();
+					}
+
+				}
+			}
+		});
+	}
+
+	//打开微信小程序端编辑弹窗
+	function editOpenWeapp(){
+		if(!weappDeployData) return;
+		laytpl($("#contentWeapp").html()).render(weappDeployData, function (html) {
+			layer.open({
+				title: '微信小程序设置',
+				type: 1,
+				area: 'auto',
+				maxWidth: 700,
+				content: html,
+				success: function (res) {
+					form.render()
+				}
+			});
+		});
+	}
+
+	function getMobileShopDeploy() {
+		$.ajax({
+			url: ns.url("mobileshop://shop/config/getDeploy"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				if(res.code == 0){
+					mobileShopDeployData = res.data;
+					if(mobileShopDeployData.config.deploy_way == 'default'){
+						$('.js-mobile-shop-deploy-way').text('默认部署');
+						$('.js-mobile-shop-domain').text(`${mobileShopDeployData.root_url}/mshop`).attr('href',`${mobileShopDeployData.root_url}/mshop`);
+					}else if(mobileShopDeployData.config.deploy_way == 'separate'){
+						$('.js-mobile-shop-deploy-way').text('独立部署');
+						$('.js-mobile-shop-domain').text(mobileShopDeployData.config.domain_name_mobileshop ? mobileShopDeployData.config.domain_name_mobileshop : '').attr('href',mobileShopDeployData.config.domain_name_mobileshop ? mobileShopDeployData.config.domain_name_mobileshop : '');
+					}
+
+				}
+			}
+		});
+	}
+
+	function refreshMb(){
+		if (repeat_flag) return false;
+		repeat_flag = true;
+		$.ajax({
+			url: ns.url("mobileshop://shop/config/downloadcsdefault"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				repeat_flag = false;
+				layer.msg(res.message);
+			}
+		});
+	}
+
+	//打开手机商家管理端编辑弹窗
+	function editOpenMshop(){
+		if(!mobileShopDeployData) return;
+		laytpl($("#contentMshop").html()).render(mobileShopDeployData, function (html) {
+			layer.open({
+				title: '商家端设置',
+				type: 1,
+				area: 'auto',
+				maxWidth: 700,
+				maxHeight: 540,
+				content: html,
+				success: function (res) {
+					form.render();
+				}
+
+			})
+		});
+	}
+
+	function refreshCashier(){
+		if (repeat_flag) return false;
+		repeat_flag = true;
+		$.ajax({
+			url: ns.url("cashier://shop/index/refreshcashier"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				repeat_flag = false;
+				layer.msg(res.message);
+			}
+		});
+	}
+
+	//打开手机端编辑弹窗
+	function editOpenCashier(){
+        var data = {};
+        data.list = cashregisterThemeList;
+        data.config = cashregisterThemeConfig;
+    
+        laytpl($("#contentCashier").html()).render(data, function (html) {
+            layer.open({
+                title:'收银端设置',
+                type:1,
+                area: ['600px', '400px'],
+                content: html,
+                success:function(res){
+                    form.render();
+                    cashregisterDominantToneFn();
+                }
+
+            })
+        })
+	}
+
+	function getAliappDeploy() {
+		$.ajax({
+			url: ns.url("aliapp://shop/aliapp/getDeploy"),
+			dataType: 'JSON',
+			type: 'POST',
+			success: function(res){
+				if(res.code == 0){
+					aliappDeployData = res.data;
+
+					if(aliappDeployData.config && Object.keys(aliappDeployData.config).length){
+						$('.js-aliapp-deploy').css('height','270px');
+						$('.js-aliapp-edit-open').show();
+
+						$('.js-aliapp-qrcode').attr('src',ns.img(aliappDeployData.config.qrcode));
+						$('.js-aliapp-name').text(aliappDeployData.config.name);
+						$('.js-aliapp-appid').text(aliappDeployData.config.app_id);
+
+						$('.js-aliapp-info').show();
+						$('.js-aliapp-not-config').hide();
+					}else{
+						$('.js-aliapp-edit-open').hide();
+						$('.js-aliapp-info').hide();
+						$('.js-aliapp-not-config').show();
+					}
+
+				}
+			}
+		});
+	}
+
+	// 打开支付宝小程序端编辑弹窗
+	function editOpenAliapp() {
+		if(!aliappDeployData) return;
+		laytpl($("#contentAliapp").html()).render(aliappDeployData, function (html) {
+			layer.open({
+				title: '支付宝小程序设置',
+				type: 1,
+				area: 'auto',
+				maxWidth: 700,
+				content: html,
+				success: function (layero, index) {
+					form.render()
+				}
+			});
+		});
+	}
+
+	function authLayer(){
+		layer.confirm('当前为免费版，授权后才可以下载UNIAPP源码包！是否立即授权？', {
+			btn: ['立即授权','暂不需要'] //按钮
+		}, function(){
+			window.open('https://www.niushop.com');
+		}, function(){
+			layer.closeAll();
+		});
+	}
+
+    // 设置后台主色调
+    var isDominantTone = false;
+    $(".dominant-tone .tone-item").click(function(event){
+        if(isDominantTone) return false;
+        isDominantTone = true;
+
+        var data = $(event.currentTarget).attr('data-str');
+
+        $.ajax({
+			url: ns.url("shop/config/setThemeConfig"),
+			dataType: 'JSON',
+			type: 'POST',
+            data: {...JSON.parse(data)},
+			success: function(res){
+				if(res.code == 0){
+					location.reload();
+				}
+                isDominantTone = false;
+			}
+		});
+    });
+
+
+    // 设置收银台主色调
+    function cashregisterDominantToneFn(){
+        var isDominantTone = false;
+        $(".cashregister-dominant-tone .tone-item").click(function(event){
+            if(isDominantTone) return false;
+            isDominantTone = true;
+
+            var data = $(event.currentTarget).attr('data-str');
+
+            $.ajax({
+                url: ns.url("cashier://shop/index/setThemeConfig"),
+                dataType: 'JSON',
+                type: 'POST',
+                data: {...JSON.parse(data)},
+                success: function(res){
+                    if(res.code == 0){
+                        location.reload();
+                    }
+                    isDominantTone = false;
+                }
+            });
+        });
+    }
+
+    // 收银台主色调列表
+    var cashregisterThemeList = [];
+    function getCashregisterThemeListFn(){
+        $.ajax({
+            url: ns.url("cashier://shop/index/getThemeList"),
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res){
+                if(res.code == 0){
+                    cashregisterThemeList = res.data;
+                }
+            }
+        });
+    }
+    // 收银台主色调配置
+    var cashregisterThemeConfig = {};
+    function getCashregisterThemeConfigFn(){
+        $.ajax({
+            url: ns.url("cashier://shop/index/getThemeConfig"),
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res){
+                if(res.code == 0){
+                    cashregisterThemeConfig = res.data.value;
+                    var html = `
+                        <p>主色调：</p>
+                        <div class="cashier-theme-conf-content">
+                            <div class="tone-item">
+                                <div style="background-color:${cashregisterThemeConfig.color};"></div>
+                                <span>${cashregisterThemeConfig.title}</span>
+                            </div>
+                        </div>`;
+                    $(".cashier-theme-conf").html(html);
+                    form.render();
+                    
+                }
+            }
+        });
+    }
+    
+</script>

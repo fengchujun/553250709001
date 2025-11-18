@@ -1,0 +1,102 @@
+<style>
+	.layui-layer-page .layui-layer-content { padding: 20px 30px; }
+	.layui-form-item{ margin-bottom: 0px; }
+	.form-row { margin: 0px !important; display: inline-block }
+	.screen.layui-collapse { margin-top: 10px }
+</style>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<div class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">邀请人：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="recommend_name" placeholder="请输入邀请人" autocomplete="off" class="layui-input">
+					</div>
+					<div class="form-row">
+						<button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="layui-tab table-tab">
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="receive_list" lay-filter="receive_list"></table>
+	</div>
+</div>
+
+<!-- 优惠券列表 -->
+<script type="text/html" id="coupon_list">
+	{{#  layui.each(d.coupon_list, function(index, item){ }}
+	<a href="{{ ns.href('coupon://shop/coupon/detail?coupon_type_id=' + item.coupon_type_id ) }}" target="_blank">{{ item.coupon_name }}</a>
+	{{#  }); }}
+</script>
+
+<input id="recommend_id" type="hidden" value="{$recommend_id}" />
+
+<script>
+    layui.use(['form'], function() {
+        var table,
+            form = layui.form,
+            recommend_id = $('#recommend_id').val();
+
+        table = new Table({
+            elem: '#receive_list',
+            url: ns.url("memberrecommend://shop/memberrecommend/receive"),
+            where: {
+                "recommend_id": recommend_id
+            },
+            cols: [
+                [{
+                    field: 'member_nickname',
+                    title: '邀请人',
+                    unresize: 'false',
+                    width: '10%'
+                }, {
+                    field: 'source_member_nickname',
+                    title: '被邀请人',
+                    unresize: 'false',
+                    width: '10%'
+                }, {
+                    field: 'point',
+                    title: '奖励积分',
+                    unresize: 'false',
+                    width: '12.5%'
+                }, {
+                    field: 'balance',
+                    title: '奖励余额',
+                    unresize: 'false',
+                    width: '12.5%'
+                }, {
+                    title: '奖励优惠券',
+                    unresize: 'false',
+                    width: '20%',
+                    templet:"#coupon_list"
+                }, {
+                    field: 'create_time',
+                    title: '注册时间',
+                    unresize: 'false',
+                    width: '20%',
+                    templet: function(data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }]
+            ],
+        });
+
+        // 搜索
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+    });
+</script>

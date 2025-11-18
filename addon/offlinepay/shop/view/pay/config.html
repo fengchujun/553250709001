@@ -1,0 +1,193 @@
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用支付：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="pay_status" value="1" lay-skin="switch" {if condition="$config_info.pay_status == 1"} checked {/if} />
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">银行收款开启：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="bank_status" lay-filter="payment_type_status" value="1" lay-skin="switch" {if condition="$config_info.bank.status == 1"} checked {/if} />
+		</div>
+	</div>
+	<div class="payment-type bank {if $config_info.bank.status == 0}layui-hide{/if}">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>银行名称：</label>
+			<div class="layui-input-inline">
+				<input name="bank_bank_name" type="text" value="{$config_info.bank.bank_name}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>账户名称：</label>
+			<div class="layui-input-inline">
+				<input name="bank_account_name" type="text" value="{$config_info.bank.account_name}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>账户账号：</label>
+			<div class="layui-input-inline">
+				<input name="bank_account_number" type="text" value="{$config_info.bank.account_number}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>支行名称：</label>
+			<div class="layui-input-inline">
+				<input name="bank_branch_name" type="text" value="{$config_info.bank.branch_name}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">微信收款开启：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="wechat_status" lay-filter="payment_type_status" value="1" lay-skin="switch" {if condition="$config_info.wechat.status == 1"} checked {/if} />
+		</div>
+	</div>
+	<div class="payment-type wechat {if $config_info.wechat.status == 0}layui-hide{/if}">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>账户名称：</label>
+			<div class="layui-input-block">
+				<input name="wechat_account_name" type="text" value="{$config_info.wechat.account_name}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+			<div class="word-aux">请输入真实姓名，用于支付时确认收款人</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>收款码：</label>
+			<div class="layui-input-block" id="wechat_payment_code">
+			</div>
+			<div class="word-aux">请上传正方形的二维码，截图裁剪时尽量贴着二维码，不要有多余的空白</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">支付宝收款开启：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="alipay_status" lay-filter="payment_type_status" value="1" lay-skin="switch" {if condition="$config_info.alipay.status == 1"} checked {/if} />
+		</div>
+	</div>
+	<div class="payment-type alipay {if $config_info.alipay.status == 0}layui-hide{/if}">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>账户名称：</label>
+			<div class="layui-input-block">
+				<input name="alipay_account_name" type="text" value="{$config_info.alipay.account_name}" class="layui-input len-long" lay-verify="payment_type_data">
+			</div>
+			<div class="word-aux">请输入真实姓名，用于支付时确认收款人</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>收款码：</label>
+			<div class="layui-input-block" id="alipay_payment_code">
+			</div>
+			<div class="word-aux">请上传正方形的二维码，截图裁剪时尽量贴着二维码，不要有多余的空白</div>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPayConfig()">返回</button>
+	</div>
+</div>
+
+<script>
+	layui.use(['form'], function() {
+		var form = layui.form,
+			repeat_flag = false; //防重复标识
+		form.render();
+
+		new Upload({
+			container: '#wechat_payment_code',
+			name:'wechat_payment_code',
+			value:'{$config_info.wechat.payment_code}',
+		});
+
+		new Upload({
+			container: '#alipay_payment_code',
+			name:'alipay_payment_code',
+			value:'{$config_info.alipay.payment_code}',
+		});
+
+		form.on('switch(payment_type_status)', function (data) {
+			let name = $(data.elem).attr('name');
+			let payment_type = name.replace('_status', '');
+			let block = $(".payment-type."+payment_type);
+			if(data.elem.checked){
+				block.removeClass('layui-hide');
+			}else{
+				block.addClass('layui-hide');
+			}
+		})
+
+		form.verify({
+			payment_type_data: function(value, elem){
+				if(getPaymentTypeStatus(elem) && !value){
+					return '请输入'+getFieldName(elem);
+				}
+			},
+			wechat_payment_code:function (value, elem){
+				if(getPaymentTypeStatus(elem) && !value){
+					return '请上传'+getFieldName(elem);
+				}
+			},
+			alipay_payment_code:function (value, elem){
+				if(getPaymentTypeStatus(elem) && !value){
+					return '请上传'+getFieldName(elem);
+				}
+			},
+		})
+
+		function getPaymentTypeStatus(elem){
+			return $(elem).parents('.payment-type').prev().find('input[type=checkbox]').prop('checked');
+		}
+
+		function getFieldName(elem){
+			return $(elem).parents('.layui-form-item').find('.layui-form-label').text().replace('*', '').replace('：', '');
+		}
+
+		/**
+		 * 监听提交
+		 */
+		form.on('submit(save)', function(data) {
+
+			let pay_status = $('input[name="pay_status"]').prop('checked');
+            let bank_status = $('input[name="bank_status"]').prop('checked');
+			let wechat_status = $('input[name="wechat_status"]').prop('checked');
+			let alipay_status = $('input[name="alipay_status"]').prop('checked');
+
+			if(pay_status == 1 && (bank_status != 1 && wechat_status != 1 && alipay_status != 1)){
+				layer.msg('请至少开启一种收款方式');
+				return false;
+			}
+
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			$.ajax({
+				url: ns.url("offlinepay://shop/pay/config"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res) {
+					repeat_flag = false;
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero){
+								location.hash = ns.hash("shop/config/pay");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		});
+	});
+
+	function backPayConfig() {
+		location.hash = ns.hash("shop/config/pay");
+	}
+</script>

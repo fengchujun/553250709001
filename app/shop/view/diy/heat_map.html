@@ -1,0 +1,765 @@
+<style>
+	.content-box {
+		position: relative;
+		width: 600px;
+		height: 600px;
+		background-color: rgb(242, 244, 244);
+		border: 1px dashed #333;
+		background-size: 100% 100%;
+		box-sizing: border-box;
+	}
+
+	.box {
+		width: 100px;
+		height: 100px;
+		background-color: rgba(255, 255, 255, 0.7);
+		border: 1px solid #ccc;
+		position: absolute;
+		left: 0px;
+		top: 0px;
+	}
+
+	.box1, .box2, .box3, .box4 {
+		width: 10px;
+		height: 10px;
+		background-color: #fff;
+		position: absolute;
+		border-radius: 50%;
+		border: 1px solid #333;
+	}
+
+	.box1 {
+		top: -5px;
+		left: -5px;
+		cursor: nw-resize;
+	}
+
+	.box2 {
+		top: -5px;
+		right: -5px;
+		cursor: ne-resize;
+	}
+
+	.box3 {
+		left: -5px;
+		bottom: -5px;
+		cursor: sw-resize;
+	}
+
+	.box4 {
+		bottom: -5px;
+		right: -5px;
+		cursor: se-resize;
+	}
+
+	.heat-map-wrap {
+		display: flex;
+		align-items: flex-start;
+		width: 900px;
+		margin: 0 auto;
+		padding: 30px;
+	}
+
+	.heat-map-wrap .area-box {
+		width: 100px;
+		height: 100px;
+		position: absolute;
+		top: 0;
+		left: 0;
+		user-select: none;
+		cursor: move;
+		border: 1px solid #ccc;
+		padding: 5px;
+		box-sizing: border-box;
+	}
+
+	.heat-map-wrap .manage-wrap {
+		padding-left: 20px;
+	}
+
+	.heat-map-wrap .manage-wrap h3 {
+		margin-bottom: 10px;
+		font-size: 16px;
+	}
+
+	.heat-map-wrap .manage-wrap button {
+		margin-bottom: 10px;
+	}
+
+	.heat-map-wrap .manage-wrap .list-wrap {
+		overflow-y: auto;
+		height: 500px;
+	}
+
+	.heat-map-wrap .manage-wrap .list-wrap .item {
+		margin-bottom: 16px;
+		display: flex;
+	}
+
+	.heat-map-wrap .manage-wrap .list-wrap .item label {
+		width: 80px;
+		padding-right: 10px;
+		text-align: right;
+	}
+
+	.heat-map-wrap .manage-wrap .list-wrap .item div span {
+		cursor: pointer;
+	}
+
+	.heat-map-wrap .manage-wrap .list-wrap .item div i {
+		cursor: pointer;
+		margin: 0 10px;
+	}
+</style>
+
+<div class="layui-form heat-map-wrap">
+    <div class="content-box" id="content_box"><!-- 热区列表 --></div>
+    <div class="manage-wrap">
+        <h3>热区管理</h3>
+        <button class="layui-btn" id="addArea">添加热区</button>
+        <div class="list-wrap"><!-- 热区列表 --></div>
+    </div>
+</div>
+
+<script type="text/html" id="dragBoxHtml">
+    {{# for(let i=0;i<d.length;i++){ }}
+    <div id="box_{{ i }}" class="area-box" style="left:{{ d[i].left }}{{ d[i].unit }};top:{{ d[i].top }}{{ d[i].unit }};width:{{ d[i].width }}{{ d[i].unit }};height:{{ d[i].height }}{{ d[i].unit }}" onmousedown="mouseDown(event,{{ i }})">
+        <span>{{ i + 1 }}</span>
+        {{# if(d[i].link.title){ }}
+            <span class="p-[4px]">|</span>
+            <span>{{ d[i].link.title }}</span>
+        {{# } }}
+        <span class="box1" onmousedown="resizeMouseDown(event,{{ i }})"></span>
+        <span class="box2" onmousedown="resizeMouseDown(event,{{ i }})"></span>
+        <span class="box3" onmousedown="resizeMouseDown(event,{{ i }})"></span>
+        <span class="box4" onmousedown="resizeMouseDown(event,{{ i }})"></span>
+    </div>
+    {{# } }}
+</script>
+<script type="text/html" id="manageHotAreaHtml">
+    {{# for(let i=0;i<d.length;i++){ }}
+        <div class="item">
+            <label>热区{{ i+1 }}：</label>
+            <div>
+                {{# if(d[i].link.title){ }}
+                <span data-index="{{i}}" class="text-color">{{ d[i].link.title }}</span>
+                {{# }else{ }}
+                <span data-index="{{i}}">选择跳转链接</span>
+                {{# } }}
+                <i class="icondiy icon-system-delete-bin-6-line" onclick="deleteHotArea({{i}})"></i>
+            </div>
+        </div>
+    {{# } }}
+</script>
+<script>
+    // 热区设置数据
+    var imageData = JSON.parse(sessionStorage.getItem('imageData'));
+    var dragBoxArr = [];
+    var contentBoxWidth = 600;
+    var contentBoxHeight = 600;
+    var num = 6;// 每行显示的数量
+    var laytpl,form,layer;
+
+    layui.use(['form','layer','laytpl'], function() {
+        layer = layui.layer;
+        laytpl = layui.laytpl;
+        form = layui.form;
+        form.render();
+
+        if (imageData == null) return;
+
+        if (Object.keys(imageData.heatMapData).length) {
+            dragBoxArr.splice(0, dragBoxArr.length, ...imageData.heatMapData);
+        } else {
+            dragBoxArr.splice(0, dragBoxArr.length);
+            $("#addArea").click();
+        }
+
+        $("#content_box").css({
+            backgroundImage: "url(" + ns.img(imageData.imageUrl) + ")",
+            width: contentBoxWidth + 'px',
+            height: contentBoxHeight + 'px'
+        });
+        renderDragBox();
+    });
+
+    // 增加热区
+    $("#addArea").click(function() {
+        let left = dragBoxArr.length % num * 100;
+        let top = Math.floor(dragBoxArr.length / num) * 100;
+        if (top >= contentBoxWidth) {
+            top = 0;
+            left = 0;
+        }
+
+        dragBoxArr.push({
+            left: left,
+            top: top,
+            width: 100,
+            height: 100,
+            unit: 'px',
+            link: {
+                name: ''
+            }
+        });
+        renderDragBox();
+
+    });
+
+    // 渲染热区
+    function renderDragBox() {
+        laytpl($('#dragBoxHtml').html()).render(dragBoxArr,function(html){
+            $('#content_box').html(html);
+        });
+
+        laytpl($('#manageHotAreaHtml').html()).render(dragBoxArr,function(html){
+            $('.heat-map-wrap .manage-wrap .list-wrap').html(html);
+        });
+    }
+
+    // 选择跳转链接
+    $('body').off('click','.heat-map-wrap .manage-wrap .list-wrap .item div span').on('click','.heat-map-wrap .manage-wrap .list-wrap .item div span',function () {
+        let index = $(this).attr('data-index');
+        dragBoxArr[index].link = dragBoxArr[index].link || {};
+        ns.select_link(dragBoxArr[index].link, function (data) {
+            dragBoxArr[index].link = data;
+            renderDragBox();
+        });
+    });
+
+    // 删除热区
+    function deleteHotArea(index) {
+        dragBoxArr.splice(index,1);
+        renderDragBox();
+    }
+
+    // 移动事件
+    function mouseDown(e, index) {
+        let box = document.getElementById('box_' + index);
+        let disX = e.clientX - box.offsetLeft;
+        let disY = e.clientY - box.offsetTop;
+
+        //鼠标移动时
+        document.onmousemove = function (e) {
+            box.style.left = e.clientX - disX + 'px';
+            box.style.top = e.clientY - disY + 'px';
+
+            //边界判断
+            if (e.clientX - disX < 0) {
+                box.style.left = 0;
+            }
+
+            if (e.clientX - disX > contentBoxWidth - box.offsetWidth) {
+                box.style.left = contentBoxWidth - box.offsetWidth + 'px';
+            }
+
+            if (e.clientY - disY < 0) {
+                box.style.top = 0;
+            }
+
+            if (e.clientY - disY > contentBoxHeight - box.offsetHeight) {
+                box.style.top = contentBoxHeight - box.offsetHeight + 'px';
+            }
+
+            dragBoxArr[index].left = box.offsetLeft;
+            dragBoxArr[index].top = box.offsetTop;
+            dragBoxArr[index].width = box.offsetWidth;
+            dragBoxArr[index].height = box.offsetHeight;
+            dragBoxArr[index].unit = 'px';
+
+        };
+
+        //鼠标抬起时
+        document.onmouseup = function (e) {
+            document.onmousemove = null;
+        }
+    }
+
+    // 拖拽大小事件
+    function resizeMouseDown(e,index) {
+        var oEv = e;
+        oEv.stopPropagation();
+        let box = document.getElementById('box_' + index);
+        let className = e.target.className;
+
+        // 获取移动前盒子的宽高，
+        var oldWidth = box.offsetWidth;
+        var oldHeight = box.offsetHeight;
+
+        // 获取鼠标距离屏幕的left和top值
+        var oldX = oEv.clientX;
+        var oldY = oEv.clientY;
+
+        // 元素相对于最近的父级定位
+        var oldLeft = box.offsetLeft;
+        var oldTop = box.offsetTop;
+
+        // 设置最小的宽度
+        var minWidth = 50;
+        var minHeight = 50;
+
+        document.onmousemove = function (e) {
+            var oEv = e;
+            // console.log('move', "width：" + oldWidth,
+            //     '，oldLeft: ' + oldLeft, '，oldTop: ' + oldTop,
+            //     '，oldX：clientX-- ' + oldX + '：' + oEv.clientX,
+            //     '，oldY：clientY-- ' + oldY + '：' + oEv.clientY,
+            // )
+
+            // 左上角
+            if (className == "box1") {
+
+                let width = oldWidth - (oEv.clientX - oldX);
+                let maxWidth = contentBoxWidth;
+
+                let height = oldHeight - (oEv.clientY - oldY);
+                let maxHeight = contentBoxHeight - oldTop;
+
+                let left = oldLeft + (oEv.clientX - oldX);
+                let top = oldTop + (oEv.clientY - oldY);
+
+                if (width < minWidth) {
+                    width = minWidth
+                }
+                if (width > maxWidth) {
+                    width = maxWidth
+                }
+
+                if (height < minHeight) {
+                    height = minHeight
+                }
+                if (height > maxHeight) {
+                    height = maxHeight
+                }
+
+                if (oldLeft == 0 && oldTop == 0) {
+                    // 坐标：left = 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 最小宽度，top = 最小高度
+                        left = minWidth;
+                        top = minHeight
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 最小宽度，top = 不予处理
+                        left = minWidth;
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，left = 不予处理，top = 最小高度
+                        top = minHeight
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，left = 不予处理，top = 不予处理
+                    }
+
+                } else if (oldLeft == 0 && oldTop > 0) {
+
+                    // 坐标：left = 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 最小宽度，top = 元素上偏移位置
+                        left = minWidth;
+                        top = box.offsetTop
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 最小宽度，top = 元素上偏移位置
+                        left = minWidth;
+                        top = box.offsetTop;
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，left = 不予处理，top = 元素上偏移位置
+                        top = box.offsetTop;
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，left = 不予处理，top = 不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop == 0) {
+
+                    // 坐标：left > 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 元素左偏移位置，top = 元素上偏移位置
+                        left = box.offsetLeft;
+                        top = box.offsetTop;
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 元素左偏移位置，top = 0
+                        left = box.offsetLeft;
+                        top = 0;
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，left = 不予处理，top = 元素上偏移位置
+                        top = box.offsetTop;
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，left = 不予处理，top = 不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop > 0) {
+
+                    // 坐标：left > 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 元素左偏移位置，top = 元素上偏移位置
+                        left = box.offsetLeft;
+                        top = box.offsetTop
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 元素左偏移位置，top = 元素上偏移位置
+                        left = box.offsetLeft;
+                        top = box.offsetTop;
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，left = 不予处理，top = 元素上偏移位置
+                        top = box.offsetTop;
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，left = 不予处理，top = 不予处理
+                    }
+
+                }
+
+                //左上 宽
+                if (left < 0) {
+                    left = 0;
+                    width = oldWidth - (oEv.clientX - oldX) + (oldLeft + (oEv.clientX - oldX));
+                }
+
+                //左上  高
+                if (top < 0) {
+                    top = 0;
+                    height = oldTop + (oEv.clientY - oldY) + (oldHeight - (oEv.clientY - oldY));
+                }
+
+                box.style.width = width + 'px';
+                box.style.height = height + 'px';
+                box.style.left = left + 'px';
+                box.style.top = top + 'px';
+
+            } else if (className == "box2") {
+                // 右上角
+
+                let width = oldWidth + (oEv.clientX - oldX);
+                let maxWidth = contentBoxWidth - oldLeft;
+
+                let height = oldHeight - (oEv.clientY - oldY);
+                let maxHeight = contentBoxHeight - oldTop;
+
+                let top = oldTop + (oEv.clientY - oldY);
+
+                if (width < minWidth) {
+                    width = minWidth
+                }
+                if (width > maxWidth) {
+                    width = maxWidth
+                }
+
+                if (height < minHeight) {
+                    height = minHeight
+                }
+                if (height > maxHeight) {
+                    height = maxHeight
+                }
+
+                if (oldLeft == 0 && oldTop == 0) {
+
+                    // 坐标：left = 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，top = 最小高度
+                        top = minHeight
+
+                    } else if (width == minWidth && height > minHeight) {
+                        // 宽 = 最小值，高 > 最小值，不予处理
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，top = 最小高度
+                        top = minHeight
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft == 0 && oldTop > 0) {
+
+                    // 坐标：left = 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop == 0) {
+
+                    // 坐标：left = 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，top = 0
+                        top = 0
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop > 0) {
+
+                    // 坐标：left > 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width > minWidth && height == minHeight) {
+
+                        // 宽 > 最小值，高 = 最小值，top = 元素上偏移位置
+                        top = box.offsetTop
+
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                }
+
+                //右上  高
+                if (top < 0) {
+                    top = 0;
+                    height = oldTop + (oEv.clientY - oldY) + (oldHeight - (oEv.clientY - oldY))
+                }
+
+                box.style.width = width + 'px';
+                box.style.height = height + 'px';
+                box.style.top = top + 'px';
+
+            } else if (className == "box3") {
+                // 左下角
+
+                let width = oldWidth - (oEv.clientX - oldX);
+                let maxWidth = contentBoxWidth;
+
+                let height = oldHeight + (oEv.clientY - oldY);
+                let maxHeight = contentBoxHeight - oldTop;
+
+                let left = oldLeft + (oEv.clientX - oldX);
+
+                if (width < minWidth) {
+                    width = minWidth
+                }
+                if (width > maxWidth) {
+                    width = maxWidth
+                }
+
+                if (height < minHeight) {
+                    height = minHeight
+                }
+                if (height > maxHeight) {
+                    height = maxHeight
+                }
+
+                if (oldLeft == 0 && oldTop == 0) {
+                    // 坐标：left = 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 最小宽度
+                        left = minWidth;
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 最小宽度
+                        left = minWidth;
+
+                    } else if (width > minWidth && height == minHeight) {
+                        // 宽 > 最小值，高 = 最小值，不予处理
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft == 0 && oldTop > 0) {
+
+                    // 坐标：left = 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 最小宽度
+                        left = minWidth;
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 最小宽度
+                        left = minWidth;
+
+                    } else if (width > minWidth && height == minHeight) {
+                        // 宽 > 最小值，高 = 最小值，不予处理
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop == 0) {
+
+                    // 坐标：left > 0，top = 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 元素左偏移位置
+                        left = box.offsetLeft;
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 元素左偏移位置
+                        left = box.offsetLeft;
+
+                    } else if (width > minWidth && height == minHeight) {
+                        // 宽 > 最小值，高 = 最小值，不予处理
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                } else if (oldLeft > 0 && oldTop > 0) {
+
+                    // 坐标：left > 0，top > 0
+
+                    if (width == minWidth && height == minHeight) {
+
+                        // 宽高 = 最小值，left = 元素左偏移位置
+                        left = box.offsetLeft;
+
+                    } else if (width == minWidth && height > minHeight) {
+
+                        // 宽 = 最小值，高 > 最小值，left = 元素左偏移位置
+                        left = box.offsetLeft;
+
+                    } else if (width > minWidth && height == minHeight) {
+                        // 宽 > 最小值，高 = 最小值，不予处理
+                    } else if (width > minWidth && height > minHeight) {
+                        // 宽 > 最小值，高 > 最小值，不予处理
+                    }
+
+                }
+
+                if (left < 0) {
+                    left = 0;
+                    width = oldWidth - (oEv.clientX - oldX) + (oldLeft + (oEv.clientX - oldX));
+                }
+
+                box.style.width = width + 'px';
+                box.style.height = height + 'px';
+                box.style.left = left + 'px';
+
+            } else if (className == "box4") {
+                // 右下角
+
+                let width = oldWidth + (oEv.clientX - oldX);
+                let maxWidth = contentBoxWidth - oldLeft;
+
+                let height = oldHeight + (oEv.clientY - oldY);
+                let maxHeight = contentBoxHeight - oldTop;
+
+                if (width < minWidth) {
+                    width = minWidth
+                }
+                if (width > maxWidth) {
+                    width = maxWidth
+                }
+
+                if (height < minHeight) {
+                    height = minHeight
+                }
+                if (height > maxHeight) {
+                    height = maxHeight
+                }
+
+                box.style.width = width + 'px';
+                box.style.height = height + 'px';
+            }
+
+            dragBoxArr[index].left = box.offsetLeft;
+            dragBoxArr[index].top = box.offsetTop;
+            dragBoxArr[index].width = box.offsetWidth;
+            dragBoxArr[index].height = box.offsetHeight;
+            dragBoxArr[index].unit = 'px';
+
+        };
+
+        // 鼠标抬起时
+        document.onmouseup = function () {
+            document.onmousemove = null;
+            document.onmouseup = null;
+        }
+    }
+
+    //获取操作结果
+    function heatMapListener(callback){
+        var isOk = true;
+
+        for (let i = 0; i < dragBoxArr.length; i++) {
+            if (!dragBoxArr[i].link.title) {
+                layer.msg('请选择热区'+ (i + 1) + '的链接地址');
+                isOk = false;
+                break;
+            }
+        }
+
+        if (!isOk) return;
+
+        dragBoxArr.forEach((item, index) => {
+            var box = document.getElementById('box_' + index);
+            item.width = parseFloat(box.offsetWidth / contentBoxWidth * 100).toFixed(2);
+            item.height = parseFloat(box.offsetHeight / contentBoxHeight * 100).toFixed(2);
+            item.left = parseFloat(box.offsetLeft / contentBoxWidth * 100).toFixed(2);
+            item.top = parseFloat(box.offsetTop / contentBoxHeight * 100).toFixed(2);
+            item.unit = '%';
+        });
+
+        imageData.heatMapData = dragBoxArr;
+
+        if(typeof callback == 'function'){
+            callback(imageData);
+        }
+    }
+
+</script>

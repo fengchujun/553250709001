@@ -1,0 +1,224 @@
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="add()">添加电子面单模板</button>
+</div>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">模板名称：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="template_name" placeholder="请输入模板名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+			</div>
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="electronicsheet_tab">
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="electronicsheet_list" lay-filter="electronicsheet_list"></table>
+	</div>
+</div>
+
+<!-- 商品 -->
+<script type="text/html" id="goods">
+	<div class="table-title">
+		<div class="title-pic">
+			{{#  if(d.goods_image){  }}
+			<img layer-src src="{{ns.img(d.goods_image.split(',')[0],'small')}}"/>
+			{{#  }  }}
+		</div>
+		<div class="title-content">
+			<a href="javascript:;" class="multi-line-hiding text-color" title="{{d.goods_name}}">{{d.goods_name}}</a>
+		</div>
+	</div>
+</script>
+
+<!-- 时间 -->
+<script id="time" type="text/html">
+	<div class="layui-elip">开始：{{ns.time_to_date(d.start_time)}}</div>
+	<div class="layui-elip">结束：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!-- 状态 -->
+<script type="text/html" id="status">
+	{{#  if(d.status == 1){  }}
+	未开始
+	{{#  }else if(d.status == 2){  }}
+	进行中
+	{{#  }else if(d.status == 3){  }}
+	已结束
+	{{#  }  }}
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		{{# if(d.is_default != 1){ }}
+		<a class="layui-btn" lay-event="default">设置默认</a>
+		{{# } }}
+		<a class="layui-btn" lay-event="del">删除</a>
+	</div>
+</script>
+
+<script>
+	layui.use(['form', 'element'], function() {
+		var table,
+			form = layui.form,
+			element = layui.element,
+			repeat_flag = false; //防重复标识
+		form.render();
+
+		table = new Table({
+			elem: '#electronicsheet_list',
+			url: ns.url("electronicsheet://shop/electronicsheet/lists"),
+			cols: [
+				[{
+			    	'field':'template_name',
+					title: '模板名称',
+					unresize: 'false'
+				}, {
+					field: 'company_name',
+					title: '快递公司',
+					unresize: 'false'
+				}, {
+					field: 'is_default',
+					title: '是否默认',
+					unresize: 'false',
+                    templet: function(data) {
+						if(data.is_default == 1){
+						    return '是';
+						}else{
+						    return '否';
+						}
+                    }
+				}, {
+					title: '操作',
+					toolbar: '#operation',
+					unresize: 'false',
+					align:'right'
+				}]
+			]
+
+		});
+		
+		/**
+		 * 搜索功能
+		 */
+		form.on('submit(search)', function(data) {
+			table.reload({
+				page: {
+					curr: 1
+				},
+				where: data.field
+			});
+		});
+
+		//监听Tab切换
+		element.on('tab(status)', function(data) {
+			var status = $(this).attr("data-status");
+			table.reload({
+				page: {
+					curr: 1
+				},
+				where: {
+					'status': status
+				}
+			});
+		});
+
+		/**
+		 * 监听工具栏操作
+		 */
+		table.tool(function(obj) {
+			var data = obj.data;
+			switch (obj.event) {
+				case 'edit': //编辑
+					location.hash = ns.hash("electronicsheet://shop/electronicsheet/edit", {"id": data.id});
+					break;
+				case 'del': //删除
+                    deleteElectronicsheet(data.id);
+					break;
+				case 'default': //默认
+                    setDefaultStatus(data.id);
+					break;
+			}
+		});
+		
+		/**
+		 * 删除
+		 */
+		function deleteElectronicsheet(id) {
+			layer.confirm('确定要删除该电子面单模板吗?', function(index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+
+				$.ajax({
+					url: ns.url("electronicsheet://shop/electronicsheet/delete"),
+					data: {
+						id: id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						if (res.code == 0) {
+							table.reload({
+							    page: {
+							        curr: 1
+							    },
+							});
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+
+		//默认
+		function setDefaultStatus(id) {
+
+			layer.confirm('您确认设为默认模版吗?', function(index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+
+				$.ajax({
+					url: ns.url("electronicsheet://shop/electronicsheet/setdefaultstatus"),
+					data: {
+						id: id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+	});
+
+	function add() {
+		location.hash = ns.hash("electronicsheet://shop/electronicsheet/add");
+	}
+</script>

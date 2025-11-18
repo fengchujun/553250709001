@@ -1,0 +1,255 @@
+<style>
+	.align-center {text-align: center!important;}
+	.manage-store {display: none}
+	.manage-store .store-group {width: 200px;margin: 0 auto}
+</style>
+
+<div class="layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">创建用户：</label>
+		<div class="layui-input-inline">
+			{php}$create_user_data = json_decode($edit_user_info['create_user_data'], true);{/php}
+			{:join(' -> ', array_column($create_user_data, 'name'))}
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">员工用户名：</label>
+		<div class="layui-input-inline">
+			<input name="username" value="{$edit_user_info.username}" type="text" disabled class="layui-input len-long" autocomplete="off">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">员工状态：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="status" value="1" lay-skin="switch" {if condition="$edit_user_info.status == 1"} checked {/if} />
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">{if !$cashier_is_exist}<span class="required">*</span>{/if}员工角色：</label>
+		<div class="layui-input-inline len-mid">
+			<select name="group_id" {if !$cashier_is_exist}lay-verify="groupid"{/if}>
+				<option value="">请选择角色</option>
+				{foreach $group_list as $group_list_k => $group_list_v}
+				<option value="{$group_list_v.group_id}" {if $edit_user_info.group_id==$group_list_v.group_id}selected{/if}>{$group_list_v.group_name} </option> 
+				{/foreach}
+			</select> 
+		</div>
+	</div>
+
+	{if $store_is_exist }
+	<div class="layui-form-item">
+		<label class="layui-form-label">管理门店：</label>
+		<div class="layui-input-block len-mid">
+			<button class="layui-btn select-store">选择门店</button>
+		</div>
+	</div>
+	<div class="layui-form-item manage-store" {notempty name="$edit_user_info.user_group_list"}style="display:block;"{/notempty}>
+		<label class="layui-form-label"></label>
+		<div class="layui-input-block" style="width: 600px">
+			<table class="layui-table" lay-skin="nob">
+				<colgroup>
+					<col width="40%">
+					<col width="40%">
+					<col width="20%">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>门店</th>
+						<th class="align-center">门店角色</th>
+						<th class="align-center">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			<script type="text/html" id="store_user_group_tpl">
+				{{# d.store_list.forEach((item)=>{ }}
+				<tr data-store="{{ item.store_id }}">
+					<td>{{ item.store_name }}</td>
+					<td>
+						{{# let create_user_store_group_id = create_user_store_group[item.store_id] && create_user_store_group[item.store_id]['group_id'] ? create_user_store_group[item.store_id]['group_id'] : -1; }}
+						<div class="store-group">
+							<select name="store_group" lay-verify="storegroupid" lay-filter="store_group">
+								<option value="">请选择门店角色</option>
+								{{# d.store_user_group.forEach((vo)=>{ }}
+								{{# if((is_admin == 1 && vo.store_id == 0) || vo.group_id == create_user_store_group_id || vo.store_id == item.store_id){ }}
+								<option value="{{ vo.group_id }}">{{ vo.group_name }}</option>
+								{{# } }}
+								{{# }) }}
+							</select>
+						</div>
+					</td>
+					<td class="align-center"><a href="javascript:;" class="del">删除</a></td>
+				</tr>
+				{{# }) }}
+			</script>
+		</div>
+	</div>
+	{elseif $cashier_is_exist}
+	<div class="layui-form-item">
+		<label class="layui-form-label">门店角色：</label>
+		<div class="layui-input-block len-mid">
+			<select name="store_group">
+				<option value="">请选择门店角色</option>
+				{foreach name="store_user_group" item="vo"}
+				<option value="{$vo.group_id}" {if !empty($edit_user_info.user_group_list) && $edit_user_info.user_group_list[0]['group_id'] eq $vo.group_id}selected{/if}>{$vo.group_name}</option>
+				{/foreach}
+			</select>
+		</div>
+	</div>
+	<input type="hidden" name="default_store_id" value="{$default_store_id}">
+	{/if}
+
+	<div class="word-aux">关闭后，员工将被锁定，无法登录</div>
+	<!-- 表单操作 -->
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backUserList()">返回</button>
+	</div>
+	
+	<!-- 隐藏域 -->
+	<input value="{$edit_user_info.uid}" type="hidden" class="user_id" name="uid" />
+</div>
+
+<script>
+	var storeGroup = {};
+	var store_user_group = {:json_encode($store_user_group ?? [])};
+	var create_user_store_group = {:json_encode($create_user_store_group)};
+	var user_group_list = {:json_encode($edit_user_info.user_group_list)};
+	var store_is_exist = {$store_is_exist};
+	var is_admin = {$user_info.is_admin};
+	layui.use(['form','laytpl'], function() {
+		var form = layui.form,
+			laytpl = layui.laytpl,
+			repeat_flag = false;//防重复标识
+		form.render();
+		var storeIsExist = '{$store_is_exist}';
+		var cashierIsExist = '{$cashier_is_exist}';
+		
+		form.on('submit(save)', function(data) {
+			data.field.store = [];
+			if(storeIsExist == 1) {
+				$('.manage-store tbody tr').each(function () {
+					data.field.store.push({
+						store_id: $(this).attr('data-store'),
+						group_id: $(this).find('[name="store_group"]').val()
+					});
+				});
+			}else if(cashierIsExist == 1) {
+				if (data.field.store_group) {
+					data.field.store.push({
+						store_id: data.field.default_store_id,
+						group_id: data.field.store_group
+					});
+				}
+			}
+
+			if(cashierIsExist == 1) {
+				if (!data.field.group_id && !data.field.store.length) {
+					layer.msg('员工角色和门店角色至少需设置一项', {icon: 5});
+					return;
+				}
+			}
+
+			data.field.store = JSON.stringify(data.field.store);
+
+			if (repeat_flag) return;
+			repeat_flag = true;
+
+			$.ajax({
+				dataType: 'JSON',
+				type: 'POST',
+				url: ns.url("shop/user/editUser"),
+				data: data.field,
+				success: function(res) {
+					repeat_flag = false;
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero) {
+								location.hash = ns.hash("shop/user/user");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						})
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		});
+		
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			groupid: function(value) {
+				if (value == 0) {
+					return '请选择员工角色!';
+				}
+			},
+			storegroupid: function (value) {
+				if(!value) {
+					return '请选择门店角色!';
+				}
+			}
+		});
+
+		form.on('select(store_group)', function (data) {
+			var store_id = $(data.elem).parents('tr').attr('data-store');
+			storeGroup['store_' + store_id] = data.value;
+		});
+
+		// 选择门店
+		$('.select-store').click(function () {
+			var storeId = [];
+			$('.manage-store tbody tr').each(function () {
+				storeId.push($(this).attr('data-store'));
+			});
+			storeSelect(function (store) {
+				fetchStore(store);
+			}, {store_id: storeId.toString(), store_ids:'{$store_ids??""}'})
+		});
+
+		function fetchStore(store){
+			if (store.length) {
+				$('.manage-store').show();
+				laytpl($("#store_user_group_tpl").html()).render({store_list:store, store_user_group:store_user_group}, function (html){
+					$('.manage-store tbody').html(html);
+					Object.keys(storeGroup).forEach(function (key) {
+						var group = storeGroup[key], store_id = key.replace('store_', '');
+						$('.manage-store tr[data-store="'+ store_id +'"] option[value="'+ group +'"]').prop('selected', true);
+					});
+					form.render();
+				})
+			} else {
+				$('.manage-store tbody').html('');
+				$('.manage-store').hide();
+			}
+		}
+		if(store_is_exist == 1){
+			user_group_list.forEach((item)=>{
+				storeGroup['store_' + item.store_id] = item.group_id;
+			})
+			fetchStore(user_group_list);
+		}
+
+		// 删除门店
+		$('body').off('click', '.manage-store .del').on('click', '.manage-store .del', function () {
+			var store_id = $(this).parents('tr').attr('data-store');
+			if (storeGroup['store_' + store_id]) delete storeGroup['store_' + store_id];
+			$(this).parents('tr').remove();
+		})
+	});
+	
+	function backUserList() {
+		location.hash = ns.hash("shop/user/user");
+	}
+</script>

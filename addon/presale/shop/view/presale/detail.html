@@ -1,0 +1,127 @@
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>活动名称：</label>
+				<span>{$info.presale_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>活动状态：</label>
+				<span>{$info.status_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>添加时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.create_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>开始时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.start_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>结束时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.end_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>预售总库存：</label>
+				<span>{$info.presale_stock}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>尾款支付开始时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.pay_start_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>尾款支付结束时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.pay_end_time)}</span>
+			</div>
+
+			<div class="promotion-view-item">
+				<label>发货时间：</label>
+				<span>
+					{if $info.deliver_type == 0}
+						{:date('Y-m-d H:i:s',$info.deliver_time)}
+					{else/}
+						支付尾款{$info.deliver_time}天后，开始发货
+					{/if}
+				</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>销量：</label>
+				<span>{$info.sale_num}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>是否参与分销：</label>
+				<span>{if $info.is_fenxiao == 1} 参与 {else/} 不参与 {/if}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>是否支持退定金：</label>
+				<span>{if $info.is_deposit_back == 1} 否 {else/} 是 {/if}</span>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-header">
+            <span class="card-title">活动商品</span>
+		</div>
+		<div class="layui-card-body">
+			<div class='promotion-view-list'>
+				<table id="promotion_list"></table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type='text/html' id="promotion_list_item_box_html">
+	<div class="promotion-list-item-title">
+		<div class="promotion-list-item-title-icon">
+			<img src="{{ ns.img(d.sku_image) }}" alt="">
+		</div>
+		<p class="promotion-list-item-title-name multi-line-hiding">{{ d.sku_name }}</p>
+	</div>
+</script>
+<script>
+	var promotion_list = {:json_encode($info.sku_list, JSON_UNESCAPED_UNICODE)};
+	layui.use('table', function() {
+		new Table({
+			elem: '#promotion_list',
+			cols: [
+                [{
+                    field: 'sku_name',
+                    title: '商品名称',
+                    width: '30%',
+                    unresize: 'false',
+                    templet: '#promotion_list_item_box_html'
+                }, {
+                    field: 'price',
+                    title: '商品价格',
+                    unresize: 'false',
+                    templet: function(data) {
+                        return '￥' + data.price;
+                    }
+                }, {
+                    field: 'presale_stock',
+                    title: '预售库存',
+                    unresize: 'false',
+                }, {
+                    field: 'presale_deposit',
+                    title: '定金',
+                    unresize: 'false',
+					templet: function(data) {
+						return '￥' + data.presale_deposit;
+					}
+                }, {
+                    field: 'presale_price',
+                    title: '定金抵扣金额',
+                    unresize: 'false'
+                }]
+			],
+			data: promotion_list
+		});
+	});
+</script>

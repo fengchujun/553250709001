@@ -1,0 +1,60 @@
+<style>
+    html,body {width: 100%;height: 100%}
+    .store-empty {display: flex;height: 100%; align-items: center;justify-content: center}
+    .store-wrap {display: flex;height: 100%;flex-wrap: wrap;overflow-y: auto;padding: 15px;box-sizing: border-box;align-content: flex-start;}
+    .store-wrap .store-item {box-sizing: border-box;margin: 0 15px 15px 0;border: 1px solid #ccc;width: calc((100% - 30px) / 3);padding: 10px;cursor: pointer;height: fit-content;border-radius: 4px;}
+    .store-wrap .store-item.active {border-color: var(--base-color);}
+    .store-wrap .store-item .name {font-weight: bold;}
+    .store-wrap .store-item .status {margin: 5px 0;line-height: 1;font-size: 12px}
+    .store-wrap .store-item .address {color: #999;font-size: 12px;white-space: nowrap;text-overflow: ellipsis;overflow:hidden;width: 100%;}
+    .store-wrap .store-item:nth-child(3n+3) {margin-right: 0}
+    .open {color: #00A717}
+    .close {color: #ff0000}
+</style>
+
+{notempty name="store_list"}
+<div class="store-wrap">
+    {foreach name="store_list" item="vo"}
+        <div class="store-item {if in_array($vo.store_id, $store_id)}active{/if}" data-store="{$vo.store_id}">
+            <div class="name">{$vo.store_name}</div>
+            <div class="status">
+                {if $vo.is_frozen == 1}
+                    <span class="close">已停业</span>
+                {else/}
+                    {if $vo.status == 0}
+                        <span class="open">休息中</span>
+                    {else/}
+                        <span class="open">营业中</span>
+                    {/if}
+                {/if}
+            </div>
+            <div class="address">{$vo.full_address}{$vo.address}</div>
+        </div>
+    {/foreach}
+</div>
+{else/}
+<div class="store-empty">暂无可用门店</div>
+{/notempty}
+
+<script>
+    var storeList = {:json_encode($store_list)};
+    var multiple_type = "{$multiple_type ?? 0}"; //0多选 1单选
+    $('.store-item').click(function () {
+
+        if(multiple_type == 1){
+            $(".store-item").removeClass('active')
+        }
+
+        if ($(this).hasClass('active')) $(this).removeClass('active');
+        else $(this).addClass('active');
+    })
+
+    function selectStoreListener(callback) {
+        var store = [];
+        $('.store-item.active').each(function () {
+            var index = $(this).index();
+            store.push(storeList[index])
+        })
+        if (typeof callback == "function") callback(store);
+    }
+</script>

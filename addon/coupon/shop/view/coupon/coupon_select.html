@@ -1,0 +1,214 @@
+<style>
+	.coupon-list {
+		padding: 0 20px;
+	}
+</style>
+
+<div class="coupon-list">
+	<div class="single-filter-box">
+		<div class="layui-form">
+			<div class="layui-input-inline">
+				<input type="text" name="coupon_name" placeholder="请输入优惠券名称" class="layui-input">
+				<button type="button" class="layui-btn layui-btn-primary" lay-submit lay-filter="search">
+					<i class="layui-icon">&#xe615;</i>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- 列表 -->
+	<table id="coupon_list" lay-filter="coupon_list"></table>
+</div>
+
+<script type="text/html" id="checkbox">
+	{{# if($.inArray(d.coupon_type_id.toString(), selected_id_arr) != -1){ }}
+	<input type="checkbox" data-coupon-id="{{d.coupon_type_id}}" name="coupon_checkbox" lay-skin="primary" lay-filter="coupon_checkbox" checked>
+	{{# }else{ }}
+	<input type="checkbox" data-coupon-id="{{d.coupon_type_id}}" name="coupon_checkbox" lay-skin="primary" lay-filter="coupon_checkbox">
+	{{# } }}
+	<input type="hidden" data-coupon-id="{{d.coupon_type_id}}" name="coupon_json" value='{{ JSON.stringify(d) }}' />
+</script>
+
+<script type="text/html" id="validity">
+	<div class="text">
+		{{#  if(d.validity_type == 0){  }}
+		至 {{ ns.time_to_date(d.end_time) }}
+		{{#  } else if(d.validity_type == 1) {  }}
+		领取后，{{ d.fixed_term }}天有效
+		{{#  } else { }}
+		长期有效
+		{{#  }  }}
+	</div>
+</script>
+
+<script>
+	var table, form, laytpl,
+		select_id = "{$select_id}", //选中商品id
+		selected_id_arr = select_id.length ? select_id.split(',') : [],
+		max_num = Number('{$max_num}'),
+		min_num = Number('{$min_num}'),
+		select_list = []; //选中商品所有数据
+
+	$(function () {
+		layui.use(['form', 'laytpl'], function () {
+			form = layui.form;
+			laytpl = layui.laytpl;
+
+			table = new Table({
+				elem: '#coupon_list',
+				url: ns.url("coupon://shop/coupon/couponSelect"),
+				where: {
+					app_module: ns.appModule,
+					site_id: ns.siteId
+				},
+				cols: [
+					[{
+						unresize: 'false',
+						width: '3%',
+						templet: '#checkbox'
+					}, {
+						field: 'coupon_name',
+						title: '优惠券名称',
+						unresize: 'false',
+						width: '20%',
+						templet: function (data){
+							return '<div class="text">'+ data.coupon_name +'</div>'
+						}
+					}, {
+						field: 'reward',
+						title: '优惠类型',
+						unresize: 'false',
+						width: '12%',
+						templet: function (data) {
+							if (data.type == 'reward') {
+								return '满减';
+							} else {
+								return '折扣';
+							}
+						}
+					}, {
+						field: 'goods_type',
+						title: '适用商品',
+						unresize: 'false',
+						width: '15%',
+						templet: function (data) {
+							return data.goods_type_name;
+						}
+					}, {
+						title: '优惠金额/折扣',
+						unresize: 'false',
+						width: '14%',
+						align: 'right',
+						templet: function (data) {
+							if (data.type == 'reward') {
+								return '<span style="padding-right: 12px;">￥' + data.money + '</span>';
+							} else {
+								return '<span style="padding-right: 12px;">' + data.discount + '折</span>';
+							}
+						}
+					}, {
+						field: 'count',
+						title: '发放数量',
+						unresize: 'false',
+						width: '10%',
+						templet: function (data) {
+							return data.count == -1 ? '不限制' : data.count;
+						}
+					},{
+						title: '有效期',
+						unresize: 'false',
+						templet: '#validity',
+
+					},
+					]
+				],
+				callback: function () {
+					// 更新商品复选框状态
+					for (var i = 0; i < selected_id_arr.length; i++) {
+						var selected_coupons = $("input[name='coupon_checkbox'][data-coupon-id='" + selected_id_arr[i] + "']");
+
+						if (selected_coupons.length) {
+							$("input[name='coupon_checkbox'][data-coupon-id='" + selected_id_arr[i] + "']").prop("checked", true);
+						}
+					}
+
+					form.render();
+					initData();
+				}
+
+			});
+
+			/**
+			 * 监听搜索
+			 */
+			form.on('submit(search)', function (data) {
+				data.field.app_module = ns.appModule;
+				data.field.site_id = ns.siteId;
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: data.field
+				});
+			});
+
+			// 勾选商品
+			form.on('checkbox(coupon_checkbox)', function(data) {
+				var coupon_id = $(data.elem).attr("data-coupon-id"), json = {};
+				form.render();
+				
+				var couponLen = $("input[name='coupon_checkbox'][data-coupon-id="+ coupon_id +"]:checked").length;
+				if (couponLen){
+					json = JSON.parse($("input[name='coupon_json'][data-coupon-id="+ coupon_id +"]").val());
+					delete json.LAY_INDEX;
+					delete json.LAY_TABLE_INDEX;
+					delete json.create_time;
+					select_list.push(json);
+				} else{
+					for (var i = 0; i < select_list.length; i++) {
+						if (select_list[i].coupon_type_id == coupon_id) {
+							select_list.splice(i, 1);
+							break;
+						}
+					}
+				}
+			});
+
+			//初始化数据
+			function initData(){
+				var couponLen = $("input[name='coupon_checkbox'][data-coupon-id]:checked").length;
+				
+				for (var i = 0; i < couponLen; i++){
+					var couponId = $("input[name='coupon_checkbox'][data-coupon-id]:checked").eq(i).attr("data-coupon-id");
+					var ident = false;
+					for (var k = 0; k < select_list.length; k++){
+						if(select_list[k].coupon_type_id == couponId){
+							ident = true;
+							break;
+						}
+					}
+
+					if (ident) return;
+					json = JSON.parse($("input[name='coupon_json'][data-coupon-id="+ couponId +"]").val());
+					delete json.LAY_INDEX;
+					delete json.LAY_TABLE_INDEX;
+					delete json.create_time;
+					
+					select_list.push(json);
+				}
+			}
+		});
+	});
+
+	function selectCouponListener(callback) {
+		if (max_num > 0 && select_list.length > max_num) {
+			layer.msg("所选优惠券数量不能超过" + max_num + '个');
+			return;
+		}
+		if (min_num > 0 && select_list.length < min_num) {
+			layer.msg("所选优惠券数量不能少于" + min_num + '个');
+			return;
+		}
+		callback(select_list);
+	}
+</script>

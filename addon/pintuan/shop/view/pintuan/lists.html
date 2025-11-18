@@ -1,0 +1,504 @@
+<style>
+	.screen{margin-bottom: 15px;}
+	.contraction span {cursor: pointer;display: inline-block;width: 17px;height: 17px;text-align: center;line-height: 14px;user-select: none;}
+	.sku-list {overflow: hidden;padding: 0 45px;}
+	.sku-list li .img-wrap {vertical-align: middle;margin-right: 8px;width: 20%;height: 80px;text-align: center;line-height: 70px;}
+	.sku-list li .img-wrap img {max-width: 100%;max-height: 100%;}
+	.sku-list li .info-wrap span.sku-name {-webkit-line-clamp: 2;margin-bottom: 5px;}
+	.sku-list li .info-wrap span {display: -webkit-box;margin-bottom: 5px;overflow: hidden;text-overflow: ellipsis;white-space: normal;word-break: break-all;-webkit-box-orient: vertical;-webkit-line-clamp: 1;}
+	.sku-list li {float: left;display: flex;padding: 10px;margin-right: 10px;margin-bottom: 10px;border: 1px solid #EFEFEF;width: 294px;height: 110px;align-items: center;}
+	.body-content {padding-top: 15px!important;}
+	.layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+</style>
+
+<!-- 按钮容器 -->
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="add()">添加拼团商品</button>
+</div>
+
+<!-- 搜索框 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">商品名称：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="goods_name" placeholder="请输入商品名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">活动时间：</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="pintuan_tab">
+	<ul class="layui-tab-title">
+		<li class="layui-this" lay-id="">全部</li>
+		<li lay-id="6">未开始</li>
+		<li lay-id="1">进行中</li>
+		<li lay-id="2">已结束</li>
+		<li lay-id="3">已关闭</li>
+	</ul>
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="pintuan_list" lay-filter="pintuan_list"></table>
+	</div>
+</div>
+
+<!-- 推广 -->
+{include file="app/shop/view/component/promote_show.html"}
+
+<!-- 商品 -->
+<script type="text/html" id="goods">
+	<div class="table-title">
+
+		<div class="contraction" data-id="{{d.pintuan_id}}" data-open="0">
+			<span>+</span>
+		</div>
+
+		<div class="title-pic">
+			{{#  if(d.goods_image){  }}
+			<img layer-src="{{ns.img(d.goods_image.split(',')[0],'big')}}" src="{{ns.img(d.goods_image.split(',')[0],'small')}}"/>
+			{{#  }  }}
+		</div>
+		<div class="title-content">
+			<a href="javascript:;" class="multi-line-hiding text-color-sub">{{d.goods_name}}</a>
+		</div>
+	</div>
+</script>
+
+<!-- 时间 -->
+<script id="time" type="text/html">
+	<div class="layui-elip">开始时间：{{ns.time_to_date(d.start_time)}}</div>
+	<div class="layui-elip">结束时间：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!-- 状态 -->
+<script type="text/html" id="status">
+	{{#  if(d.status == 0){  }}
+	未开始
+	{{#  }else if(d.status == 1){  }}
+	进行中
+	{{#  }else if(d.status == 2){  }}
+	已结束
+	{{#  }else if(d.status == 3){  }}
+	已关闭
+	{{#  }  }}
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="operation-wrap" data-pintuan-id="{{d.pintuan_id}}">
+		<div class="popup-qrcode-wrap" style="display: none"><img class="popup-qrcode-loadimg" src="__STATIC__/loading/loading.gif"/></div>
+		<div class="table-btn">
+			{{# if(d.status == 1){ }}
+			<a class="layui-btn text-color" lay-event="select">推广</a>
+			{{# } }}
+		<a class="layui-btn" lay-event="detail">详情</a>
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		{{# if(d.status == 0){ }}
+		<a class="layui-btn" lay-event="delete">删除</a>
+		{{# }else if(d.status == 1){ }}
+		<a class="layui-btn" lay-event="team">拼团列表</a>
+		<a class="layui-btn" lay-event="invalid">关闭</a>
+		{{# }else if(d.status == 2){ }}
+		<a class="layui-btn" lay-event="team">拼团列表</a>
+		<a class="layui-btn" lay-event="delete">删除</a>
+		{{# }else if(d.status == 3){ }}
+		<a class="layui-btn" lay-event="delete">删除</a>
+		{{# } }}
+	</div>
+	</div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarOperation">
+	<button class="layui-btn layui-btn-primary" lay-event="delete">批量删除</button>
+	<button class="layui-btn layui-btn-primary" lay-event="invalid">批量关闭</button>
+</script>
+
+<!-- 商品sku -->
+<script type="text/html" id="skuList">
+	<tr class="js-list-{{d.index}}" id="sku_img_{{d.index}}">
+		<td colspan="9">
+			<ul class="sku-list">
+				{{# for(var i=0; i<d.list.length; i++){ }}
+				<li>
+					<div class="img-wrap">
+						<img layer-src src="{{ns.img(d.list[i].sku_image)}}">
+					</div>
+					<div class="info-wrap">
+						<span class="sku-name" title="{{d.list[i].sku_name}}">{{d.list[i].sku_name}}</span>
+						<span class="price">商品价格：￥{{d.list[i].price}}</span>
+						<span class="price">拼团价：￥{{d.list[i].pintuan_price}}</span>
+					</div>
+				</li>
+				{{# } }}
+			</ul>
+		</td>
+	</tr>
+</script>
+
+<script>
+	var laytpl;
+	$(function () {
+		$("body").off("click", ".contraction").on("click", ".contraction", function () {
+
+			var pintuan_id = $(this).attr("data-id");
+			var open = $(this).attr("data-open");
+			var tr = $(this).parent().parent().parent().parent();
+			var index = tr.attr("data-index");
+			if (open == 1) {
+				$(this).children("span").text("+");
+				$(".js-list-" + index).remove();
+			} else {
+				$(this).children("span").text("-");
+				$.ajax({
+					url: ns.url("pintuan://shop/pintuan/getSkuList"),
+					data: {pintuan_id: pintuan_id},
+					dataType: 'JSON',
+					type: 'POST',
+					async: false,
+					success: function (res) {
+
+						var sku_list = $("#skuList").html();
+						var data = {
+							list: res.data,
+							index: index
+						};
+						laytpl(sku_list).render(data, function (html) {
+							tr.after(html);
+						});
+						layer.photos({
+							photos: '.img-wrap',
+							anim: 5
+						});
+					}
+				});
+			}
+			$(this).attr("data-open", (open == 0 ? 1 : 0));
+		});
+		layui.use(['form', 'element','laytpl', 'laydate'], function () {
+			laytpl = layui.laytpl;
+			var table,
+					form = layui.form,
+					laydate = layui.laydate,
+					element = layui.element,
+					pingtuanAll = [],
+					repeat_flag = false; //防重复标识
+			form.render();
+
+			//开始时间
+			laydate.render({
+				elem: '#start_time', //指定元素
+                type: 'datetime'
+			});
+			//结束时间
+			laydate.render({
+				elem: '#end_time', //指定元素
+                type: 'datetime'
+			});
+
+			element.on('tab(pintuan_tab)', function () {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: {
+						'status': this.getAttribute('lay-id')
+					}
+				});
+			});
+
+			table = new Table({
+				elem: '#pintuan_list',
+				url: ns.url("pintuan://shop/pintuan/lists"),
+				cols: [
+					[{
+						type: 'checkbox',
+						width: '3%',
+					}, {
+						title: '拼团商品',
+						unresize: 'false',
+						width: '20%',
+						templet: '#goods'
+					}, {
+						title: '商品价格',
+						unresize: 'false',
+						width: '8%',
+						templet: function (data) {
+							return '￥' + data.price;
+						}
+					}, {
+						field:'pintuan_price',
+						title: '拼团价格',
+						unresize: 'false',
+						width: '8%',
+						sort:true,
+						templet: function (data) {
+							return '￥' + data.pintuan_price;
+						}
+					}, {
+						field: 'group_num',
+						title: '开团组数',
+						unresize: 'false',
+						sort:true,
+						width: '8%'
+					}, {
+						field: 'success_group_num',
+						title: '成团组数',
+						unresize: 'false',
+						sort:true,
+						width: '8%'
+					}, {
+						field: 'order_num',
+						title: '购买人数',
+						unresize: 'false',
+						sort:true,
+						width: '8%'
+					}, {
+						title: '活动时间',
+						unresize: 'false',
+						width: '15%',
+						templet: '#time'
+					}, {
+						title: '状态',
+						unresize: 'false',
+						width: '8%',
+						templet: '#status'
+					}, {
+						title: '操作',
+						toolbar: '#operation',
+						unresize: 'false',
+						align:'right'
+					}]
+				],
+				toolbar: '#toolbarOperation',
+			});
+
+			table.on("sort",function (obj) {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: {
+						order:obj.field,
+						sort:obj.type
+					}
+				});
+			});
+
+			// 监听工具栏操作
+			table.toolbar(function (obj) {
+				var data = obj.data;
+				switch (obj.event) {
+					case 'delete':
+						deletePintuanAll(data)
+						break;
+					case 'invalid':
+						invalidPintuanAll(data)
+						break;
+				}
+			})
+
+			//批量关闭
+			function invalidPintuanAll(data){
+				if(data.length <= 0) return;
+				var pintuanIdAll = [];
+				for (var i in data){
+					pintuanIdAll.push(data[i].pintuan_id);
+				}
+
+				layer.confirm('确定要关闭拼团活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("pintuan://shop/pintuan/invalidAll"),
+						data: {
+							pintuan_id: pintuanIdAll
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							table.reload();
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			//批量删除
+			function deletePintuanAll(data){
+				if(data.length <= 0) return;
+				var pintuanIdAll = [];
+				for (var i in data){
+					pintuanIdAll.push(data[i].pintuan_id);
+				}
+				layer.confirm('确定要删除拼团活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("pintuan://shop/pintuan/deleteAll"),
+						data: {
+							pintuan_id: pintuanIdAll
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							table.reload({
+								page: {
+									curr: 1
+								},
+							});
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			/**
+			 * 搜索功能
+			 */
+			form.on('submit(search)', function (data) {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: data.field
+				});
+			});
+
+			/**
+			 * 监听工具栏操作
+			 */
+			table.tool(function (obj) {
+				var data = obj.data;
+				switch (obj.event) {
+					case 'edit': //编辑
+						location.hash = ns.hash("pintuan://shop/pintuan/edit", {"pintuan_id": data.pintuan_id});
+						break;
+					case 'detail': //详情
+						location.hash = ns.hash("pintuan://shop/pintuan/detail", {"pintuan_id": data.pintuan_id});
+						break;
+					case 'team': //开团团队
+						location.hash = ns.hash("pintuan://shop/pintuan/group", {"pintuan_id": data.pintuan_id});
+						break;
+					case 'delete': //删除
+						deletePintuan(data.pintuan_id);
+						break;
+					case 'select': //推广
+						pintuanUrl(data);
+						break;
+					case 'invalid': //使失效
+						invalidPintuan(data.pintuan_id);
+						break;
+				}
+			});
+
+			/**
+			 * 删除
+			 */
+			function deletePintuan(pintuan_id) {
+				layer.confirm('确定要删除该拼团活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("pintuan://shop/pintuan/delete"),
+						data: {
+							pintuan_id: pintuan_id
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							if (res.code == 0) {
+								table.reload();
+							}
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			//使失效
+			function invalidPintuan(pintuan_id) {
+
+				layer.confirm('确定要关闭拼团活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("pintuan://shop/pintuan/invalid"),
+						data: {
+							pintuan_id: pintuan_id
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							if (res.code == 0) {
+							    table.reload({
+							        page: {
+							            curr: 1
+							        },
+							    });
+							}
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			function pintuanUrl(data){
+				new PromoteShow({
+					url:ns.url("pintuan://shop/pintuan/pintuanUrl"),
+					param:{pintuan_id:data.pintuan_id},
+				})
+			}
+		});
+
+	});
+
+	function add() {
+		location.hash = ns.hash("pintuan://shop/pintuan/add");
+	}
+</script>

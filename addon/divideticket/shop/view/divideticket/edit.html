@@ -1,0 +1,643 @@
+<style>
+    .goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" value="{$coupon_info.name}" lay-verify="required|len" class="layui-input len-long" autocomplete="off" maxlength="40">
+        </div>
+        <div class="word-aux">
+            <p>活动名称最多为25个字符</p>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>活动内容：</label>
+        <div class="layui-input-block">
+            <div class="layui-input-inline len-short">
+                <input type="number" name="divide_num" value="{$coupon_info.divide_num}" placeholder="" autocomplete="off" class="layui-input len-short" lay-verify="required|count"  {if $coupon_info.status == 1}disabled {/if}>
+            </div>
+            <div class="layui-form-mid">名好友，瓜分</div>
+            <div class="layui-input-inline len-short">
+                <input type="number" name="money" value="{$coupon_info.money}" placeholder="" autocomplete="off" class="layui-input len-short" lay-verify="required|money"  {if $coupon_info.status == 1}disabled {/if}>
+            </div>
+            <div class="layui-form-mid">元</div>
+        </div>
+        <div class="word-aux">
+            <p>瓜分人数建议5人以下，超过5人存在被微信封禁的风险。</p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>瓜分券总量：</label>
+        <div class="layui-input-block">
+            <div class="layui-input-inline">
+                <input type="number" name="inventory" value="{$coupon_info.inventory}" lay-verify="required|grantcount" autocomplete="off" class="layui-input len-short">
+            </div>
+            <span class="layui-form-mid">张</span>
+        </div>
+        <div class="word-aux">
+            <p>修改总量时只能增加不能减少，请谨慎设置</p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>瓜分有效期：</label>
+        <div class="layui-input-block">
+            <div class="layui-input-inline">
+                <input type="number" name="divide_time" value="{$coupon_info.divide_time}" lay-verify="required|divide_time" autocomplete="off" class="layui-input len-short">
+            </div>
+            <span class="layui-form-mid">小时</span>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>活动开始时间：</label>
+        <div class="layui-input-block len-mid">
+            <input type="text" class="layui-input" value="{:date('Y-m-d H:i:s',$coupon_info.start_time)}" name="start_time" lay-verify="required" id="start_time" autocomplete="off" readonly {if $coupon_info.status == 1}disabled {/if} >
+            <i class="iconrili iconfont calendar"></i>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>活动结束时间：</label>
+        <div class="layui-input-block len-mid end_time">
+            <input type="text" class="layui-input" value="{:date('Y-m-d H:i:s',$coupon_info.end_time)}" name="end_time" lay-verify="required|time|overtime" id="end_time" autocomplete="off" readonly>
+            <i class="iconrili iconfont calendar"></i>
+        </div>
+        <div class="word-aux">
+            <p>结束时间不能小于开始时间，也不能小于当前时间</p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>满多少元可以使用：</label>
+        <div class="layui-input-block">
+            <div class="layui-input-inline">
+                <input type="number" name="at_least" value="{$coupon_info.at_least}" min="0" lay-verify="required|number|money" autocomplete="off" class="layui-input len-short">
+            </div>
+            <span class="layui-form-mid">元</span>
+        </div>
+        <div class="word-aux">
+            <p>价格不能小于0，无门槛请设为0</p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>是否模拟好友：</label>
+        <div class="layui-input-block">
+            <input type="radio" name="is_simulation" value="1" title="是" {if $coupon_info.is_simulation==1} checked {/if}>
+            <input type="radio" name="is_simulation" value="0" title="否" {if $coupon_info.is_simulation==0} checked {/if}>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>仅新人参与限制：</label>
+        <div class="layui-input-block">
+            <input type="radio" name="is_new" value="1" title="是" {if $coupon_info.is_new==1} checked {/if}>
+            <input type="radio" name="is_new" value="0" title="否" {if $coupon_info.is_new==0} checked {/if}>
+        </div>
+        <div class="word-aux">
+            <p>开启后，每人只能参与一次</p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>瓜分方式：</label>
+        <div class="layui-input-block">
+            <input type="radio" name="divide_type" value="0" title="固定金额" {if $coupon_info.divide_type==0} checked {/if}>
+            <input type="radio" name="divide_type" value="1" title="随机金额" {if $coupon_info.divide_type==1} checked {/if}>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">优惠券图片：</label>
+        <div class="layui-input-block img-upload">
+            <div class="upload-img-block">
+                <div class="upload-img-box {notempty name=" $coupon_info['image']"}hover{/notempty}">
+                <div class="upload-default " id="couponImg">
+                    {if condition="$coupon_info.image"}
+                    <div id="preview_couponImg" class="preview_img">
+                        <img layer-src src="{:img($coupon_info.image)}" class="img_prev" />
+                    </div>
+                    {else/}
+                    <div class="upload">
+                        <i class="iconfont iconshangchuan"></i>
+                        <p>点击上传</p>
+                    </div>
+                    {/if}
+                </div>
+                <div class="operation">
+                    <div>
+                        <i title="图片预览" class="iconfont iconreview js-preview" style="margin-right: 20px;"></i>
+                        <i title="删除图片" class="layui-icon layui-icon-delete js-delete"></i>
+                    </div>
+                    <div class="replace_img js-replace">点击替换</div>
+                </div>
+                <input type="hidden" class="layui-input" name="image" value="{$coupon_info.image}" />
+            </div>
+            <!-- 	<p id="couponImg" class=" {if condition="$coupon_info.image"} replace {else/} no-replace{/if}">替换</p>
+            <i class="del {if condition="$coupon_info.image"}show{/if}">x</i> -->
+        </div>
+    </div>
+    <div class="word-aux">
+        <p>建议尺寸：325*95像素，图片上传默认不限制大小</p>
+    </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">有效期类型：</label>
+        <div class="layui-input-block">
+            <input type="radio" name="validity_type" value="0" lay-filter="validity_type"  title="固定时间" {if !empty($coupon_info) && $coupon_info.validity_type == 0}checked{/if}>
+            <input type="radio" name="validity_type" value="1" lay-filter="validity_type"  title="领取之日起" {if !empty($coupon_info) && $coupon_info.validity_type == 1}checked{/if}>
+        </div>
+    </div>
+	    <div class="layui-form-item end-time" {if !empty($coupon_info) && $coupon_info.validity_type != 0}style="display: none;"{/if}>
+	        <label class="layui-form-label"></label>
+	        <div class="layui-input-block">
+	            <input type="text" name="validity_end_time" value="{:date('Y-m-d H:i:s',$coupon_info.validity_end_time)}" lay-verify="time|validity_end_time" id="validity_end_time" class="layui-input len-mid" autocomplete="off" readonly>
+	        </div>
+	    </div>
+		<div class="layui-form-item fixed-term" {if !empty($coupon_info) && $coupon_info.validity_type != 1}style="display: none;"{/if}>
+			<label class="layui-form-label">领取之日起：</label>
+			<div class="layui-input-block">
+				<div class="layui-input-inline">
+					<input type="number" min="1" max="365" value="{$coupon_info.fixed_term}" name="fixed_term" lay-verify="days|int" autocomplete="off" class="layui-input len-short">
+				</div>
+				<span class="layui-form-mid">天有效</span>
+			</div>
+			<div class="word-aux">
+				<p>不能小于0，且必须为整数</p>
+			</div>
+		</div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label"><span class="required">*</span>活动商品：</label>
+        <div class="layui-input-block">
+            <input type="radio" name="goods_type" lay-filter="goods_type" value="1" title="全部商品参与" {if $coupon_info.goods_type==1} checked {/if}>
+            <input type="radio" name="goods_type" lay-filter="goods_type" value="2" title="指定商品参与" {if $coupon_info.goods_type==2} checked {/if}>
+        </div>
+    </div>
+    
+    {if $coupon_info.goods_type == 1}
+    <div class="layui-form-item goods_list" style="display:none">
+        {else /}
+        <div class="layui-form-item goods_list">
+            {/if}
+            <label class="layui-form-label"></label>
+            <div class="layui-input-block">
+                <table id="selected_goods_list"></table>
+                <button class="layui-btn" onclick="addGoods()">选择商品</button> <span class="goods_num">已选商品（<span id="goods_num" class="text-color">{$coupon_info.goods_list_count}</span>）</span>
+            </div>
+        </div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>活动说明：</label>
+			<div class="layui-input-inline">
+				<textarea name="remark" class="layui-textarea len-long"  lay-verify="required" maxlength="150">{$coupon_info.remark}</textarea>
+			</div>
+		</div>
+        <input type="hidden" name="goods_ids">
+    
+        <div class="form-row">
+            <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+            <button class="layui-btn layui-btn-primary" onclick="backDivideticketList()">返回</button>
+            <a id="couponImage"></a>
+        </div>
+    
+        <input type="hidden" name="site_id" value="{$coupon_info.site_id}" />
+        <input type="hidden" name="coupon_id" value="{$coupon_info.coupon_id}" />
+    </div>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        <a class="layui-btn" onclick="delGoods({{d.goods_id}})">删除</a>
+    </div>
+</script>
+
+<script>
+    var submitRule;
+    var delRule, selectedGoodsId = [],
+        goods_id = [],
+        table;
+    var goods_list = {:json_encode($coupon_info.goods_list, JSON_UNESCAPED_UNICODE)};
+    var inventory = {$coupon_info.inventory};
+    var overtime = {$coupon_info.end_time};
+    var saveData = null;
+    var totalUploadNum = 0;
+    var completeUploadNum = 0;
+    var upload;
+
+    $('input[name="fixed_term"]').change(function () {
+        var time_time = $('input[name="fixed_term"]').val();
+        $('.time-bbb').html('有效期：领取之日起' + time_time + '日内有效');
+    });
+
+    $.each(goods_list, function(index, item) {
+        var id = item.goods_id;
+        selectedGoodsId.push(id);
+        goods_id.push(id);
+    });
+
+    $("input[name='goods_ids']").val(goods_id.toString());
+
+    layui.use(['form', 'laydate', 'form'], function () {
+        var form = layui.form,
+            laydate = layui.laydate,
+            repeat_flag = false; //防重复标识
+        currentDate = new Date();  //当前时间
+        form.render();
+
+        currentDate.setDate(currentDate.getDate() + 10);  //10天后的日期
+
+        var now_time = (new Date()).getTime();
+        var start_time = (new Date($("#start_time").val())).getTime();
+        var end_time = (new Date($("#end_time").val())).getTime();
+        if(start_time > now_time){
+            // 开始时间
+            laydate.render({
+                elem: '#start_time',//指定元素
+                type: 'datetime',
+            });
+        }
+        if( now_time < end_time){
+            //结束时间
+            laydate.render({
+                elem: '#end_time',//指定元素
+                type: 'datetime',
+            });
+        }
+
+        // 时间模块
+        laydate.render({
+            elem: '#validity_end_time', //指定元素
+            type: 'datetime',
+            done: function (value) {
+                $('.time-aaa').html('有效期：' + value);
+            }
+        });
+
+        currentDate.setDate(currentDate.getDate() + 30);   //当前时间+30之后的时间戳
+
+        var date = new Date(currentDate);
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        m = m < 10 ? ('0' + m) : m;
+        var d = date.getDate();
+        d = d < 10 ? ('0' + d) : d;
+        var h = date.getHours();
+        var minute = date.getMinutes();
+        var second = date.getSeconds();
+        minute = minute < 10 ? ('0' + minute) : minute;
+        var time = y + '-' + m + '-' + d + ' ' + h + ':' + minute + ':' + second;
+        $('.time-aaa').html('有效期：' + time);
+        var time_time = $('input[name="fixed_term"]').val();
+        $('.time-bbb').html('有效期：领取之日起' + time_time + '日内有效');
+
+        renderTable(goods_list); // 初始化表格
+
+        //监听活动商品类型
+        form.on('radio(goods_type)', function (data) {
+            var value = data.value;
+
+            if (value == 1) {
+                $(".goods_list").hide();
+                $('.max_price').html('全场商品');
+            }
+            if (value == 2) {
+                $(".goods_list").show();
+                $('.max_price').html('指定商品');
+            }
+        });
+
+        //监听瓜分次数限制
+        form.on('radio(divide_frequency)', function (data) {
+            var value = data.value;
+            if (value == 0) {
+                $('#divide_frequency_limit').hide();
+            }
+        });
+
+        // 监听单选按钮
+        form.on('radio(validity_type)', function (data) {
+            if (data.value == 0) {
+                // $('.end-time').removeClass('layui-hide');
+                // $('.fixed-term').addClass('layui-hide');
+				$('.end-time').show();
+				$('.fixed-term').hide();
+                $('.time-aaa').css('display', 'block');
+                $('.time-bbb').css('display', 'none');
+            } else {
+                // $('.fixed-term').removeClass('layui-hide');
+                // $('.end-time').addClass('layui-hide');
+				$('.end-time').hide();
+				$('.fixed-term').show();
+                $('.time-bbb').css('display', 'block');
+                $('.time-aaa').css('display', 'none');
+            }
+        });
+        /**
+         * 表单验证
+         */
+        form.verify({
+            len: function (value) {
+                if (value.length > 25) {
+                    return "活动名称最多为25个字符!";
+                }
+            },
+            days: function (value) {
+                if (value == '') {
+                    return;
+                }
+                if (value % 1 != 0) {
+                    return '请输入整数';
+                }
+            },
+            number: function (value) {
+                if (value < 0) {
+                    return '请输入大于或等于0的数!'
+                }
+            },
+            int: function (value) {
+                if (value % 1 != 0) {
+                    return '请输入整数!'
+                }
+                if (value < 0) {
+                    return '请输入大于0的数!'
+                }
+            },
+            money: function (value) {
+                var arrMen = value.split(".");
+                var val = 0;
+                if (arrMen.length == 2) {
+                    val = arrMen[1];
+                }
+                if (val.length > 2) {
+                    return '保留小数点后两位'
+                }
+            },
+            validity_end_time: function (value) {
+                var validity_type = $('[name="validity_type"]:checked').val();
+                if (validity_type == 0) {
+                    var now_time = (new Date()).getTime();
+                    var validity_end_time = (new Date(value)).getTime();
+
+                    if (now_time > validity_end_time) {
+                        return '结束时间不能小于当前时间!'
+                    }
+                    var end_time = (new Date($("#end_time").val())).getTime();
+
+                    if(validity_end_time < end_time){
+                        return  '有效期时间不能小于活动结束时间';
+                    }
+                }
+            },
+            time: function (value) {
+                var now_time = (new Date()).getTime();
+                var start_time = (new Date($("#start_time").val())).getTime();
+                var end_time = (new Date(value)).getTime();
+                if (now_time > end_time) {
+                    return '结束时间不能小于当前时间!'
+                }
+                if (start_time > end_time) {
+                    return '结束时间不能小于开始时间!';
+                }
+            },
+            overtime:function(value){
+                var end_time = (new Date(value)).getTime() / 1000;
+                if(end_time < overtime){
+                    return '结束时间不能小于之前设置的时间';
+                }
+            },
+            count: function (value) {
+                if (value % 1 != 0) {
+                    return '请输入整数';
+                }
+                if (value <= 0) {
+                    return '不能小于0';
+                }
+            },
+            grantcount:function (value){
+				if(value<=0){
+					return "瓜分券总量不能小于等于0"
+				}
+				if (value % 1 != 0) {
+				    return '请输入整数';
+				}
+                if(value < inventory){
+                    return '发放不能小于之前发放数量('+inventory+')只可增加';
+                }
+            },
+            divide_time:function (value){
+                if (value > 24) {
+                    return '有效期不能大于24小时';
+                }
+                if(value<=0){
+                	 return '有效期不能小于等于0';
+                }
+                if (value % 1 != 0) {
+                    return '请输入整数';
+                }
+            }
+        });
+
+        upload = new Upload({
+            elem: '#couponImg',
+            auto:false,
+            bindAction:'#couponImage',
+            callback: function(res) {
+                uploadComplete('image', res.data.pic_path);
+            }
+        });
+
+        function uploadComplete(field, pic_path) {
+            saveData.field[field] = pic_path;
+            completeUploadNum += 1;
+            if(completeUploadNum == totalUploadNum){
+                saveFunc();
+            }
+        }
+
+        function saveFunc(){
+            var data = saveData;
+            // 删除图片
+            if (!data.field.image) upload.delete();
+            $.ajax({
+                url: ns.url("divideticket://shop/divideticket/edit"),
+                data: data.field,
+                dataType: 'JSON',
+                type: 'POST',
+                success: function(res) {
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        layer.confirm('编辑成功', {
+                            title: '操作提示',
+                            btn: ['返回列表', '继续编辑'],
+                            yes: function(index, layero) {
+                                location.hash = ns.hash("divideticket://shop/divideticket/lists")
+								layer.close(index);
+                            },
+                            btn2: function(index, layero) {
+                                layer.close(index);
+                            }
+                        });
+                    } else {
+                        layer.msg(res.message);
+                    }
+                }
+            });
+        }
+
+        /**
+         * 监听提交
+         */
+        form.on('submit(save)', function(data) {
+            if (repeat_flag) return;
+            repeat_flag = true;
+            if (data.field.goods_type != 1) {
+                if (data.field.goods_ids == '') {
+                    layer.msg("请选择商品");
+                    return;
+                }
+            }
+            var new_goods_ids = [];
+            goods_list.forEach((item,i)=>{
+                new_goods_ids.push(item.goods_id)
+            });
+            data.field.goods_ids = new_goods_ids.join(',');
+
+            saveData = data;
+            var obj = $("img.img_prev[data-prev='1']");
+            totalUploadNum = obj.length;
+            if(totalUploadNum > 0){
+                obj.each(function(){
+                    var actionId = $(this).attr('data-action-id');
+                    $(actionId).click();
+                })
+            }else{
+                saveFunc();
+            }
+        });
+
+        submitRule = function () {
+            var money = $("#money").val().trim(),
+                discount_money = $("#discount_money").val().trim();
+
+            if (Number(money) == "0" || Number(discount_money) == "0") {
+                layer.msg("金额不能为空！", {icon: 5, anim: 6});
+                return false;
+            }
+            if (Number(money) < 0 || Number(discount_money) < 0) {
+                layer.msg("金额不能小于0！", {icon: 5, anim: 6});
+                return false;
+            }
+            if (Number(money) * 100 % 1 != 0 || Number(discount_money) * 100 % 1 != 0) {
+                layer.msg("金额最多保留小数点后两位！", {icon: 5, anim: 6});
+                return false;
+            }
+
+            for (var i = 0; i < $(".discount-box .discount").length; i++) {
+                var money_num = $(".discount-box .discount").eq(i).find(".money-num").text();
+                if (money == money_num) {
+                    layer.msg("该金额规则已添加，不可重复添加！");
+                    return false;
+                }
+            }
+        };
+
+        delRule = function (obj) {
+            $(obj).parent().parent().remove();
+        };
+
+    });
+
+    // 表格渲染
+    function renderTable(goods_list) {
+        //展示已知数据
+        table = new Table({
+            elem: '#selected_goods_list',
+            page: false,
+            limit: Number.MAX_VALUE,
+            cols: [
+                [{
+                    field: 'goods_name',
+                    title: '商品名称',
+                    unresize: 'false',
+                    width: '50%'
+                }, {
+                    field: 'price',
+                    title: '商品价格(元)',
+                    unresize: 'false',
+                    align: 'right',
+                    width: '20%',
+                    templet: function (data) {
+                        return '￥' + data.price;
+                    }
+                }, {
+                    field: 'goods_stock',
+                    title: '库存',
+                    unresize: 'false',
+                    align: 'center',
+                    width: '20%'
+                }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+				    align:'right'
+                }],
+            ],
+            data: goods_list,
+        });
+    }
+
+    // 删除选中商品
+    function delGoods(id) {
+        var i, j;
+        $.each(goods_list, function (index, item) {
+            var goods_id = item.goods_id;
+
+            if (id == Number(goods_id)) {
+                i = index;
+            }
+        });
+        goods_list.splice(i, 1);
+        renderTable(goods_list);
+
+        $.each(selectedGoodsId, function (index, item) {
+            if (id == Number(item)) {
+                j = index;
+            }
+        });
+        selectedGoodsId.splice(j, 1);
+        goods_id = selectedGoodsId;
+        $("#goods_num").html(goods_id.length);
+        $("input[name='goods_ids']").val(goods_id.toString());
+    }
+
+    /* 商品 */
+    function addGoods() {
+        goodsSelect(function (data) {
+
+            goods_id = [];
+            goods_list = [];
+
+            for (var key in data) {
+                goods_id.push(data[key].goods_id);
+                goods_list.push(data[key]);
+            }
+
+            renderTable(goods_list);
+            $("input[name='goods_ids']").val(goods_id.toString());
+            selectedGoodsId = goods_id;
+            $("#goods_num").html(goods_id.length)
+
+        }, selectedGoodsId, {mode: "spu"});
+    }
+
+    function backDivideticketList() {
+        location.hash = ns.hash("divideticket://shop/divideticket/lists");
+    }
+</script>

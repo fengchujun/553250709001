@@ -1,0 +1,858 @@
+<style>
+	.gift-box{padding: 20px;}
+	.gift-box .layui-form{padding: 0!important;}
+	.form-wrap{margin-top: 0;}
+	.layui-input {display: inline-block;}
+	.forbidden {cursor: not-allowed;}
+	.layui-table-body{max-height: 480px !important;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;}
+	.forbidden{cursor:not-allowed;background-color: #eee;}
+	.prompt-block .prompt-box{
+		top:unset;bottom:30px;left:-85px;
+	}
+	.layui-table-cell{overflow:inherit;}
+	.layui-table-box{overflow:inherit;}
+	.layui-table-header{overflow:inherit;}
+	.prompt-block .prompt-box:before{
+		transform:rotate(-90deg);left:84px;top:104px;
+	}
+	.prompt-block .prompt-box:after{
+		transform:rotate(-90deg);left:84px;top:103px;
+	}
+	.delivery_model{width:20%;display: inline-block;}
+	.layui-input-block{margin-bottom:16px;}
+	.print.delivery_model .layui-anim-upbit{z-index:1000}
+</style>
+
+{if $exchange_info['type'] == 1}
+<!-- 商品 -->
+<div class="exchange-gift content layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">商品图片：</label>
+		<div class="layui-input-block img-upload">
+			<div class="upload-img-block square">
+				<div class="upload-img-box">
+					{if condition="$exchange_info.image"}
+					<img layer-src  src="{:img($exchange_info.image)}" >
+					{else/}
+					<img layer-src src="__STATIC__/img/shape.png" />
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">商品名称：</label>
+		<div class="layui-input-block">
+			<p class="input-text">{$exchange_info.name}</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否上架：</label>
+		<div class="layui-input-block">
+			<p class="input-text len-long"><input id="state" type="checkbox" name="state" lay-skin="switch" {if $exchange_info['state'] == 1}checked {/if} value="1" lay-filter="state"></p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否免邮：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="is_free_shipping" {if $exchange_info['exchange_goods'][0]['is_free_shipping'] == 1}checked {/if} value="1" lay-filter="shipping" class="shipping" lay-skin="switch" >
+		</div>
+	</div>
+
+	<div class="layui-form-item ems_block" style="display:{if $exchange_info['exchange_goods'][0]['is_free_shipping'] == 1}none{else/}block{/if};padding-left:100px;">
+		<div class="layui-input-block">
+			<input type="checkbox" name="delivery_type" title="按照商品设置" lay-skin="primary" lay-filter="delivery_type" class="delivery_type" value="2" {if $exchange_info['exchange_goods'][0]['delivery_type'] == 2}checked {/if}>
+			<div class="word-aux" style="margin-left: 28px;margin-top: 0">
+				<p>如果选择按照商品设置,那么积分商城商品将会根据商品中设置的运费模版进行</p>
+				<p>计算运费</p>
+			</div>
+		</div>
+		<div class="layui-input-block">
+			<input type="checkbox" name="delivery_type" title="固定运费" lay-skin="primary" lay-filter="delivery_type" class="delivery_type" value="0" {if $exchange_info['exchange_goods'][0]['delivery_type'] == 0}checked {/if}>
+			<input class="layui-input len-short print" type="number" style="display:{if $exchange_info['exchange_goods'][0]['delivery_type'] == 0}inline-block{else/}none{/if};" name="delivery_price"  {if $exchange_info['exchange_goods'][0]['delivery_type'] == 0}value="{$exchange_info['exchange_goods'][0]['delivery_price']}"{/if} onblur="checkInput(this)">
+			<div class="word-aux" style="margin-left: 28px;margin-top: 0">
+				<p>如果选择固定运费,积分商城的商品无论购买几件,将会按照设置的固定运费收取,</p>
+				<p>如:固定运费设置为12元,客户兑换A商品时无论一次兑换几件,运费都是12元.</p>
+			</div>
+		</div>
+		<div class="layui-input-block">
+			<input type="checkbox" name="delivery_type" title="运费模版" lay-skin="primary" lay-filter="delivery_type" class="delivery_type layui-form-label" value="1" {if $exchange_info['exchange_goods'][0]['delivery_type'] == 1}checked {/if}>
+			<div class="print delivery_model" style="display:{if $exchange_info['exchange_goods'][0]['delivery_type'] == 1}inline-block{else/}none{/if};">
+				<select name="shipping_template" lay-filter="delivery_model">
+					<option value="0">请选择运费模版</option>
+					{foreach name="$express_template_list" item="vo"}
+					<option value="{$vo['template_id']}" {if $exchange_info['exchange_goods'][0]['shipping_template'] == $vo['template_id']} selected {/if}>{$vo['template_name']}</option>
+					{/foreach}
+				</select>
+			</div>
+			<div class="word-aux" style="margin-left: 28px;margin-top: 0">
+				<p>如果选择运费模版,积分商城的商品将会按照该处选择的运费模版进行单独计算</p>
+				<p>运费,与商品本身设置的是否包邮以及运费模版无关.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">兑换规则：</label>
+		<div class="layui-input-block special-length">
+			<script id="containerG" name="containerG" type="text/plain" style="width:100%;height:500px;"></script>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label"><span class="required">*</span>规格选择：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPointExchangeOrderList()">返回</button>
+	</div>
+
+	<!-- 操作 -->
+	<script type="text/html" id="operation">
+		<div class="table-btn">
+			{{# if (d.is_select == 1){ }}
+			<a class="layui-btn no-participation" >不参与</a>
+			{{# }else{ }}
+			<a class="layui-btn participation" >参与</a>
+			{{# } }}
+		</div>
+	</script>
+
+	<script type="text/html" id="exchangePoint">
+		{{# if (d.is_select == 1){ }}
+		<input type="number" class="layui-input len-input exchange_point expoint" onchange="setSkulist('point', {{d.sku_id}}, this , 'integral')" value="{{d.point ? d.point : 0.00}}" lay-verify="exchange_point" min="0.00"/>
+		{{# }else{ }}
+		<input type="number" class="layui-input len-input exchange_point forbidden" disabled="disabled"  onchange="setSkulist('point', {{d.sku_id}}, this, 'integral')" value="{{d.point ? d.point : 0.00}}" lay-verify="exchange_point" min="0.00"/>
+		{{# } }}
+	</script>
+
+	<script type="text/html" id="exchangeLimit">
+		{{# if (d.is_select == 1){ }}
+		<input type="number" class="layui-input len-input exchange_limit_num expoint" onchange="setSkulist('limit_num', {{d.sku_id}}, this, 'integral')" value="{{d.limit_num ? d.limit_num : 0}}" lay-verify="exchange_point" min="0.00"/>
+		{{# }else{ }}
+		<input type="number" class="layui-input len-input exchange_limit_num forbidden" disabled="disabled" onchange="setSkulist('limit_num', {{d.sku_id}}, this, 'integral')" value="{{d.limit_num ? d.limit_num : 0}}" lay-verify="exchange_point" min="0.00"/>
+		{{# } }}
+	</script>
+
+	<script type="text/html" id="exchangeMoney">
+
+		{{# if (d.is_select == 1){ }}
+		<input type="number" class="layui-input len-input exchange_money" onchange="setSkulist('exchange_price', {{d.sku_id}}, this, 'positiveNumber')" value="{{d.exchange_price ? d.exchange_price : 0.00}}" lay-verify="exchange_money" min="0.00"/>
+		{{# }else{ }}
+		<input type="number" class="layui-input len-input exchange_money forbidden" disabled="disabled"  onchange="setSkulist('exchange_price', {{d.sku_id}}, this, 'positiveNumber')" value="{{d.exchange_price ? d.exchange_price : 0.00}}" lay-verify="exchange_money" min="0.00"/>
+		{{# } }}
+
+	</script>
+	<input type="hidden" name="type" value="1">
+	<input type="hidden" name="id" value="{$exchange_info.id}">
+	<input type="hidden" id="contentG" value="{$exchange_info.rule}" />
+</div>
+{/if}
+
+{if $exchange_info['type'] == 2}
+<!-- 优惠券 -->
+<div class="exchange-coupon content layui-form form-wrap">
+	<div class="layui-form-item">
+	    <label class="layui-form-label">优惠券图片：</label>
+		<div class="layui-input-block img-upload">
+			<div class="upload-img-block square">
+				<div class="upload-img-box">
+					{if condition="$exchange_info.image"}
+					<img layer-src  src="{:img($exchange_info.image)}" id="exchange_type_2_img">
+					{else/}
+					<img layer-src src="__STATIC__/img/shape.png" />
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+	    <label class="layui-form-label">优惠券名称：</label>
+	    <div class="layui-input-block" id="exchange_type_2_name">
+			<p class="input-text">{$exchange_info.name}</p>
+	    </div>
+	</div>
+	
+	{if condition="$exchange_info['coupon_type'] == 'reward'"}
+	<div class="layui-form-item">
+	    <label class="layui-form-label">优惠券面值：</label>
+	    <div class="layui-input-block" id="exchange_type_2_price">
+			<p class="input-text">￥{$exchange_info.market_price}</p>
+	    </div>
+	</div>
+	{elseif condition="$exchange_info['coupon_type'] == 'discount'"}
+	<div class="layui-form-item js-coupon-discount">
+		<label class="layui-form-label">优惠券折扣：</label>
+		<div class="layui-input-block" id="coupon_discount">
+			<p class="input-text text-empty">{$exchange_info.market_price}折</p>
+		</div>
+	</div>
+	{/if}
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>兑换积分：</label>
+		<div class="layui-input-block">
+			<input type="number" name="point" lay-verify="required|required_point" placeholder="请输入所需的兑换积分数" value="{$exchange_info.point}" onchange="detectionNumType(this,'integral')" class="layui-input len-short expoint">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>可兑换数量：</label>
+		<div class="layui-input-block">
+			<input type="number" name="stock" min="0" lay-verify="required|required_coupon_stock" placeholder="可兑换数量" value="{$exchange_info.stock}" onchange="detectionNumType(this,'integral')" class="layui-input len-short stock">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否上架：</label>
+		<div class="layui-input-block">
+			<input id="state" type="checkbox" name="state" lay-skin="switch" {if $exchange_info['state'] == 1}checked {/if} value="1" lay-filter="state">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">兑换规则：</label>
+		<div class="layui-input-block special-length">
+			<script id="container" name="content" type="text/plain" style="width: 800px; height: 300px;"></script>
+		</div>
+	</div>
+	
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPointExchangeOrderList()">返回</button>
+	</div>
+
+	<input type="hidden" name="type" value="2">
+	<input type="hidden" name="id" value="{$exchange_info.id}">
+	<input type="hidden" name="coupon_type_id" value="{$exchange_info.type_id}">
+	<input type="hidden" id="content" value="{$exchange_info.content}" />
+</div>
+{/if}
+
+{if $exchange_info['type'] == 3}
+<!-- 红包 -->
+<div class="exchange-red-packet content layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>红包名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="name" lay-verify="required" placeholder="请输入红包名称" value="{$exchange_info.name}" class="layui-input len-long">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">红包封面：</label>
+		<div class="layui-input-inline img-upload">
+			<div class="upload-img-block icon square">
+				<div class="upload-img-box {if condition="$exchange_info.image"}hover{/if}">
+					<div class="upload-default" id="redPacket">
+						{if condition="$exchange_info.image"}
+							<div id="preview_redPacket" class="preview_img">
+								<img src="{:img($exchange_info.image)}" alt="" class="img_prev">
+							</div>
+						{else/}
+						<div class="upload">
+							<i class="iconfont iconshangchuan"></i>
+							<p>点击上传</p>
+						</div>
+						{/if}
+					</div>
+					<div class="operation">
+						<div>
+							<i title="图片预览" class="iconfont iconreview js-preview" style="margin-right: 20px;"></i>
+							<i title="删除图片" class="layui-icon layui-icon-delete js-delete"></i>
+						</div>
+						
+						<div class="replace_img js-replace">点击替换</div>
+					</div>
+					<input type="hidden" name="image" value="{$exchange_info.image}" />
+				</div>
+
+				<!-- <p id="redPacket" class='{if condition="$exchange_info.image"}replace {else/} no-replace{/if}'>替换</p>
+				<i class="del {if condition="$exchange_info.image"}show{/if}">x</i> -->
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>兑换积分：</label>
+		<div class="layui-input-block">
+			<input type="number" name="point" lay-verify="required|required_point" placeholder="请输入所需的兑换积分数" value="{$exchange_info.point}"  onchange="detectionNumType(this,'integral')" class="layui-input len-short expoint">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>可兑换数量：</label>
+		<div class="layui-input-block">
+			<input type="number" name="stock" min="0" lay-verify="required|required_balance_stock" placeholder="可兑换数量" value="{$exchange_info.stock}" onchange="detectionNumType(this,'integral')" class="layui-input len-short stock">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>余额：</label>
+		<div class="layui-input-block">
+			<input type="number" name="balance" lay-verify="required|required_balance" placeholder="请输入红包余额" value="{$exchange_info.balance}"  onchange="detectionNumType(this,'positiveNumber')" class="layui-input len-short">
+		</div>
+		<p class="word-aux">兑换的红包会以余额的形式发放给指定会员</p>
+	</div>
+	
+    <div class="layui-form-item">
+		<label class="layui-form-label">是否上架：</label>
+		<div class="layui-input-block">
+			<input id="state" type="checkbox" name="state" lay-skin="switch" {if $exchange_info['state'] == 1}checked {/if} value="1" lay-filter="state">
+		</div>
+    </div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">兑换规则：</label>
+		<div class="layui-input-block special-length">
+			<script id="containerT" name="content" type="text/plain" style="height: 300px;"></script>
+		</div>
+	</div>
+	
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPointExchangeOrderList()">返回</button>
+	</div>
+
+	<input type="hidden" name="type" value="3">
+	<input type="hidden" name="id" value="{$exchange_info.id}">
+	<input type="hidden" id="contentT" value="{$exchange_info.content}" />
+</div>
+{/if}
+
+<input type="hidden" id="type" value="{$exchange_info.type}" />
+<a id="redPacketImage"></a>
+
+<script type="text/html" id="toolbarOperation">
+	<button class="layui-btn layui-btn-primary" lay-event="change-number">兑换次数</button>
+	<button class="layui-btn layui-btn-primary" lay-event="goods-integral">所需积分</button>
+	<button class="layui-btn layui-btn-primary" lay-event="goods-price">所需金额</button>
+</script>
+
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/ueditor.config.js?time=20240614"></script>
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/ueditor.all.js?time=20240614"></script>
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/lang/zh-cn/zh-cn.js"></script>
+<script>
+	var _type = $("#type").val();
+	var saveData = null;
+	var totalUploadNum = 0;
+	var completeUploadNum = 0;
+	var upload;
+
+	//实例化富文本
+	var ue, html = '';
+	if (_type == 2) {
+		ue = UE.getEditor('container');
+		ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+			var con = $("#content").val();
+			ue.setContent(con);   //获取html内容，返回: <p>hello</p>
+		});
+	} else if (_type == 3) {
+		ue = UE.getEditor('containerT');
+		ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+			var con = $("#contentT").val();
+			ue.setContent(con);   //获取html内容，返回: <p>hello</p>
+		});
+	} else if(_type == 1){
+		ue = UE.getEditor('containerG');
+		ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+			var con = $("#contentG").val();
+			ue.setContent(con);   //获取html内容，返回: <p>hello</p>
+		});
+	}
+
+	var giftTable, couponTable, form, laytpl,sku_list;
+	{if $exchange_info['type'] == 1}
+		sku_list = {:json_encode($exchange_info.goods_sku, JSON_UNESCAPED_UNICODE)};
+	{/if}
+
+		layui.use(['form', 'laytpl'], function() {
+			form = layui.form;
+			laytpl = layui.laytpl;
+			form.render();
+
+			upload = new Upload({
+				elem: '#redPacket',
+				auto:false,
+				bindAction:'#redPacketImage',
+				callback: function(res) {
+					uploadComplete('image', res.data.pic_path);
+				}
+			});
+
+			renderTable(sku_list);
+
+			//监听兑换方式
+			form.on('radio(pay_type)', function(data){
+				var value = data.value;
+				var html = '';
+				if(value == 1){
+					html = '<input type="number" name="point" min="0" lay-verify="required_point" autocomplete="off" class="layui-input len-short"> 积分' +
+							'&nbsp;&nbsp;+ &nbsp;&nbsp;<input type="number" name="price" min="0" lay-verify="required_money" autocomplete="off" class="layui-input len-short"> 元';
+				}
+				if(value == 0){
+					html = '<input type="number" name="point" min="0"  lay-verify="required_point" autocomplete="off" class="layui-input len-short"> 积分';
+				}
+				$('.pay_price').html(html);
+			});
+
+			/**
+			 * 商品列表搜索
+			 */
+			form.on('submit(gift-search)', function(data) {
+				giftTable.reload({
+					page: {
+						curr: 1
+					},
+					where: data.field
+				});
+			});
+
+			form.on('switch(shipping)', function(data){
+				if(data.elem.checked){
+					$(".ems_block").hide();
+				}else{
+					$(".ems_block").show();
+				}
+			});
+
+			//监听邮费设置
+			form.on('checkbox(delivery_type)', function(data){
+				if(data.elem.checked){
+					$("input[name='delivery_type']").prop("checked", false);
+					$(this).prop("checked", true);
+					form.render('checkbox');
+					$(this).siblings(".print").show();
+					$(this).parent().siblings().children(".print").hide()
+				}else{
+					$(this).siblings(".print").hide();
+				}
+			});
+
+			/**
+			 * 监听表单提交
+			 */
+			form.on('submit(save)', function(data) {
+
+				if (_type == 1) {
+					var goods_list = [];
+
+					for (var i in sku_list){
+						if(sku_list[i]['is_select'] == 1){
+							goods_list.push(sku_list[i]);
+						}
+					}
+					if(goods_list.length == 0){
+						layer.msg('请选择商品', {icon: 5, anim: 6});
+						return false;
+					}
+
+					for (var i in sku_list){
+						if (parseFloat(sku_list[i]['point']) <= 0 && sku_list[i]['is_select'] == 1) {
+							layer.msg('兑换积分不能小于等于0', {icon: 5, anim: 6});
+							return false;
+						}
+					}
+
+					data.field.goods_data = goods_list;
+					ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+						html = ue.getContent();   //获取html内容，返回: <p>hello</p>
+					});
+
+				}else if (_type == 2) {
+					ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+						html = ue.getContent();   //获取html内容，返回: <p>hello</p>
+					});
+				} else if (_type == 3) {
+					ue.ready(function() {   //对编辑器的操作最好在编辑器ready之后再做
+						html = ue.getContent();   //获取html内容，返回: <p>hello</p>
+					});
+				}
+
+				data.field.content = html;
+				//不免邮
+				if(data.field.is_free_shipping==undefined){
+					data.field.is_free_shipping = 0;
+				}
+				if(data.field.is_free_shipping == 0 && data.field.type == 1){
+					data.field.delivery_type = $('[name="delivery_type"]:checked').val();
+					if(data.field.delivery_type==undefined){
+						layer.msg('请选择运费类型', {icon: 5, anim: 6});
+						return false;
+					}else if(data.field.delivery_type==0){
+						if(data.field.delivery_price==""){
+							layer.msg('请填写固定邮费', {icon: 5, anim: 6});
+							return false;
+						}
+					}else if(data.field.delivery_type==1){
+						if(data.field.shipping_template<=0){
+							layer.msg('请选择运费模版', {icon: 5, anim: 6});
+							return false;
+						}
+					}
+				}else{
+					data.field.delivery_type = "";
+					data.field.delivery_price = "";
+					data.field.shipping_template = 0;
+				}
+				saveData = data;
+				var obj = $("img.img_prev[data-prev='1']");
+				totalUploadNum = obj.length;
+				if(totalUploadNum > 0){
+					obj.each(function(){
+						var actionId = $(this).attr('data-action-id');
+						$(actionId).click();
+					})
+				}else{
+					saveFunc();
+				}
+			});
+
+			function uploadComplete(field, pic_path) {
+				saveData.field[field] = pic_path;
+				completeUploadNum += 1;
+				if(completeUploadNum == totalUploadNum){
+					saveFunc();
+				}
+			}
+
+			function saveFunc(){
+				var data = saveData;
+				// 删除图片
+				if(!data.field.image) upload.delete();
+
+				$.ajax({
+					url: ns.url("pointexchange://shop/exchange/edit"),
+					data: data.field,
+					dataType: 'JSON',
+					type: 'POST',
+					async: false,
+					success: function(res) {
+						if (res.code == 0) {
+							layer.confirm('编辑成功', {
+								title: '操作提示',
+								btn: ['返回列表', '继续操作'],
+								yes: function(index, layero) {
+									location.hash = ns.hash("pointexchange://shop/exchange/lists")
+									layer.close(index);
+								},
+								btn2: function(index, layero) {
+									listenerHash(); // 刷新页面
+									layer.close(index);
+								}
+							});
+						} else {
+							layer.msg(res.message);
+						}
+					}
+				});
+			}
+
+			form.verify({
+				required_point: function(value) {
+					if (value == "") {
+						return '积分不能为空';
+					}
+					if (Number(value) <= 0){
+						return '积分必须大于0！';
+					}
+				},
+				required_money: function(value) {
+					if (value == "") {
+						return '金额不能为空';
+					}
+					if (Number(value) <= 0){
+						return '价格必须大于0！';
+					}
+				},
+				required_limit: function(value) {
+					if (Number(value) < 1){
+						return '兑换限制不能小于1！';
+					}
+				},
+				required_coupon_stock: function(value) {
+					if (Number(value) <= 0){
+						return '可兑换数量必须大于0！';
+					}
+				},
+				required_balance_stock: function(value) {
+					if (Number(value) <= 0){
+						return '可兑换数量必须大于0！';
+					}
+				},
+				required_balance: function(value) {
+					if (Number(value) <= 0){
+						return '红包余额必须大于0！';
+					}
+				}
+			})
+		});
+
+		function setSelect(status,id) {
+			for (var i = 0; i < sku_list.length; i++){
+				if (sku_list[i].sku_id == parseInt(id)){
+					sku_list[i]['is_select'] = status;
+				}
+			}
+			renderTable(sku_list);
+			return false;
+
+		}
+
+		// 表格渲染
+		function renderTable(sku_list) {
+
+			//展示已知数据
+			table = new Table({
+				elem: '#selected_goods_list',
+				page: false,
+				limit: Number.MAX_VALUE,
+				cols: [
+					[{
+						width: "3%",
+						type: 'checkbox',
+						unresize: 'false'
+					},{
+						field: 'sku_name',
+						title: '商品名称',
+						width: '23%',
+						unresize: 'false',
+						templet: function(data) {
+							var html = '';
+							html += `
+									<div class="goods-title">
+										<div class="goods-img">
+											<img layer-src src="${data.sku_image ? ns.img(data.sku_image) : ''}" alt="">
+										</div>
+										<p class="multi-line-hiding goods-name" data-goods_id="${data.goods_id}" data-sku_id="${data.sku_id}" title="${data.sku_name}">${data.sku_name}</p>
+									</div>
+								`;
+							return html;
+						}
+					}, {
+						field: 'price',
+						title: '商品价格',
+						unresize: 'false',
+						align: 'left',
+						width: '10%',
+						templet: function(data) {
+							return '<p class="line-hiding" title="'+ data.price +'">￥<span>' + data.price +'</span></p>';
+						}
+					}, {
+						field: 'stock',
+						title: '库存',
+						unresize: 'false',
+						width: '10%',
+						templet: function(data) {
+							return '<p class="stock">' + data.stock +'</p>';
+						}
+					}, {
+						title: '<span title="兑换次数(0为不限次)">兑换次数(0为不限次)</span>',
+						unresize: 'false',
+						width: '14%',
+						templet: '#exchangeLimit'
+					}, {
+						title: '<span title="兑换所需积分">所需积分</span>',
+						unresize: 'false',
+						width: '12%',
+						templet: '#exchangePoint'
+					}, {
+						title: '<span title="兑换所需金额">所需金额</span>',
+						unresize: 'false',
+						width: '12%',
+						templet: '#exchangeMoney'
+					}, {
+						title: '操作',
+						toolbar: '#operation',
+						unresize: 'false',
+						align:'right'
+					}]
+				],
+				data: sku_list,
+				toolbar: '#toolbarOperation'
+			});
+			table.toolbar(function(obj) {
+
+				if (obj.data.length < 1) {
+					layer.msg('请选择要操作的数据');
+					return;
+				}
+				switch (obj.event) {
+					case "change-number":
+						editInput(0,obj);
+						break;
+					case "goods-integral":
+						editInput(1,obj);
+						break;
+					case "goods-price":
+						editInput(2,obj);
+						break;
+				}
+			});
+		}
+		function editInput(textIndex=0,data) {
+			var text = [{
+				name: '兑换次数',
+				value: 'limit_num',
+				type: 'integral',
+			},{
+				name: '所需积分',
+				value: 'point',
+				type: 'integral',
+			},{
+				name: '所需金额',
+				value: 'exchange_price',
+				type: 'positiveNumber',
+			}];
+			layer.open({
+				type: 1,
+				title:"修改"+text[textIndex].name,
+				area:['600px'],
+				btn:["保存","返回"],
+				content: `
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>${text[textIndex].name}：</label>
+				<div class="layui-input-block">
+					<input type="text" name="bargain_edit_input" lay-verify="required" autocomplete="off" onchange="detectionNumType(this,'${text[textIndex].type}')" class="layui-input len-mid" placeholder="请输入${text[textIndex].name}">
+				</div>
+			</div>
+		`,
+				yes: function(index, layero){
+					var val = $("input[name='bargain_edit_input']").val();
+					if (!val){
+						layer.msg("请输入" + text[textIndex].name);
+						return false;
+					}
+					data.data.forEach(function (item,index) {
+						sku_list.forEach(function (skuItem,skuIndex) {
+							if (item.sku_id == skuItem.sku_id){
+								sku_list[skuIndex][text[textIndex].value] = val;
+							}
+						})
+					});
+					renderTable(sku_list);
+					layer.closeAll();
+				}
+			});
+		}
+
+		function setSkulist(type, sku_id, obj, num_type){
+			var value = $(obj).val();
+			//大于零 且 不是小数
+			if (value < 0 && num_type == 'integral')
+				$(obj).val(0);
+			else if (num_type == 'integral')
+				$(obj).val(Math.round(value));
+
+			//大于1 且 不是小数
+			if (value < 1 && num_type == 'positiveInteger')
+				$(obj).val(1);
+			else if (num_type == 'positiveInteger')
+				$(obj).val(Math.round(value));
+			//大于零可以是小数
+			if (num_type == 'positiveNumber') {
+				value = parseFloat(value).toFixed(2);
+				if (value < 0)
+					$(obj).val(0);
+				else
+					$(obj).val(value);
+			}
+			$.each(sku_list, function (i, e) {
+				if(sku_id == e.sku_id){
+					sku_list[i][type] = $(obj).val();
+				}
+			})
+		}
+
+		$("body").off("click",".no-participation").on("click",".no-participation",function(){
+			$(this).text("参与");
+			$(this).parents("tr").find("input").each(function (index,item) {
+				$(item).attr("readonly",true);
+				$(item).attr("disabled",true);
+				$(item).addClass("forbidden");
+				$(item).attr("lay-verify","");
+			});
+
+			// pintuan_price  promotion_price  lay-verify
+			$(this).addClass("participation").removeClass("no-participation");
+			sku_list[$(this).parents("tr").attr("data-index")].is_select = 0;
+		});
+
+		$("body").off("click",".participation").on("click",".participation",function(){
+			$(this).text("不参与");
+			$(this).parents("tr").find("input").each(function (index,item) {
+				$(item).attr("readonly",false);
+				$(item).attr("disabled",false);
+				$(item).removeClass("forbidden");
+				// if($(item).hasClass(".pintuan-price")){
+				// 	$(item).attr("lay-verify","pintuan_price");
+				// }else{
+				// 	$(item).attr("lay-verify","promotion_price");
+				// }
+				// console.log($(item))
+			});
+
+			$(this).removeClass("participation").addClass("no-participation");
+			sku_list[$(this).parents("tr").attr("data-index")].is_select = 1;
+		});
+
+		//返回
+		function backPointExchangeOrderList() {
+			location.hash = ns.hash("pointexchange://shop/exchange/lists");
+		}
+		$("body").off('keyup', '.stock').on('keyup', '.stock', function() {
+			var value = $(this).val();
+			if(value % 1 !== 0){
+				layer.msg("红包数量请输入整数");
+				$(this).val(0);
+			}
+		});
+		
+		$("body").off('keyup', '.expoint').on('keyup', '.expoint', function() {
+			var value = $(this).val() ;
+			if(value % 1 !== 0){
+				layer.msg("兑换积分请输入整数");
+				$(this).val(0);
+			}
+		});
+
+	//检测数据类型
+	function detectionNumType(el, type) {
+        var value = $(el).val();
+        //大于零 且 不是小数
+        if (value < 0 && type == 'integral')
+            $(el).val(0);
+        else if (type == 'integral')
+            $(el).val(Math.round(value));
+
+        //大于1 且 不是小数
+        if (value < 1 && type == 'positiveInteger')
+            $(el).val(1);
+        else if (type == 'positiveInteger')
+            $(el).val(Math.round(value));
+        //大于零可以是小数
+        if (type == 'positiveNumber') {
+            value = parseFloat(value).toFixed(2);
+            if (value < 0)
+                $(el).val(0);
+            else
+                $(el).val(value);
+        }
+    }
+	function checkInput(obj){
+		$(obj).val(Math.abs($(obj).val()));
+	}
+</script>

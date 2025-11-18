@@ -1,0 +1,29 @@
+@CHARSET "UTF-8";
+
+/* 样式：单列 */
+.component-groupbuy .groupbuy-list .row1-of1{}
+.component-groupbuy .groupbuy-list .row1-of1 .item{display: flex;margin-bottom: 10px;padding: 8px;}
+.component-groupbuy .groupbuy-list .row1-of1 .item:last-child{margin-bottom: 0;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .img-wrap {width: 100px;height: 100px;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .img-wrap > img{width: 100%;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .img-wrap .bg{display: none;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content{flex:1;margin-left: 10px;position: relative;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content .goods-name{margin-top: 3px;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content .discount-price{font-weight: bold;font-size: 0;position: absolute;bottom: 3px;left: 0;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content .discount-price .unit{font-size: 12px;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content .discount-price .price{font-size: 16px;}
+.component-groupbuy .groupbuy-list .row1-of1 .item .content button{position: absolute;bottom: 3px;right: 10px;padding: 0 8px;height: 26px;font-size: 12px;line-height: 26px;}
+
+/* 样式：横向滑动 */
+.component-groupbuy .groupbuy-list .horizontal-slide{display: flex;margin: 10px;overflow: hidden;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item {width: 97px;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .img-wrap {width: 97px;height: 97px;overflow: hidden;position: relative;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .img-wrap > img{width: calc(100% + 1px);}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .img-wrap .bg {position: absolute;width: 100%;height: 30px;bottom: 0;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .img-wrap .bg img {width: 100%;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .img-wrap .num {width: 90px;position: absolute;bottom: 5px;padding-left: 10px;font-size: 12px;line-height: 1;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .content {padding: 5px 10px;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .content .discount-price{margin-top: 5px;font-weight: bold;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .content .discount-price .unit{font-size: 12px; height: 16px;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .content .discount-price .price{font-size: 16px;}
+.component-groupbuy .groupbuy-list .horizontal-slide .item .content .original-price {font-size: 12px;line-height: 1;margin-top: 5px;text-decoration: line-through;}

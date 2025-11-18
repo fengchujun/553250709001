@@ -1,0 +1,227 @@
+<!-- 搜索框 -->
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="add()">添加公告</button>
+	<div class="layui-form">
+		<div class="layui-input-inline">
+			<input type="text" name="search_text" placeholder="请输入公告名称" autocomplete="off" class="layui-input">
+			<button type="button" class="layui-btn layui-btn-primary" lay-filter="search" lay-submit>
+				<i class="layui-icon">&#xe615;</i>
+			</button>
+		</div>
+	</div>
+</div>
+
+<!-- 列表 -->
+<table id="notice_list" lay-filter="notice_list"></table>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" lay-event="promote">推广</a>
+		<a class="layui-btn" lay-event="basic">查看</a>
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		{{# if(!d.is_top){ }}
+			<a class="layui-btn" lay-event="setTop">置顶</a>
+		{{# } }}
+		<a class="layui-btn" lay-event="del">删除</a>
+	</div>
+</script>
+
+<!-- 编辑排序 -->
+<script type="text/html" id="editSort">
+	<input name="sort" type="number" onchange="editSort({{d.id}}, this)" value="{{d.sort}}" class="layui-input edit-sort len-short">
+</script>
+
+<!-- 推广 -->
+{include file="app/shop/view/component/promote_show.html"}
+
+<script type="text/javascript">
+	var form,laytpl,table,repeat_flag = false; //防重复标识
+	layui.use(['form','laytpl'], function() {
+		form = layui.form;
+		laytpl = layui.laytpl;
+		form.render();
+
+		table = new Table({
+			elem: '#notice_list',
+			url: ns.url("shop/notice/index"),
+			cols: [
+				[{
+					width: '35%',
+					title: '公告标题',
+					unresize: 'false',
+					templet: function(data) {
+						var html = data.is_top ? '<span class="required">[ 置顶 ] </span>' : '';
+						html += data.title;
+						return html;
+					}
+				},
+				// 	{
+				// 	field:'receiving_name',
+				// 	width: '20%',
+				// 	title: '接收范围',
+				// 	unresize: 'false',
+				// },
+					{
+					width: '25%',
+					title: '创建时间',
+					unresize: 'false',
+					templet: function(data) {
+						return ns.time_to_date(data.create_time);
+					}
+				}, {
+                    field: 'sort',
+                    unresize:'false',
+                    title: '排序',
+                    sort : true,
+                    width: '20%',
+                    templet: '#editSort'
+                }, {
+					title: '操作',
+					unresize: 'false',
+					templet: '#operation',
+                    align : 'right'
+				}
+			]]
+		});
+
+		table.tool(function(obj) {
+			var data = obj.data;
+			var event = obj.event;
+			switch (obj.event) {
+				case 'promote': // 推广
+					promote(data);
+					break;
+				case 'edit': //编辑
+					location.hash = ns.hash("shop/notice/editNotice?id=" + data.id);
+					break;
+				case 'del': //删除
+					deleteNotice(data.id);
+					break;
+				case 'setTop': // 置顶
+					modifySiteNoticeTop(data.id);
+					break;
+				case 'basic':
+					location.hash = ns.hash("shop/notice/detail?id=" + data.id);
+					break;
+			}
+		});
+		/**
+		 * 搜索功能
+		 */
+		form.on('submit(search)', function(data) {
+			table.reload({
+				page: {
+					curr: 1
+				},
+				where: data.field
+			});
+		});
+
+		function deleteNotice(id) {
+
+			if (repeat_flag) return;
+			repeat_flag = true;
+			layer.confirm('确定要删除该公告吗?', function(index) {
+				layer.close(index);
+				$.ajax({
+					type: "post",
+					async: false,
+					url: ns.url("shop/notice/deleteNotice"),
+					data: {
+						'id': id
+					},
+					dataType: "JSON",
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			}, function() {
+					repeat_flag = false;
+					layer.close();
+				}
+			);
+		}
+        table.on("sort",function (obj) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    order:obj.field,
+                    sort:obj.type
+                }
+            });
+        });
+
+		function modifySiteNoticeTop(id) {
+			if (repeat_flag) return;
+			repeat_flag = true;
+			
+			$.ajax({
+				type: "POST",
+				dataType: "JSON",
+				async: false,
+				url: ns.url("shop/notice/modifyNoticeTop"),
+				data: {id},
+				success: function(res) {
+					layer.msg(res.message);
+					repeat_flag = false;
+					if (res.code == 0) {
+						table.reload();
+					}
+				}
+			});
+		}
+	});
+	
+	function add() {
+		location.hash = ns.hash("shop/notice/addNotice");
+	}
+
+    // 监听单元格编辑
+    function editSort(id, event){
+        var data = $(event).val();
+
+        if (data == '') {
+            $(event).val(0);
+            data = 0;
+        }
+
+        if(!new RegExp("^-?[0-9]\\d*$").test(data)){
+            layer.msg("排序号只能是整数");
+            return ;
+        }
+        if(data<0){
+            layer.msg("排序号必须大于0");
+            return ;
+        }
+        $.ajax({
+            type: 'POST',
+            url: ns.url("shop/notice/modifySort"),
+            data: {
+                sort: data,
+                id: id
+            },
+            dataType: 'JSON',
+            success: function(res) {
+                layer.msg(res.message);
+                if(res.code==0){
+                    table.reload();
+                }
+            }
+        });
+    }
+
+	function promote(data){
+		new PromoteShow({
+			url:ns.url("shop/notice/promote"),
+			param:{notice_id:data.id},
+		})
+	}
+</script>

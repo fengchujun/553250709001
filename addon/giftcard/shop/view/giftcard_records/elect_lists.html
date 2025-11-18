@@ -1,0 +1,242 @@
+<style>
+    .rights_interests {
+        line-height: 13px;
+    }
+    .layui-form-item{
+        display: flex;
+        justify-content: flex-end;
+    }
+    .search-input{
+        margin-right: 0 !important;
+    }
+	.layui-table-view .layui-table td, .layui-table-view .layui-table th{
+		text-align: center;
+	}
+	.table-title .title-pic{
+		width: 100% !important;
+		height: 100%;
+		margin-left: 0;
+	}
+</style>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-content layui-form layui-show">
+        <div class="layui-form-item">
+            <div class="layui-inline search-input">
+                <label class="layui-form-label">卡编号：</label>
+                <div class="layui-input-inline search-input">
+                    <input type="text" name="search_text" placeholder="请输入卡编号" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <div class="layui-input-inline">
+                    <!-- <button class="layui-btn" lay-submit lay-filter="search">筛选</button> -->
+                    <button type="button" class="layui-btn layui-btn-primary" lay-filter="search" lay-submit>
+                        <i class="layui-icon">&#xe615;</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="layui-tab table-tab" lay-filter="manjian_tab">
+    <div class="layui-tab-content">
+        <!-- 列表 -->
+        <table id="poster_list" lay-filter="poster_list"></table>
+    </div>
+</div>
+<script type="text/html" id="time">
+    <div class='rights_interests'>
+        {{# if(d.create_time){ }}
+        <p style="margin-top: 13px;"><span>生成时间：{{ns.time_to_date(d.create_time)}}</span></p><br/>
+        {{# } }}
+        {{# if(d.use_time){ }}
+        <p><span>使用时间：{{ns.time_to_date(d.use_time)}}</span></p>
+        {{# } }}
+    </div>
+</script>
+<script type="text/html" id="rights_interests">
+    <div class='rights_interests'>
+        <p style="margin-top: 13px;"><span>积分：{{d.point}}</span></p><br>
+        <p><span>余额：{{d.balance}}</span></p><br>
+    </div>
+</script>
+<script type="text/html" id="poster_status">
+    <div class='table-title'>
+        {{# if(d.elect_status == 0){ }}
+        <div class='title-pic text-color'>待使用</div>
+        {{# }else if(d.elect_status == 1){ }}
+        <div class='title-pic '>已使用</div>
+        {{# }else if(d.elect_status == 2){ }}
+        <div class='title-pic'>已过期</div>
+        {{# } }}
+    </div>
+</script>
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        {{# if(d.entity_status==0){ }}
+        <a class="layui-btn" lay-event="start">激活</a>
+        <a class="layui-btn" lay-event="close">作废</a>
+        {{# }else if(d.entity_status==1){ }}
+        <a class="layui-btn" lay-event="close">作废</a>
+        {{# } }}
+    </div>
+</script>
+
+<script>
+    var laytpl;
+    var id = {:input('id', 0)};
+    layui.use(['form', 'laytpl'], function () {
+        var table,
+            form = layui.form,
+            repeat_flag = false; //防重复标识
+        form.render();
+
+        laytpl = layui.laytpl;
+        table = new Table({
+            elem: '#poster_list',
+            url: ns.url("giftcard://shop/giftcard/electlist"),
+            where: {
+                id: id
+            },
+            cols: [
+                [{
+                    field: 'LAY_INDEX',
+                    title: '序号',
+                    unresize: 'false',
+                    width: '7%',
+                    templet: function (data) {
+                        return data.LAY_INDEX;
+                    }
+                }, {
+                        field: 'number',
+                        title: '卡编号',
+                        unresize: 'false',
+                        width: '10%',
+                    }, {
+                    field: 'username',
+                    title: '使用人',
+                    unresize: 'false',
+                    width: '12%',
+                }, {
+                    title: '兑换权益',
+                    unresize: 'false',
+                    width: '10%',
+                    templet: '#rights_interests'
+                }, {
+                    title: '时间',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: '#time'
+                }, {
+                    field: 'status',
+                    title: '状态',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: '#poster_status'
+                },]
+            ]
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'close': //关闭
+                    close(data.id);
+                    break;
+                case 'start': //启用
+                    start(data.id);
+                    break;
+            }
+        });
+
+        /**
+         * 关闭
+         */
+        function close(id) {
+            if (repeat_flag) return false;
+            repeat_flag = true;
+            layer.confirm('确定作废吗?', {
+                btn: ['确定', '取消'] //按钮
+                , cancel: function (index, layero) {
+                    repeat_flag = false;
+					layer.close(index);
+                }
+            }, function (index) {
+				layer.close(index);
+                $.ajax({
+                    url: ns.url("giftcard://shop/giftcard/editrecordstatus"),
+                    data: {
+                        id: id, entity_status: 2
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function (res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                }, function (index) {
+                    repeat_flag = false;
+					layer.close(index);
+                });
+            });
+        }
+
+        /**
+         * 开启
+         */
+        function start(id) {
+            if (repeat_flag) return false;
+            repeat_flag = true;
+
+            layer.confirm('确定激活吗?', {
+                btn: ['确定', '取消'] //按钮
+                , cancel: function (index, layero) {
+                    repeat_flag = false;
+					layer.close(index);
+                }
+            }, function (index) {
+				layer.close(index);
+                $.ajax({
+                    url: ns.url("giftcard://shop/giftcard/editrecordstatus"),
+                    data: {
+                        id: id, entity_status: 1
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function (res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function (index) {
+                repeat_flag = false;
+				layer.close(index);
+            });
+        }
+
+        form.on('submit(search)', function (data) {
+            table.reload({
+                page: {
+                    curr: 1,
+                    id: id
+                },
+                where: data.field
+            });
+        });
+    });
+
+    function add() {
+        location.hash = ns.hash("giftcard://shop/giftcard/addgiftcard");
+    }
+</script>

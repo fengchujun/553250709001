@@ -1,0 +1,390 @@
+<style>
+    .layui-card-body .content{width: 33.3%;}
+    .layui-card-body .bottom-title{color: #909399;font-size: 14px;margin-top: 5px;}
+    .table-bottom .layui-table-page{top: 0;position: static;}
+    .table-tab .layui-tab-content{margin-bottom: 0;}
+    .layui-layout-admin .screen{margin-bottom: 15px;}
+    .align-center {text-align: center!important;}
+    .layui-table td, .layui-table th {padding: 15px}
+</style>
+
+<div class="layui-card card-common card-brief panel-content">
+    <div class="layui-card-header simple">
+        <span class="card-title">积分概况</span>
+    </div>
+    <div class="layui-card-body">
+        <div class="content">
+            <p class="title">可用积分 <a href="{:href_url('shop/memberaccount/point')}" class="text-color">明细</a></p>
+            <p class="money">{$total_usable_point}</p>
+        </div>
+        <div class="content">
+            <p class="title">累计发放积分 <a href="{:href_url('shop/memberaccount/point')}" class="text-color">明细</a></p>
+            <p class="money">{$grant_point}</p>
+        </div>
+        <div class="content">
+            <p class="title">累计使用积分 <a href="{:href_url('shop/memberaccount/point')}" class="text-color">明细</a></p>
+            <p class="money">{$consume_point}</p>
+        </div>
+    </div>
+</div>
+
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header simple">
+        <span class="card-title">积分规则</span>
+    </div>
+    <div class="layui-card-body" style="padding: 10px 25px!important;">
+        <table class="layui-table" lay-skin="nob">
+            <colgroup>
+                <col width="20%">
+                <col width="50%">
+                <col width="15%">
+                <col width="15%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>规则名称</th>
+                    <th>规则详情</th>
+                    <th>更新时间</th>
+                    <th class="align-center">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {foreach name="$rule" item="vo"}
+                <tr>
+                    <td>{$vo.title}</td>
+                    <td>{$vo.content}</td>
+                    <td>{if $vo.update_time}{:time_to_date($vo.update_time)}{else/}-{/if}</td>
+                    <td class="align-center"><a href="{:href_url($vo.url)}" class="text-color" target="_blank">查看</a></td>
+                </tr>
+                {/foreach}
+            <tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header simple">
+        <span class="card-title">积分操作</span>
+    </div>
+    <div class="layui-card-body" style="padding: 10px 25px!important;">
+        <button class="layui-btn" onclick="clearpoint()">积分清零</button>
+        <button class="layui-btn" onclick="reset()">积分重置</button>
+    </div>
+</div>
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header simple">
+        <span class="card-title">积分任务</span>
+    </div>
+    <div class="layui-card-body" style="padding: 10px 25px!important;">
+        <span id="point_task_config_desc"></span>
+        <a class="text-color" onclick="pointTaskConfig()" href="javascript:;">设置</a>
+    </div>
+</div>
+
+<script id="clear_html" type="text/html">
+    <div class="layui-form member-form" id="reset_label" lay-filter="form">
+        <div class="layui-form-item">
+            <label class="layui-form-label sm">说明：</label>
+            <div class="layui-input-block">
+                <textarea name="remark" class="layui-textarea len-long" maxlength="150"></textarea>
+            </div>
+            <div class="word-aux sm"><p>积分清零后会将会员现有的积分全部清零,请谨慎操作</p></div>
+        </div>
+        <div class="form-row sm">
+            <button class="layui-btn" lay-submit lay-filter='clear_bth'>确定</button>
+            <button class="layui-btn layui-btn-primary" lay-submit lay-filter='clear_close_bth'>取消</button>
+        </div>
+    </div>
+</script>
+
+<script id="point_task_config" type="text/html">
+    <div class="layui-form member-form" lay-filter="form">
+        <div class="layui-form-item">
+            <label class="layui-form-label sm">任务状态：</label>
+            <div class="layui-input-block">
+                <input type="radio" name="status" value="1" title="开启" {{# if(d.status == 1){ }} checked {{# } }} lay-filter="status">
+                <input type="radio" name="status" value="0" title="关闭" {{# if(d.status == 0){ }} checked {{# } }} lay-filter="status">
+            </div>
+        </div>
+        <div id="point_status_on" {{# if(d.status == 0){ }}style="display:none;"{{# } }}>
+            <div class="layui-form-item">
+                <label class="layui-form-label sm">任务类型：</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="type" value="clear" title="清零" {{# if(d.type == 'clear'){ }} checked {{# } }}>
+                    <input type="radio" name="type" value="reset" title="重置" {{# if(d.type == 'reset'){ }} checked {{# } }}>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label sm">任务时间：</label>
+                <div class="layui-input-block">
+                    <div class="layui-input-inline">
+                        <input type="hidden" name="time_type" value="1"/>
+                        每年
+                    </div>
+                    <div class="layui-input-inline len-short">
+                        <select name="month" lay-filter="month1">
+                            {{# d.month_arr.forEach((item)=>{ }}
+                            <option value="{{item.id}}" {{# if(d.month == item.id){ }}selected{{# } }}>{{item.name}}</option>
+                            {{# }) }}
+                        </select>
+                    </div>
+                    <div class="layui-input-inline len-short">
+                        <select name="day">
+                            {{# d.day_arr.forEach((item)=>{ }}
+                            <option value="{{item.id}}" {{# if(d.day == item.id){ }}selected{{# } }}>{{item.name}}</option>
+                            {{# }) }}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row sm">
+            <button class="layui-btn" lay-submit lay-filter='point_task_config_save'>确定</button>
+            <button class="layui-btn layui-btn-primary" lay-filter='point_task_config_cancel'>取消</button>
+        </div>
+    </div>
+</script>
+
+<script>
+    var form, laydate, laytpl;
+    layui.use(['laydate','form', 'element', 'laytpl'], function(){
+        form = layui.form;
+        laydate = layui.laydate;
+        laytpl = layui.laytpl;
+    });
+
+    var clear_tag = false;
+    var clear_index;
+    function clearpoint(){
+
+        laytpl($("#clear_html").html()).render([], function(html) {
+            clear_index = layer.open({
+                title: '积分清零',
+                skin: 'layer-tips-class',
+                type: 1,
+                area: ['600px'],
+                content: html,
+                success: function(){
+                    form.on('submit(clear_bth)', function(obj) {
+                        var field = obj.field;
+                        if (clear_tag) return;
+                        clear_tag = true;
+                        $.ajax({
+                            type: 'POST',
+                            url: ns.url("shop/memberaccount/pointclear"),
+                            dataType: 'JSON',
+                            data: field,
+                            success: function(res) {
+                                clear_tag = false;
+                                layer.msg(res.message);
+                                if (res.code >= 0) {
+                                    listenerHash(); // 刷新页面
+                                    layer.closeAll();
+                                }
+                            }
+                        });
+
+                    });
+                    form.on('submit(clear_close_bth)', function(obj) {
+                        clear_tag = false;
+                        layer.close(clear_index);
+                    })
+                }
+            });
+        });
+        form.render();
+    }
+
+    var reset_tag = false;
+
+    function reset() {
+        if (reset_tag) return;
+        reset_tag = true;
+        layer.confirm('您确定要将会员现有的积分全部重置吗(重置后会员的积分以及积分记录全都会被删除)？', {
+            btn: ['确定', '取消'] //按钮
+        }, function (index) {
+            layer.close(index);
+            $.ajax({
+                type: 'POST',
+                url: ns.url("shop/memberaccount/pointreset"),
+                dataType: 'JSON',
+                success: function (res) {
+                    reset_tag = false;
+                    layer.msg(res.message);
+                    if (res.code >= 0) {
+                        listenerHash(); // 刷新页面
+                    }
+                }
+            });
+        }, function () {
+            reset_tag = false;
+            layer.closeAll();
+        });
+    }
+
+    //积分任务设置
+    var point_task_config = {:json_encode($point_task_config)};
+    var task_index = null;
+    function pointTaskConfigDesc(){
+        var desc = '';
+        if(point_task_config['status'] == 0){
+            desc += '无任务';
+        }else{
+            switch(Number(point_task_config['time_type'])){
+                case 1:
+                    var time_arr = point_task_config['time'].split('/');
+                    var month = time_arr[0];
+                    var day = time_arr[1];
+                    desc += '每年'+month+'月'+day+'日';
+                    break;
+            }
+            switch(point_task_config['type']){
+                case 'clear':
+                    desc += '积分清零';
+                    break;
+                case 'reset':
+                    desc += '积分重置';
+                    break;
+            }
+            desc += '<span style="padding-left:10px;"></span>下次任务时间：'+ns.time_to_date(point_task_config['cron_time'], 'Y-m-d');
+        }
+        $("#point_task_config_desc").html(desc);
+    }
+    pointTaskConfigDesc();
+    function pointTaskConfig(){
+        function _render(callback){
+            _timeToField(point_task_config);
+            point_task_config.month_arr = _getMonth();
+            point_task_config.day_arr = _getDay(point_task_config['month1']);
+            laytpl($("#point_task_config").html()).render(point_task_config, function(html) {
+                callback(html);
+            })
+        }
+
+        function _open(html, callback){
+            task_index = layer.open({
+                title: '积分任务',
+                skin: 'layer-tips-class',
+                type: 1,
+                area: ['600px'],
+                content: html,
+                success: function(){
+                    $(".layui-layer-content").css('height','auto');
+                    form.render();
+                    callback();
+                }
+            })
+        }
+
+        function _getMonth(){
+            var arr = [];
+            for(let i = 1; i <= 12; i ++){
+                arr.push({
+                    id : i,
+                    name : i + '月',
+                })
+            }
+            return arr;
+        }
+
+        function _getDay(month) {
+            month = Number(month);
+            var day_num = 30;
+            if([2].indexOf(month) > -1){
+                day_num = 29;
+            }else if([1,3,5,7,8,10,12].indexOf(month) > -1){
+                day_num = 31;
+            }
+            var arr = [];
+            for(let i = 1; i <= day_num; i ++){
+                arr.push({
+                    id : i,
+                    name : i + '日',
+                })
+            }
+            return arr;
+        }
+
+        function _monthSelect(){
+            form.on('select(month1)', function (data){
+                var month = data.value;
+                var day_arr = _getDay(month);
+                let html = '';
+                day_arr.forEach((item)=>{
+                    html += '<option value="'+ item.id +'">'+ item.name +'</option>';
+                })
+                $("select[name='day1']").html(html);
+                form.render();
+            })
+        }
+
+        function _statusChange(){
+            form.on('radio(status)', function (data){
+                var status = data.value;
+                var dom = $("#point_status_on");
+                if(status == 1){
+                    dom.show();
+                }else{
+                    dom.hide();
+                }
+            })
+        }
+
+        function _timeToField(field){
+            switch(Number(field.time_type)){
+                case 1:
+                    var time_arr = field.time.split('/');
+                    field.month = time_arr[0];
+                    field.day = time_arr[1];
+                    break;
+            }
+        }
+
+        function _fieldToTime(field){
+            switch(Number(field.time_type)){
+                case 1:
+                    field.time = field.month+'/'+field.day;
+                    break;
+            }
+        }
+
+        function _save(){
+            form.on('submit(point_task_config_save)', function(data) {
+                var field = data.field;
+                _fieldToTime(field);
+                if (clear_tag) return;
+                clear_tag = true;
+                $.ajax({
+                    type: 'POST',
+                    url: ns.url("shop/memberaccount/pointtaskconfig"),
+                    dataType: 'JSON',
+                    data: field,
+                    success: function(res) {
+                        clear_tag = false;
+                        layer.msg(res.message);
+                        if (res.code >= 0) {
+                            point_task_config = res.data;
+                            pointTaskConfigDesc();
+                            layer.close(task_index);
+                        }
+                    }
+                });
+            });
+        }
+
+        function _cancel(){
+            $("button[lay-filter='point_task_config_cancel']").on('click', function() {
+                layer.close(task_index);
+            });
+        }
+
+        _render((res)=>{
+            _open(res, ()=>{
+                _statusChange();
+                _monthSelect();
+                _save();
+                _cancel();
+            })
+        })
+    }
+</script>

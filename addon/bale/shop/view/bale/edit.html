@@ -1,0 +1,298 @@
+<style type="text/css">
+.goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="name" lay-verify="required|len" class="layui-input len-long" autocomplete="off" value="{$bale_info.name}" maxlength="40">
+		</div>
+		<div class="word-aux">
+			<p>活动名称最多为25个字符</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>开始时间：</label>
+		<div class="layui-input-block len-mid">
+			<input type="text" class="layui-input" name="start_time" lay-verify="required" id="start_time" autocomplete="off" readonly value="{:date('Y-m-d H:i:s', $bale_info.start_time)}" {if condition="$bale_info.status == 1"}disabled {/if}>
+			<i class=" iconrili iconfont calendar"></i>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>结束时间：</label>
+		<div class="layui-input-block len-mid end_time">
+			<input type="text" class="layui-input" name="end_time" lay-verify="required|time" id="end_time" autocomplete="off" readonly value="{:date('Y-m-d H:i:s', $bale_info.end_time)}" >
+			<i class=" iconrili iconfont calendar"></i>
+		</div>
+		<div class="word-aux">
+			<p>结束时间不能小于开始时间，也不能小于当前时间</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动商品：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list"></table>
+			<button class="layui-btn" onclick="addGoods()">选择商品</button> <span class="goods_num">已选商品（<span id="goods_num" class="text-color">{$bale_info.sku_list_count}</span>）</span>
+			<input type="hidden" name="sku_ids" lay-verify="goods_ids">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动规则：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline len-short">
+				<input type="number" name="price" value="{$bale_info.price}" placeholder="" autocomplete="off" class="layui-input len-short" lay-verify="price">
+			</div>
+			<div class="layui-form-mid">元 任选</div>
+			<div class="layui-input-inline len-short">
+				<input type="number" name="num" value="{$bale_info.num}" placeholder="" autocomplete="off" class="layui-input len-short" lay-verify="num">
+			</div>
+			<div class="layui-form-mid">件</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">运费承担：</label>
+		<div class="layui-input-block">
+			<input type="radio" name="shipping_fee_type" value="0" title="卖家承担运费" {$bale_info.shipping_fee_type == 0 ? 'checked' : ''}>
+			<input type="radio" name="shipping_fee_type" value="1" title="买家承担运费（快递）" {$bale_info.shipping_fee_type == 1 ? 'checked' : ''}>
+		</div>
+	</div>
+
+	<input type="hidden" name="bale_id" value="{$bale_info.bale_id}">
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">提交</button>
+		<button class="layui-btn layui-btn-primary" onclick="backBaleList()">返回</button>
+	</div>
+</div>
+
+<script type="text/javascript">
+var selectedGoodsId = [], sku_id = [], form, laydate, currentDate = new Date(), minDate = "", repeat_flag = false;
+var sku_list = {:json_encode($bale_info.sku_list, JSON_UNESCAPED_UNICODE)};
+
+//初始化商品
+$.each(sku_list, function(index, item) {
+    var id = item.goods_id;
+	var sku = item.sku_id;
+    selectedGoodsId.push(sku);
+    sku_id.push(sku);
+});
+$("input[name='sku_ids']").val(sku_id.toString());
+
+renderTable(sku_list); // 初始化表格
+
+layui.use(['form', 'laydate', 'laytpl'], function() {
+	form = layui.form,
+	laydate = layui.laydate;
+	form.render();
+
+	currentDate.setDate(currentDate.getDate() + 30);   //当前时间+30之后的时间戳
+
+	// 开始时间
+	laydate.render({
+	  	elem: '#start_time' ,//指定元素
+	  	type: 'datetime',
+	});
+	
+	//结束时间
+	laydate.render({
+	  	elem: '#end_time' ,//指定元素
+	  	type: 'datetime'
+	});
+	
+	/**
+	 * 重新渲染结束时间
+	 * */
+	function reRender(){
+		$("#end_time").remove();
+		$(".end_time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class="layui-input len-mid" autocomplete="off">');
+		laydate.render({
+			elem: '#end_time',
+			type: 'datetime',
+			min: minDate
+		});
+	}
+
+	/**
+	 * 表单验证
+	 */
+	form.verify({
+		len: function(value) {
+			if (value.length > 25) {
+				return "活动名称最多为25个字符!";
+			}
+		},
+		time: function(value) {
+			var now_time = (new Date()).getTime();
+			var start_time = (new Date($("#start_time").val())).getTime();
+			var end_time = (new Date(value)).getTime();
+			if (now_time > end_time) {
+				return '结束时间不能小于当前时间!'
+			}
+			if (start_time > end_time) {
+				return '结束时间不能小于开始时间!';
+			}
+		},
+		goods_ids: function(value){
+			if (!/[\S]+/.test(value)) {
+				return '请选择活动商品';
+			}
+		},
+		num: function(value) {
+			if (!/[\S]+/.test(value)) {
+				return '请输入商品件数';
+			}
+			if (value <= 0) {
+				return '商品件数不能小于等于0!';
+			}
+		},
+		price: function(value) {
+			if (!/[\S]+/.test(value)) {
+				return '请输入活动金额';
+			}
+			if (value <= 0) {
+				return '活动金额不能小于等于0!';
+			}
+		}
+	});
+	
+	/**
+	 * 监听提交
+	 */
+	form.on('submit(save)', function(data) {
+    	if (repeat_flag) return;
+		repeat_flag = true;
+
+        data.field.goods_ids = [];
+        sku_list.forEach(function(item){
+            if (jQuery.inArray(item.goods_id, data.field.goods_ids) == -1) {
+                data.field.goods_ids.push(item.goods_id)
+            }
+        });
+        data.field.goods_ids = data.field.goods_ids.toString();
+
+		$.ajax({
+			type: 'POST',
+			url: ns.url("bale://shop/bale/edit"),
+			data: data.field,
+			dataType: 'JSON',
+			success: function (res) {
+				repeat_flag = false;
+				
+				if (res.code == 0) {
+					layer.confirm('编辑成功', {
+						title:'操作提示',
+						btn: ['返回列表', '继续编辑'],
+						yes: function(index, layero) {
+							location.hash = ns.hash("bale://shop/bale/lists")
+							layer.close(index);
+						},
+						btn2: function(index, layero) {
+							layer.close(index);
+						}
+					});
+				} else {
+					layer.msg(res.message);
+				}
+			}
+		});
+
+	});
+});
+
+/**
+ * 添加商品
+ */
+function addGoods(){
+	goodsSelect(function (data) {
+
+		sku_id = [];
+		sku_list = [];
+
+		for (var key in data) {
+			for (var sku in data[key].selected_sku_list) {
+				var item = data[key].selected_sku_list[sku];
+				sku_id.push(item.sku_id);
+				sku_list.push(item);
+			}
+		}
+
+        renderTable(sku_list);
+		$("input[name='sku_ids']").val(sku_id.toString());
+		selectedGoodsId = sku_id;
+		$("#goods_num").html(sku_list.length)
+    }, selectedGoodsId, {mode: "sku", is_virtual: 0});
+}
+
+function delRow(obj,id) {
+    var i, j;
+    $.each(sku_list, function(index, item) {
+        var sku_id = item.sku_id;
+
+        if (id == sku_id) {
+            i = index;
+        }
+    });
+    sku_list.splice(i, 1);
+    renderTable(sku_list);
+
+    $.each(selectedGoodsId, function(index, item) {
+        if (id == item) {
+            j = index;
+        }
+    });
+    selectedGoodsId.splice(j, 1);
+    sku_id = selectedGoodsId;
+	$("#goods_num").html(sku_list.length);
+    $("input[name='sku_ids']").val(sku_id.toString());
+}
+
+function backBaleList() {
+	location.hash = ns.hash("bale://shop/bale/lists");
+}
+
+function renderTable(sku_list) {
+	//展示已知数据
+	table = new Table({
+		elem: '#selected_goods_list',
+		cols: [
+			[{
+				field: 'sku_name',
+				title: '商品名称',
+				unresize: 'false',
+				width: '50%'
+			}, {
+				field: 'price',
+				title: '商品价格(元)', 
+				unresize: 'false',
+				align: 'right',
+				width: '20%',
+				templet: function(data) {
+					return '￥' + data.price;
+				}
+			}, {
+				field: 'stock', 
+				title: '库存', 
+				unresize: 'false',
+				align: 'center',
+				width: '20%'
+			}, {
+				title: '操作',
+				toolbar: '#operation',
+				unresize: 'false',
+				align:'right'
+			}],
+		],
+		data: sku_list,
+	});
+}
+</script>
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" onclick="delRow(this,{{d.sku_id}})">删除</a>
+	</div>
+</script>

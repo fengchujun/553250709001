@@ -1,0 +1,54 @@
+<link rel="stylesheet" type="text/css" href="__STATIC__/ext/layui/extend/cascader/cascader.css"/>
+<style>
+  .goods-category-container {display: inline-block;position: relative;z-index: 10}
+</style>
+<div class="goods-category-container">
+  <input type="text" autocomplete="off" show="false" class="layui-input select-category" placeholder="选择商品分类" readonly />
+  <input type="hidden" name="category_id">
+</div>
+<script>
+var form, layCascader, goodsCategory = [];
+$(function() {
+  layui.use(['form', 'layCascader'], function () {
+    form = layui.form;
+    layCascader = layui.layCascader;
+    form.render();
+    fetchCategory($('.goods-category-container .select-category'), function (value, node) {
+      $('[name="category_id"]').val(value);
+    })
+  });
+});
+
+/**
+ * 渲染分类选择
+ * @param elem
+ * @param callback
+ */
+function fetchCategory(elem, callback){
+  if (!goodsCategory.length) {
+    $.ajax({
+      url : ns.url("shop/goodscategory/lists"),
+      dataType: 'JSON',
+      type: 'POST',
+      async: false,
+      success: function(res) {
+        goodsCategory = res.data;
+      }
+    })
+  }
+  if($('.select-category').length) {
+    var _cascader = layCascader({
+      elem: $('.select-category'),
+      options: goodsCategory,
+      props: {
+        value: 'category_id',
+        label: 'category_name',
+        children: 'child_list'
+      }
+    });
+    _cascader.changeEvent(function (value, node) {
+      typeof callback == 'function' && callback(value, node)
+    });
+  }
+}
+</script>

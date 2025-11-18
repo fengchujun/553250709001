@@ -1,0 +1,143 @@
+<style>
+    .refund-view-list{font-size:14px;line-height:20px;color:#323233;color:var(--theme-stroke-1,#323233)}
+    .refund-view-item {margin-bottom: 10px;}
+    .refund-view-item-label{width:75px; vertical-align: top;}
+    .refund-view-item-content{display:inline-block}
+    .refund-view-list .word-aux{margin-left:74px;}
+</style>
+<!-- 店铺主动退款 -->
+<script type="text/html" id="refund_transfer_html">
+    <div style="padding:10px;">
+        <div class="layui-form refund-transfer-html" id='refund_transfer'lay-filter="refund_transfer">
+            <div class="refund-view-list">
+                <div class="refund-view-item">
+                    <label class="refund-view-item-label">退款金额：</label>
+                    <div class="refund-view-item-content">
+                        <span class="refund-money">￥{{ d.order_goods_info.refund_apply_money }}</span>
+                    </div>
+                </div>
+                <div class="refund-view-item">
+                    <label class="refund-view-item-label">主动退款：</label>
+                    <div class="refund-view-item-content">
+                        <input type='number' class="layui-input" name="shop_active_refund_money" value="{{d.order_goods_info.refund_apply_money}}" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="refund-view-item">
+                    <label class="refund-view-item-label">完成状态：</label>
+                    <div class="refund-view-item-content">
+                        <input type="radio" title="部分退款状态" checked name="refund_status" value="PARTIAL_REFUND">
+                        <input type="radio" title="退款完成状态"  name="refund_status" value="REFUND_COMPLETE">
+                    </div>
+                    <div class="word-aux">
+                        <div>1、如果是退部分金额，退款后可以是部分退款状态或退款完成状态</div>
+                        <div>2、如果是退全部金额，则退款后一定是退款完成状态</div>
+                        <div>3、退款完成才会执行相关业务如核销码失效，卡包失效等操作</div>
+                    </div>
+                </div>
+                <div class="refund-view-item">
+                    <label class="refund-view-item-label">退款方式：</label>
+                    <div class="refund-view-item-content">
+                        <input type="radio" title="原路退款" checked name="shop_active_refund_money_type" value="1">
+                        <input type="radio" title="线下退款"  name="shop_active_refund_money_type" value="2">
+                        <input type="radio" title="退款到余额"  name="shop_active_refund_money_type" value="3">
+                    </div>
+                </div>
+                <div class="refund-view-item">
+                    <label class="refund-view-item-label">退款说明：</label>
+                    <div class="refund-view-item-content">
+                        <textarea name="shop_active_refund_remark" class="layui-textarea len-long" maxlength="150"></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <input type="hidden" name="order_goods_id" value="{{ d.order_goods_info.order_goods_id }}"/>
+            <button class="layui-btn"  lay-submit id="submit_transfer" lay-filter="submit_transfer" style="display:none;">保存</button>
+        </div>
+    </div>
+</script>
+
+<script>
+    var laytpl,form,active_refund_layer;
+    layui.use(['laytpl','form'], function(){
+        laytpl = layui.laytpl;
+        form = layui.form;
+        form.render();
+    });
+
+    // 主动退款
+    function shopActiveRefund(order_goods_id) {
+        $.ajax({
+            url: ns.url("shop/orderrefund/getOrderGoodsRefundInfo"),
+            type: "POST",
+            dataType: "JSON",
+            async: false,
+            data: {order_goods_id: order_goods_id},
+            success: function (res) {
+                if (res.code >= 0) {
+                    var getTpl = $("#refund_transfer_html").html();
+                    var refund_data = res.data;
+                    laytpl(getTpl).render(refund_data, function (html) {
+                        active_refund_layer = layer.open({
+                            type: 1,
+                            shadeClose: true,
+                            shade: 0.3,
+                            offset: 'auto',
+                            scrollbar: true,
+                            fixed: false,
+                            title: "店铺主动退款",
+                            area: ['700px', 'auto'],
+                            btn: ['确认退款', '取消'],
+                            yes: function (index, layero) {
+                                $("#submit_transfer").click();
+                            },
+                            btn2: function (index, layero) {
+                                layer.close(index);
+                            },
+                            content: html,
+                            success: function (layero, index) {
+                                var repeat_flag = false;//防重复标识
+                                form.render();
+
+                                form.on('submit(submit_transfer)', function (data) {
+                                    if(!ns.getRegexp('>=0float2').test(data.field.shop_active_refund_money)){
+                                        layer.msg('请输入正确的退款金额，最多保留两位小数');
+                                        return;
+                                    }
+                                    if(Number(data.field.shop_active_refund_money) > Number(refund_data.order_goods_info.refund_apply_money)){
+                                        layer.msg('主动退款金额不能大于可退款总额');
+                                        return;
+                                    }
+                                    if (repeat_flag) return;
+                                    repeat_flag = true;
+                                    $.ajax({
+                                        url: ns.url("shop/orderrefund/shopActiveRefund"),
+                                        type: "POST",
+                                        dataType: "JSON",
+                                        data: data.field,
+                                        beforeSend: function () {layer_index = layer.load();},
+                                        complete: function () {layer.close(layer_index);},
+                                        success: function (res) {
+                                            layer.msg(res.message);
+                                            if (res.code == 0) {
+                                                layer.close(active_refund_layer);
+                                                reloadList();
+                                            } else {
+                                                repeat_flag = false;
+                                            }
+
+                                        }
+                                    });
+                                    return false;
+                                });
+                            }
+                        });
+                        form.render();
+                    });
+                } else {
+                    layer.msg(res.message);
+                }
+            }
+        });
+
+    }
+</script>

@@ -1,0 +1,121 @@
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>秒杀场次名称：</label>
+		<div class="layui-input-block">
+			<input type="text" id="name" name="name" lay-verify="required" value="{$time_info.name}" autocomplete="off" class="layui-input len-long">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<div class="layui-inline">
+			<label class="layui-form-label"><span class="required">*</span>秒杀时间段：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" id="add_start_time" value="{$time_info.start_hour}:{$time_info.start_minute}:{$time_info.start_second}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<span class="layui-form-mid">-</span>
+					<div class="layui-input-inline">
+						<input type="text" id="add_end_time" value="{$time_info.end_hour}:{$time_info.end_minute}:{$time_info.end_second}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			<div class="word-aux">
+				<p>每个场次的时间段不能重叠</p>
+			</div>
+		</div>
+	</div>
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backSeckillList()">返回</button>
+	</div>
+	<input type="hidden" name="id" value="{$time_info.id}" />
+</div>
+
+<script>
+	layui.use(['form','laydate'], function() {
+		var form = layui.form,
+			laydate = layui.laydate;
+			repeat_flag = false; //防重复标识
+		form.render();
+
+		// 表单提交监听
+		form.on('submit(save)', function(data) {
+			if (repeat_flag) return;
+			repeat_flag = true;
+			data.field.name = $('#name').val();
+			if (!data.field.name) {
+				layer.msg("秒杀场次名称不能为空");
+				return false;
+			}
+			if (!$('#add_start_time').val()) {
+				layer.msg("开始时间不能为空");
+				return false;
+			}
+			if (!$('#add_end_time').val()) {
+				layer.msg("结束时间不能为空");
+				return false;
+			}
+			if($('#add_end_time').val() <= $('#add_start_time').val()){
+				layer.msg("结束时间必须大于开始时间");
+				return false;
+			}
+			data.field.start_hour = $('#add_start_time').val().split(":")[0];
+			data.field.start_minute = $('#add_start_time').val().split(":")[1];
+			data.field.start_second = $('#add_start_time').val().split(":")[2];
+
+			data.field.end_hour = $('#add_end_time').val().split(":")[0];
+			data.field.end_minute = $('#add_end_time').val().split(":")[1];
+			data.field.end_second = $('#add_end_time').val().split(":")[2];
+			$.ajax({
+				url: ns.url("seckill://shop/seckill/edit"),
+				data: data.field,
+				type: "post",
+				dataType: "JSON",
+				success: function(res) {
+					repeat_flag = false;
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title: '操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero) {
+								location.hash = ns.hash("seckill://shop/seckill/lists");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						});
+					} else {
+						layer.msg(res.message);
+					}
+				}
+			});
+		});
+		
+		form.verify({
+			timeHour: function(value) {
+				if (!new RegExp("^0|[1-9]|1[0-9]|2[0-3]$").test(value)) {
+					return '时段范围为0-23，且只能是整数';
+				}
+			},
+			timeMinSend: function(value) {
+				if (!new RegExp("^(?:0|[0-5][0-9]?)$").test(value)) {
+					return '分秒范围为0-59，且只能是整数';
+				}
+			}
+		});
+		laydate.render({
+			elem: '#add_end_time',
+			type: 'time'
+		});
+		laydate.render({
+			elem: '#add_start_time',
+			type: 'time'
+		});
+	});
+
+	function backSeckillList() {
+		location.hash = ns.hash("seckill://shop/seckill/lists");
+	}
+</script>

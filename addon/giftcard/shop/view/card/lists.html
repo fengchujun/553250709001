@@ -1,0 +1,179 @@
+<style>
+    .table-tab .layui-tab-content{margin-top: 10px;}
+    .add-way .add-way-item{display: flex;margin: 8px 0;align-items: center;}
+    .add-way .add-way-item input{margin: 0 10px;}
+    .add-way .add-way-item .layui-form-radio{margin-right: 0;}
+</style>
+
+<div class="screen layui-collapse" lay-filter="card_tab">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">编号名称</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="search_text" placeholder="请输入编号名称" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="layui-tab table-tab" lay-filter="bargain_tab">
+    <ul class="layui-tab-title">
+        <li class="layui-this" data-status="all">全部</li>
+        {foreach $status_list as $k => $v}
+        <li data-status="{$k}">{$v}</li>
+        {/foreach}
+    </ul>
+    <div class="layui-tab-content poster_list">
+        <!-- 列表 -->
+        <table id="poster_list" lay-filter="poster_list"></table>
+    </div>
+</div>
+
+<!-- 操作 -->
+<script type="text/html" id="action">
+    <div class="table-btn">
+        <a class="layui-btn" lay-event="delete">删除</a>
+    </div>
+</script>
+
+<script>
+    var table,form,laytpl,element,repeat_flag,layer_label;
+    var giftcard_id = {$giftcard_id};
+    var import_id = {$import_id};
+    
+    layui.use(['form','laytpl','element'], function () {
+        laytpl = layui.laytpl;
+        form = layui.form;
+        element = layui.element;
+        repeat_flag = false; //防重复标识
+        form.render();
+
+        table = new Table({
+            elem: '#poster_list',
+            url: ns.url("giftcard://shop/card/lists", {'giftcard_id': giftcard_id,'import_id':import_id}),
+            cols: [
+                [{
+                    field: 'card_no',
+                    title: '编号',
+                    unresize: 'false',
+                    width: '20%',
+                },{
+                    field: 'card_cdk',
+                    title: '卡密',
+                    unresize: 'false',
+                    width: '20%',
+                }, {
+                    title: '生成时间',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }, {
+                    field: 'member_nickname',
+                    title: '激活会员',
+                    unresize: 'false',
+                    width: '10%',
+                    templet: function (data) {
+                        return data.member_nickname || '--'
+                    }
+                }, {
+                    field: 'sort',
+                    unresize: 'false',
+                    title: '激活时间',
+                    width: '15%',
+                    templet: function (data) {
+                        if(data.activate_time == 0)
+                            return "--";
+                        else
+                            return ns.time_to_date(data.activate_time);
+                    }
+                }, {
+                    field: 'status_name',
+                    title: '状态',
+                    unresize: 'false',
+                    width: '10%'
+                },{
+                    title: '操作',
+                    toolbar: '#action',
+                    unresize: 'false',
+                    align : 'right'
+                }]
+            ]
+        });
+
+        element.on('tab(bargain_tab)', function () {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    'status': this.getAttribute('data-status')
+                }
+            });
+        });
+
+        /**
+        * 监听工具栏操作
+        */
+        table.tool(function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'delete': //删除
+                    deleteCard(data.card_id);
+                    break;
+            }
+        });
+
+        /**
+        * 删除
+        */
+        function deleteCard(id) {
+            layer.confirm('确定要删除该卡项记录吗?', function (index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("giftcard://shop/card/delete"),
+                    data: {
+                        card_id: id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function (res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload({
+                                page: {
+                                    curr: 1
+                                },
+                            });
+                        }
+                    }
+                });
+            }, function () {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function (data) {
+            table.reload({
+                page: {curr: 1},
+                where: data.field
+            });
+        });
+    });
+</script>

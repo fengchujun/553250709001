@@ -1,0 +1,347 @@
+<style>
+	.layui-form-item .layui-input-inline.end-time{float: none;}
+	.layui-table-body{max-height: 330px !important;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;}
+	.form-wrap {position: relative;}
+	.goods-empty {width: 100%;display: flex;justify-content: center;align-items: center;}
+	.goods_num {padding-left: 20px;}
+</style>
+
+<div class="layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>接龙名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="jielong_name" lay-verify="required" value="{$jielong_info.jielong_name}" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="start_time" name="start_time" value="{:date('Y-m-d H:i:s', $jielong_info.start_time)}" lay-verify="required" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="end_time" name="end_time" value="{:date('Y-m-d H:i:s', $jielong_info.end_time)}" lay-verify="required|etime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>自提时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="take_start_time" name="take_start_time" value="{:date('Y-m-d', $jielong_info.take_start_time)}" lay-verify="required|take_stime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="take_end_time" name="take_end_time" value="{:date('Y-m-d', $jielong_info.take_end_time)}" lay-verify="required|take_etime" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label"><span class="required">*</span>活动说明：</label>
+		<div class="layui-input-inline">
+			<textarea name="desc" class="layui-textarea len-long" lay-verify="required" maxlength="150">{$jielong_info.desc}</textarea>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label">活动商品：</label>
+		<div class="layui-input-block" id="goods">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+			<button class="layui-btn" onclick="addGoods()">添加商品</button> <span class="goods_num">已选商品（<span id="goods_num" class="text-color">{$jielong_info.sku_list_count}</span>）</span>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backJielongList()">返回</button>
+	</div>
+	
+	<input type="hidden" name="jielong_id" value="{$jielong_info.jielong_id}" />
+</div>
+
+<script>
+    var goodsId = {},sku_list = [],status,selectedGoodsId = [];
+	sku_list = {:json_encode($jielong_info.sku_list, JSON_UNESCAPED_UNICODE)};
+	status = {:json_encode($jielong_info.status, JSON_UNESCAPED_UNICODE)};
+	sku_list.forEach(function (item,index) {
+		item.is_delete = item.goods_stock ? 1 : 2;
+	});
+
+    layui.use(['form', 'laydate'], function() {
+        var form = layui.form,
+            laydate = layui.laydate,
+            repeat_flag = false;
+        form.render();
+
+        renderTable(sku_list); // 初始化表格
+
+		if (status == 0) {
+			laydate.render({
+				elem: '#start_time', //指定元素
+				type: 'datetime'
+			});
+			laydate.render({
+				elem: '#end_time', //指定元素
+				type: 'datetime'
+			});
+		}else if (status == 1){
+			laydate.render({
+				elem: '#end_time', //指定元素
+				type: 'datetime'
+			});
+		}
+
+		//提货开始时间
+		laydate.render({
+			elem: '#take_start_time', //指定元素
+			type: 'date',
+		});
+		//提货结束时间
+		laydate.render({
+			elem: '#take_end_time', //指定元素
+			type: 'date',
+		});
+
+        /**
+         * 表单验证
+         */
+        form.verify({
+			etime: function(value) {
+				var now_time = (new Date()).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+				var end_time = (new Date(value)).getTime();
+				if (now_time > end_time) {
+					return '结束时间不能小于当前时间!'
+				}
+				if (start_time > end_time) {
+					return '结束时间不能小于开始时间!';
+				}
+			},
+			take_stime: function(value) {
+				var now_time = (new Date()).getTime();
+				var take_start_time = (new Date($("#take_start_time").val()+' 00:00:00')).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+				if (take_start_time < start_time) {
+					return '自提开始时间不能小于活动开始时间!';
+				}
+			},
+			take_etime: function(value) {
+				var now_time = (new Date()).getTime();
+				var take_start_time = (new Date($("#take_start_time").val()+' 00:00:00')).getTime();
+				var take_end_time = (new Date(value+' 23:59:59')).getTime();
+				if (now_time > take_end_time) {
+					return '自提结束时间不能小于当前时间!'
+				}
+				if (take_start_time > take_end_time) {
+					return '自提结束时间不能小于开始时间!';
+				}
+				var end_time = (new Date($("#end_time").val())).getTime();
+				if (take_end_time < end_time) {
+					return '自提结束时间不能小于活动结束时间!';
+				}
+			},
+        });
+
+        /**
+         * 监听提交
+         */
+        form.on('submit(save)', function(data){
+			var field = data.field;
+			var skuLisArr = [];
+			var goods_ids = [];
+			sku_list.forEach(function(item,index) {
+				var sku_detail = {};
+				sku_detail.goods_id = item.goods_id;
+				sku_detail.is_delete = item.is_delete || 1;
+				skuLisArr.push(sku_detail);
+
+				if (item.is_delete == 2) return false;
+				goods_ids.push(item.goods_id);
+			});
+
+			if (goods_ids.length == 0) {
+				layer.msg("请保留至少一件参与活动商品！", {icon: 5, anim: 6});
+				return;
+			}
+
+			if(field.take_start_time){
+				field.take_start_time = field.take_start_time+' 00:00:00';
+			}
+			if(field.take_end_time){
+				field.take_end_time = field.take_end_time+' 23:59:59';
+			}
+
+			field.sku_list = skuLisArr;
+			field.goods_ids = goods_ids.toString();
+
+			if(repeat_flag) return;
+			repeat_flag = true;
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("jielong://shop/jielong/edit"),
+                data: field,
+                async: false,
+                success: function(res){
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        layer.confirm('编辑成功', {
+                            title:'操作提示',
+                            btn: ['返回列表', '继续编辑'],
+                            yes: function(index, layero) {
+                                location.hash = ns.hash("jielong://shop/jielong/lists");
+								layer.close(index);
+                            },
+                            btn2: function(index, layero) {
+								layer.close(index);
+                            }
+                        });
+                    }else{
+                        layer.msg(res.message);
+                    }
+                }
+            })
+        });
+    });
+
+    //删除商品
+	function delRow(obj,id) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].goods_id == parseInt(id)){
+				sku_list.splice(i,1);
+			}
+		}
+
+		delete goodsId['goods_'+id];
+		var spuId = [];
+		Object.values(goodsId).forEach(function (item,index) {
+			spuId.push(item.spu_id);
+		});
+		selectedGoodsId = spuId.toString();
+		$(obj).parents("tr").remove();
+
+		$("#goods_num").html(sku_list.length);
+
+		if (sku_list.length == 0) {
+			var html = '<tr>'+
+					'<td colspan="4">'+
+					'<div class="goods-empty">无数据</div>'+
+					'</td>'+
+					'</tr>';
+
+			$("#goods tbody").html(html);
+		}
+	}
+
+	//添加商品
+	function addGoods(){
+
+		selectedGoodsId = [];
+		$("#goods table").find(".goods-title").each(function () {
+			var id = $(this).data("goods_id");
+			selectedGoodsId.push(id);
+		});
+
+		goodsSelect(function (data) {
+
+			sku_list = [];
+			goodsId = {};
+
+			for (var key in data) {
+				var item = data[key];
+				sku_list.push(item);
+
+				goodsId['goods_'+ item.goods_id] = {};
+				goodsId['goods_'+ item.goods_id].sku_id = {};
+				goodsId['goods_'+ item.goods_id].spu_id = item.goods_id;
+
+			}
+			renderTable(sku_list);
+			$("input[name='sku_ids']").val(JSON.stringify(goodsId));
+
+			var spuId = [];
+			Object.values(goodsId).forEach(function (item,index) {
+				spuId.push(item.spu_id);
+			});
+			$("#goods_num").html(spuId.length);
+			selectedGoodsId = spuId.toString();
+
+		}, selectedGoodsId,{is_virtual: 0,sale_channel:'all,online'});
+		sku_list.splice(0,sku_list.length);
+	}
+	
+	// 表格渲染
+	function renderTable(sku_list) {
+
+	    //展示已知数据
+	    table = new Table({
+	        elem: '#selected_goods_list',
+			page: false,
+			limit: Number.MAX_VALUE,
+	        cols: [
+	                [{
+	                    title: '商品信息',
+	        			width: '50%',
+	                    unresize: 'false',
+	        			templet: function(data) {
+	                    	var html = '';
+	        				html += `
+	        					<div class="goods-title" data-goods_id="${data.goods_id}">
+	        						<div class="goods-img">
+	        							<img layer-src src="${data.goods_image ? ns.img(data.goods_image).split(',')[0] : ''}" alt="">
+	        						</div>
+	        						<p class="multi-line-hiding goods-name" data-goods_id="${data.goods_id}" title="${data.goods_name}">${data.goods_name}</p>
+	        					</div>
+	        				`;
+	        				return html;
+	        			}
+	                }, {
+	                    field: 'price',
+	                    title: '商品价格',
+	                    unresize: 'false',
+	        			width: '20%',
+	                    templet: function(data) {
+	                        return '<p class="line-hiding"  title="'+ data.price +'">￥<span>' + data.price +'</span></p>';
+	                    }
+	                }, {
+	                    title: '商品库存',
+	                    unresize: 'false',
+	        			width: '20%',
+	        			templet: function(data) {
+	        				return '<p class="line-hiding" style="margin:0 10px 0 30px;" title="'+ data.goods_stock +'"><span>' + data.goods_stock +'</span></p>';
+	        			}
+	                }, {
+	                    title: '操作',
+	                    toolbar: '#operation',
+	                    unresize: 'false',
+						align:'right'
+	                }]
+	            ],
+	            data: sku_list
+	        });
+	}
+
+    function backJielongList() {
+        location.hash = ns.hash("jielong://shop/jielong/lists");
+    }
+</script>
+
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" onclick="delRow(this,{{d.goods_id}})">删除商品</a>
+	</div>
+</script>

@@ -1,0 +1,68 @@
+@CHARSET "UTF-8";
+.component-bargain .bargain-list{overflow: hidden;}
+/* 头部风格 */
+/* 样式一 */
+.component-bargain .bargain-list .style-1.bargain-head{display: flex;justify-content: space-between;align-items: center;height: 44px;box-sizing: border-box;margin: 0;padding: 0 10px;background-repeat: no-repeat;background-size: cover;margin-bottom: 10px;line-height: 1; border-radius: 9px 9px 0 0;}
+.component-bargain .bargain-list .style-1.bargain-head .left-img{max-width: 78px;max-height: 20px;}
+.component-bargain .bargain-list .style-1.bargain-head .head-content{position: relative;color: #fff;font-size: 12px;margin-right: auto;margin-left: 10px;line-height: 1;}
+.component-bargain .bargain-list .style-1.bargain-head .head-content::after{content:'';position: absolute;width: 1px;height: 12px;background-color: #fff;top: 50%; transform: translateY(-50%);left: -6px;}
+.component-bargain .bargain-list .style-1.bargain-head .head-right{display: flex;align-items: center;font-size: 12px; color: #fff;}
+/* 样式二 */
+.component-bargain .bargain-list .style-2.bargain-head{display: flex;justify-content: space-between;align-items: center;height: 44px;box-sizing: border-box;margin: 0;padding: 0 10px;background-repeat: no-repeat;background-size: cover;margin-bottom: 10px;line-height: 1; border-radius: 9px 9px 0 0;}
+.component-bargain .bargain-list .style-2.bargain-head .left-img{max-width: 78px;max-height: 20px;}
+.component-bargain .bargain-list .style-2.bargain-head .head-content{position: relative;color: #fff;font-size: 12px;margin-right: auto;margin-left: 10px;line-height: 1;}
+.component-bargain .bargain-list .style-2.bargain-head .head-content::after{content:'';position: absolute;width: 1px;height: 12px;background-color: #fff;top: 50%; transform: translateY(-50%);left: -6px;}
+.component-bargain .bargain-list .style-2.bargain-head .head-right{display: flex;align-items: center;justify-content: center;height: 18px;background: linear-gradient(270deg, #FFBD5B 0%, #FD882E 100%);border-radius: 12px;padding: 1px;}
+.component-bargain .bargain-list .style-2.bargain-head .head-right span:nth-child(1){position: relative;left: 3px;transform: scale(0.9);}
+.component-bargain .bargain-list .style-2.bargain-head .head-right span:nth-child(2){padding: 2px;background-color: #fff;color: #FFBD5B;border-radius: 50%;transform: scale(0.6);font-weight: bold;}
+
+
+/* 样式：单列 */
+.component-bargain .bargain-list .row1-of1{}
+.component-bargain .bargain-list .row1-of1 .item{display: flex;margin-bottom: 10px;padding: 8px;}
+.component-bargain .bargain-list .row1-of1 .item:last-child{margin-bottom: 0;}
+.component-bargain .bargain-list .row1-of1 .item .img-wrap {width: 100px;height: 100px;}
+.component-bargain .bargain-list .row1-of1 .item .img-wrap > img{width: 100%;}
+.component-bargain .bargain-list .row1-of1 .item .img-wrap .bg{display: none;}
+.component-bargain .bargain-list .row1-of1 .item .content{flex:1;padding: 3px 0 3px 10px;display: flex;flex-direction: column;justify-content: space-between;}
+.component-bargain .bargain-list .row1-of1 .item .content .bottom-wrap{display: flex;justify-content: space-between;align-items: flex-end;}
+.component-bargain .bargain-list .row1-of1 .item .content .discount-price{font-weight: bold;display: flex;align-items: flex-end;}
+.component-bargain .bargain-list .row1-of1 .item .content .discount-price .unit{font-size: 12px;}
+.component-bargain .bargain-list .row1-of1 .item .content .discount-price .price{font-size: 16px;line-height: 1;}
+.component-bargain .bargain-list .row1-of1 .item .content .price-wrap{display: flex;align-items: flex-end;}
+.component-bargain .bargain-list .row1-of1 .item .content .price-wrap .original-price{margin-left: 5px;}
+.component-bargain .bargain-list .row1-of1 .item .content button{font-size: 12px;height: 26px;max-width: 70px;line-height: 20px;padding: 0 8px;}
+/* 风格二 */    
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content{margin-top: 5px;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .progress {display: flex;flex-direction: column;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .progress .bg {width: auto;height: 10px;border-radius: 10px;background-color: #FFEADB;position: relative;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .progress .bg::after{content: "";width: 13px;height: 13px;border-radius: 50%;background-color: #FA1A1A;position: absolute;top: 50%;transform: translateY(-50%);right: 0;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .progress .bg .curr {width: 70px;height: 10px;border-radius: 10px;background-color: #FA1A1A;position: relative;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .progress-bar{position: absolute;right: 0; width: 15px;height: 15px;top: 50%;transform: translateY(-50%);}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .num {font-size: 12px;margin-top: 6px;}
+.component-bargain .bargain-list .row1-of1.style-2.bargain-content .num span{color: #FA1A1A;}
+/* 风格三 */    
+.component-bargain .bargain-list .row1-of1.style-3.bargain-content .progress{display: flex; color: #999999;font-size: 13px;}
+.component-bargain .bargain-list .row1-of1.style-3 .item .content{justify-content: space-around;}
+
+/* 样式：横向滑动 */
+.component-bargain .bargain-list .horizontal-slide{display: flex;margin: 10px;overflow: hidden;}
+.component-bargain .bargain-list .horizontal-slide .item {width: 97px;}
+.component-bargain .bargain-list .horizontal-slide .item .img-wrap {width: 97px;height: 97px;overflow: hidden;position: relative;}
+.component-bargain .bargain-list .horizontal-slide .item .img-wrap > img{width: calc(100% + 1px);}
+.component-bargain .bargain-list .horizontal-slide .item .img-wrap .bg {position: absolute;width: 100%;height: 30px;bottom: 0;}
+.component-bargain .bargain-list .horizontal-slide .item .img-wrap .bg img {width: 100%;}
+.component-bargain .bargain-list .horizontal-slide .item .img-wrap .num {width: 90px;position: absolute;bottom: 5px;padding-left: 10px;font-size: 12px;line-height: 1;}
+.component-bargain .bargain-list .horizontal-slide .item .content {padding: 5px 10px;}
+.component-bargain .bargain-list .horizontal-slide .item .content .discount-price{margin-top: 5px;font-weight: bold;display: flex;align-items: baseline;}
+.component-bargain .bargain-list .horizontal-slide .item .content .discount-price .unit{font-size: 12px; height: 16px;}
+.component-bargain .bargain-list .horizontal-slide .item .content .discount-price .price{font-size: 16px;}
+.component-bargain .bargain-list .horizontal-slide .item .content .original-price {font-size: 12px;line-height: 1;margin-top: 5px;text-decoration: line-through;}
+
+/* 秒杀头部弹窗样式 */
+.component-bargain .bargain-style-list-box{display: none;}
+.bargain-style-list-con{display: flex;flex-wrap: wrap;}
+.bargain-style-list-con .bargain-style-li{overflow: hidden;display: flex;align-items: center;justify-content: center;width: 280px;height: 100px;margin-right: 12px;margin-top: 15px;cursor: pointer;border: 1px solid #ededed;background: #f7f8fa;}
+.bargain-style-list-con .bargain-style-li img{max-width: 280px;max-height: 220px;}
+.bargain-style-list-con .bargain-style-li:nth-child(1), .bargain-style-list-con .bargain-style-li:nth-child(2), .bargain-style-list-con .bargain-style-li:nth-child(3){margin-top: 0;}
+.bargain-style-list-con .bargain-style-li:nth-child(3n){margin-right: 0;}

@@ -1,0 +1,95 @@
+.layui-form-item .layui-input-inline.end-time {
+	float: none;
+}
+
+.layui-form-item .layui-input-inline.end-time {
+	float: none;
+}
+
+.time-label {
+	display: inline-block;
+	line-height: 30px;
+	height: 30px;
+	padding: 0 15px;
+	border-radius: 2px;
+	border: 1px solid #e9e9e9;
+	background: #f7f7f7;
+	font-size: 12px;
+	vertical-align: middle;
+	opacity: 1;
+	margin: 4px 8px 4px 0;
+	cursor: pointer;
+	position: relative;
+}
+
+.time-label span {
+	vertical-align: middle;
+}
+
+.time-label i {
+	font-size: 12px;
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+	text-align: center;
+	color: #fff;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	background: rgba(0, 0, 0, 0.3);
+}
+
+.seckill-box .layui-table-col-special {
+	padding: 5px 0 !important;
+}
+
+.layui-table-body {
+	max-height: 480px !important;
+}
+
+.goods-title {
+	display: flex;
+	align-items: center;
+}
+
+.goods-title .goods-img {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 55px;
+	height: 55px;
+	margin-right: 5px;
+}
+
+.goods-title .goods-img img {
+	max-height: 100%;
+	max-width: 100%;
+}
+
+.goods-title .goods-name {
+	flex: 1;
+	line-height: 1.6;
+}
+
+.forbidden {
+	cursor: not-allowed;
+	background-color: #eee;
+}
+
+.form-wrap {
+	position: relative;
+}
+
+.layui-carousel {
+	position: absolute;
+	top: 15px;
+	left: 1325px;
+	background: #fff;
+}
+
+.goods_num {
+	padding-left: 20px;
+}

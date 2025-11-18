@@ -1,0 +1,316 @@
+<style>
+    .recommend-mark{color: #fff;line-height: 1;padding: 3px 6px;border-radius: 3px;font-size: 12px;margin-right: 3px;}
+    .layui-layout-admin .screen{margin-bottom: 15px;}
+	.layui-table-box, .layui-table-header, .layui-table-header .layui-table-cell { overflow: unset; }
+	.prompt-block .prompt-box {cursor: default}
+	.prompt-block .prompt-box a {cursor: pointer}
+</style>
+
+<div class="single-filter-box" style="display: block;">
+	<button class="layui-btn" onclick="addLevel()">添加会员卡</button>
+	<p class="layui-btn" onclick="location.hash = ns.hash('supermember://shop/membercard/agreement')">开卡协议</p>
+</div>
+
+<!-- 搜索框 -->
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">会员卡名称</label>
+					<div class="layui-input-inline">
+						<input type="text" name="search_text" placeholder="请输入会员卡名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<table id="level_list" lay-filter="level_list"></table>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		{{# if(d.charge_type == 0){ }}
+		{{# if(d.is_recommend == 0){ }}
+		<a class="layui-btn" lay-event="recommend">推荐</a>
+		{{# } else { }}
+		<a class="layui-btn" lay-event="cancelRecommend">取消推荐</a>
+		{{# } }}
+		{{# } }}
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		<a class="layui-btn" lay-event="del">删除</a>
+		{{# if(d.status == 0){ }}
+		<a class="layui-btn" lay-event="sale">发售</a>
+		{{# } else { }}
+		<a class="layui-btn" lay-event="offsale">下架</a>
+		{{# } }}
+	</div>
+</script>
+
+<script>
+    layui.use(['form'], function() {
+        var table,
+            form = layui.form,
+            repeat_flag = false; //防重复标识
+
+        table = new Table({
+            elem: '#level_list',
+            url: ns.url("supermember://shop/membercard/lists"),
+            page:false,
+            cols: [
+                [{
+                    field: 'level_name',
+                    title: '会员卡名称',
+                    width: '15%',
+                    unresize: 'false',
+                    templet: function(data){
+                   		if (data.is_recommend) {
+							return '<span class="recommend-mark bg-color">推荐</span>' + data.level_name
+						} else {
+                   		    return data.level_name;
+						}
+					}
+                }, {
+                    title: '付费类型',
+                    unresize: 'false',
+                    width: '10%',
+                    templet: function (data) {
+                        var str = '';
+                        if (data.charge_type == 1) {
+                            str = '<span style="color: green">充值卡</span>';
+                        } else if (data.charge_type == 0) {
+                            str = '<span style="color: red">付费卡</span>';
+                        }
+                        return str;
+                    }
+                },{
+                    field: 'growth',
+                    title: '价格',
+                    width: '16%',
+                    unresize: 'false',
+                    templet: function(data){
+                        var charge_rule = JSON.parse(data.charge_rule),
+                            price = '<div class="level-equity">';
+                        if (charge_rule.week) price += '<div>周卡' + charge_rule.week + '元</div>';
+                        if (charge_rule.month) price += '<div>月卡' + charge_rule.month + '元</div>';
+                        if (charge_rule.quarter) price += '<div>季卡' + charge_rule.quarter + '元</div>';
+                        if (charge_rule.year) price += '<div>年卡' + charge_rule.year + '元</div>';
+						price += '</div>'
+                        return price;
+                    }
+                },{
+                    field: '',
+                    title: '权益',
+                    width: '18%',
+                    unresize: 'false',
+                    templet: function (data) {
+                        var text = '<div class="level-equity">';
+                        if (data.is_free_shipping == 1) text += '<div>购物享商品包邮</div>';
+                        if (data.consume_discount != 100) text += '<div>购物享'+ (data.consume_discount / 10) +'折优惠</div>';
+                        if (data.point_feedback > 0) text += '<div>购物享'+ data.point_feedback +'倍积分回馈</div>';
+						text += '</div>';
+                        return text;
+                    }
+                },
+				{
+					field: 'member_num',
+					title: '持有人数',
+					width: '8%',
+					unresize: 'false',
+					align: 'center'
+				},
+				{
+					title: '状态',
+					width: '10%',
+					unresize: 'false',
+                    templet: function (data) {
+                       return data.status == 1 ? '发售中' : '已下架';
+                    }
+				},{
+                    title: '操作',
+                    unresize: 'false',
+                    toolbar: '#operation',
+					align:'right'
+                }]
+            ]
+        });
+
+        /**
+         * 工具栏操作，编辑、删除
+         */
+        table.tool(function(obj) {
+            var data = obj.data,
+                event = obj.event;
+
+            switch (event) {
+                case 'edit':
+                    location.hash = ns.hash("supermember://shop/membercard/edit?id=" + data.level_id);
+                    break;
+                case 'del':
+                    delMemberLevel(data.level_id);
+                    break;
+                case 'sale':
+                    saleMemberCard(data.level_id);
+                    break;
+                case 'offsale':
+                    offsaleMemberCard(data.level_id);
+                    break;
+                case 'recommend':
+                    recommendMemberCard(data.level_id, 1);
+                    break;
+                case 'cancelRecommend':
+                    recommendMemberCard(data.level_id, 0);
+                    break;
+            }
+        });
+
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function(data) {
+            table.reload( {
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+
+        // 删除方法
+        function delMemberLevel(level_id) {
+            if(repeat_flag) return false;
+            repeat_flag = true;
+
+            layer.confirm('确定要删除该会员卡吗?', function(index) {
+				layer.close(index);
+                $.ajax({
+                    type: 'POST',
+                    url: ns.url("supermember://shop/membercard/delete"),
+                    data: {level_id},
+                    dataType: 'JSON',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+
+                        if(res.code == 0){
+                            table.reload();
+                        }
+
+                    }
+                });
+            }, function () {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+        //使失效
+        function offsaleMemberCard(level_id) {
+            layer.confirm('此操作不会影响到已购卡用户！确定下架该会员卡吗?', function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("supermember://shop/membercard/status"),
+                    data: {
+                        level_id: level_id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+        function saleMemberCard(level_id) {
+            layer.confirm('确定发售该会员卡吗?', function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+
+                $.ajax({
+                    url: ns.url("supermember://shop/membercard/status"),
+                    data: {
+                        status: 1,
+                        level_id: level_id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+        function recommendMemberCard(level_id, recommend) {
+            let message = recommend == 1 ? '设置后前端推荐开卡处将默认展示该卡，是否继续设置?' : '是否取消推荐？';
+            layer.confirm(message, function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("supermember://shop/membercard/recommend"),
+                    data: {
+                        level_id: level_id,
+                        recommend: recommend
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg('设置成功');
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+    });
+
+    /**
+     * 点击跳转添加会员卡页面
+     */
+    function addLevel() {
+        location.hash = ns.hash("supermember://shop/membercard/add");
+    }
+
+    function showDemo(){
+        layer.open({
+            title: false,
+            type: 1,
+            area: ['760px', '570px'],
+            content: '<img src="SUPERMEMBER_IMG/demo.png">'
+        })
+    }
+</script>

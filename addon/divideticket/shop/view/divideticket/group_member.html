@@ -1,0 +1,115 @@
+<link rel="stylesheet" href="SHOP_CSS/goods_lists.css">
+<style>
+    .layui-layer-page .layui-layer-content {padding: 20px 30px;}
+    .layui-layout-admin .layui-body .body-content{overflow: hidden;}
+</style>
+
+<div class="layui-tab table-tab" lay-filter="coupon_tab">
+    <div class="layui-tab-content">
+        <!-- 列表 -->
+        <table id="coupon_list" lay-filter="coupon_list"></table>
+    </div>
+</div>
+
+<!-- 会员 -->
+<script type="text/html" id="member_info">
+    <div class="table-title">
+        <div class="title-pic">
+            <img layer-src src="{{ns.img(d.headimg) || '{:img('public/static/img/default_img/head.png')}'}}" onerror="this.src = '{:img('public/static/img/default_img/head.png')}' ">
+        </div>
+        <div class="title-content">
+            <a href="javascript:;" class="multi-line-hiding text-color-sub" title="{{d.nickname}}">{{d.nickname}}</a>
+        </div>
+    </div>
+</script>
+
+<script>
+    var laytpl;
+    layui.use(['form', 'laytpl', 'element'], function () {
+        var table, form = layui.form, element = layui.element, laytpl = layui.laytpl;
+            form.render();
+
+        element.on('tab(coupon_tab)', function () {
+            table.reload({
+                page: {curr: 1},
+                where: {'status': this.getAttribute('lay-id')},
+            })
+        });
+
+        var group_id = {$group_id};
+        // 券名称、发起时间、已参与人数/需成团人数、成团截止时间、操作（参与人列表）
+        table = new Table({
+            elem: '#coupon_list',
+            page: false,
+            url: ns.url("divideticket://shop/divideticket/groupMember", {'group_id': group_id}),
+            cols: [
+                [{
+                    title: '会员信息',
+                    unresize: 'false',
+                    width: '17%',
+                    templet: '#member_info'
+                },{
+                    title: '活动内容',
+                    field: 'name',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        return data.divide_num + '人瓜分'+ data.money + '元';
+                    }
+                },{
+                    title: '瓜分金额',
+                    field: 'coupon_money',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        var content = '';
+                        if(data.coupon_money == undefined || data.coupon_money == ''){
+                            content = '';
+                        }else{
+                            content = data.coupon_money + '元优惠券';
+                        }
+                        return content;
+                    }
+                },{
+                    title: '使用时间',
+                    field: 'coupon_use_time',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.coupon_use_time);
+                    }
+                },{
+                    title: '领券时间',
+                    field: 'coupon_fetch_time',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.coupon_fetch_time);
+                    }
+                },{
+                    title: '状态',
+                    field: 'coupon_state',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        var state_name = '';
+
+                        if(data.coupon_state == 1){
+                            state_name = '未使用';
+                        }else if(data.coupon_state == 2){
+                            state_name = '已使用';
+                        }else if(data.coupon_state == 3){
+                            state_name = '已过期';
+                        }else if(data.coupon_state == 4){
+                            state_name = '已关闭';
+                        }
+
+                        return state_name;
+                    }
+                },]
+            ],
+        });
+
+    });
+
+</script>

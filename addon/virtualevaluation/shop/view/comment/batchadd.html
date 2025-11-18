@@ -1,0 +1,250 @@
+<link rel="stylesheet" href="__STATIC__/ext/video/video.css">
+<link rel="stylesheet" type="text/css" href="__STATIC__/ext/searchable_select/searchable_select.css" />
+<style>
+  /*底部按钮*/
+  .fixed-btn {
+    width: 100%;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    margin: 0 0 0 -15px !important;
+    background: #F9F9F9;
+    line-height: 80px;
+    z-index: 1000;
+    border-top: 1px solid #e5e5e5;
+  }
+
+  .fixed-btn > button {
+    vertical-align: middle;
+  }
+
+  .fixed-btn > button:first-child {
+    display: none;
+  }
+
+</style>
+
+<div class="layui-form">
+  <div class="layui-tab layui-tab-brief" lay-filter="goods_tab">
+    <div class="layui-tab-content">
+
+      <!-- 基础设置 -->
+      <div class="layui-tab-item layui-show">
+
+        <div class="layui-card card-common">
+          <div class="layui-card-header">
+            <span class="card-title">添加条数</span>
+          </div>
+
+          <div class="layui-card-body">
+            <div class="layui-form-item">
+              <label class="layui-form-label"><span class="required">*</span>添加条数：</label>
+              <div class="layui-input-inline">
+                <input name="number" onchange="maxNum(this)" type="number" placeholder="请输入整数" max="100" autocomplete="off" lay-verify="number" class="layui-input len-long">
+              </div>
+            </div>
+            <div class="word-aux">将按此条数随机生成虚拟评论，每次上限100条</div>
+          </div>
+        </div>
+
+        <div class="layui-card card-common">
+          <div class="layui-card-header">
+            <span class="card-title">会员信息</span>
+          </div>
+
+          <div class="layui-card-body">
+            <div class="layui-form-item">
+              <label class="layui-form-label">生成方式：</label>
+              <div class="layui-input-inline">
+                 <p>随机生成</p>
+              </div>
+            </div>
+
+            <div class="layui-form-item">
+              <div class="layui-inline">
+              <label class="layui-form-label"><span class="required">*</span>头像来源：</label>
+              <div class="layui-input-inline">
+                <select name="album_id" id="album_id">
+                  <option value="">请选择头像来源</option>
+                  {foreach name="$album_list" item="vo"}
+                  <option value="{$vo['album_id']}">{$vo['album_name']}</option>
+                  {/foreach}
+                </select>
+              </div>
+              </div>
+              <div class="word-aux">头像来源分组来自【商品-相册管理】中的图片分组，生成每条评论时，用户头像将从此分组中随机抽取</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-card card-common">
+          <div class="layui-card-header">
+            <span class="card-title">评价内容</span>
+          </div>
+
+          <div class="layui-card-body">
+            <div class="layui-inline">
+            <div class="layui-form-item">
+              <label class="layui-form-label"><span class="required">*</span>评价级别：</label>
+              <div class="layui-input-inline">
+                <input type="checkbox" name="pingfen" value="1" title="1分">
+                <input type="checkbox" name="pingfen" value="2" title="2分">
+                <input type="checkbox" name="pingfen" value="3" title="3分">
+                <input type="checkbox" name="pingfen" value="4" title="4分">
+                <input type="checkbox" name="pingfen" value="5" title="5分">
+              </div>
+            </div>
+              <div class="word-aux">生成每条评论时，从所勾选的评分中随机选择</div>
+            </div>
+
+            <div class="layui-form-item">
+              <div class="layui-inline">
+              <label class="layui-form-label"><span class="required">*</span>评论来源：</label>
+              <div class="layui-input-inline">
+                <select name="stock_id" id="stock_id">
+                  <option value="">请选择评论来源</option>
+                  {foreach name="$stock_list" item="vo"}
+                  <option value="{$vo['stock_id']}">{$vo['stock_name']}</option>
+                  {/foreach}
+                </select>
+              </div>
+              </div>
+              <div class="word-aux">评论来源来自【虚拟评价库】，生成每条评论时，评论内容将从此评价库随机抽取</div>
+            </div>
+
+            <div class="layui-form-item">
+              <div class="layui-inline">
+                <label class="layui-form-label"><span class="required">*</span>时间范围：</label>
+                <div class="layui-input-inline">
+                  <input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+                  <i class=" iconrili iconfont calendar"></i>
+                </div>
+                <div class="layui-input-inline">
+                  <input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+                  <i class=" iconrili iconfont calendar"></i>
+                </div>
+              </div>
+              <div class="word-aux">生成每条评论时，评论时间将从此时间段中选取</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <div class="fixed-btn">
+    <button class="layui-btn layui-btn-primary border-color text-color js-prev" lay-filter="prev">上一步</button>
+    <input type="hidden" name="goods_id" value="{$goods_id}">
+    <button class="layui-btn js-save" lay-submit="save" lay-filter="save">保存</button>
+  </div>
+</div>
+
+<script>
+  var  save_flag = false,form;
+  layui.use(['form','layer','laytpl' ,'element','laydate'], function() {
+    form = layui.form;
+    laytpl = layui.laytpl;
+    var laydate = layui.laydate;
+    var layer = layui.layer;
+    element = layui.element;
+
+    form.render();
+	
+	var myDate = ns.time_to_date(new Date().getTime() / 1000);
+    //渲染时间
+    laydate.render({
+      elem: '#start_time'
+      ,type: 'datetime',
+	  max: myDate
+    });
+    laydate.render({
+      elem: '#end_time'
+      ,type: 'datetime',
+	  max: myDate
+    });
+
+    /**
+     * 搜索功能
+     */
+    form.on('submit(search)', function(data) {
+      table.reload({
+        page: {
+          curr: 1
+        },
+        where: data.field
+      });
+    });
+
+    /**
+     * 保存添加评价库
+     */
+    form.on('submit(save)', function (data) {
+       var pingfen =[];
+      if (save_flag) return;
+      save_flag = true;
+      var goods_id = {$goods_id};
+      // var goods_id = $("input[name='goods_id']").val();
+      var number = $("input[name='number']").val();
+      $("[name='pingfen']:checked").each(function(){
+        pingfen.push($(this).val())
+      });
+      var start_time = $("input[name='start_time']").val();
+      var end_time = $("input[name='end_time']").val() ;
+      var album_id = $("#album_id").val();
+      var stock_id = $("#stock_id").val();
+      if(goods_id==''){
+        return layer.msg('必要参数不能为空');
+      }
+      if(number=='' || number<0){
+        return layer.msg('条数不能为空且大于零的正整数');
+      }
+      if(stock_id==''){
+        return layer.msg('评论内容来源不能为空');
+      }
+      if(pingfen==''){
+        return layer.msg('评分不能不勾选');
+      }
+      if(album_id==''){
+        return layer.msg('会员头像来源不能为空');
+      }
+      if(start_time=='' || end_time=='' || end_time < start_time){
+        return layer.msg('时间格式不对');
+      }
+      $.ajax({
+        type: 'POST',
+        dataType: 'JSON',
+        url: ns.url("virtualevaluation://shop/comment/batchadd"),
+        data: {number:number,pingfen:pingfen,start_time:start_time,end_time:end_time,album_id:album_id,stock_id:stock_id,goods_id:goods_id},
+        success: function (res) {
+          save_flag = false;
+          if (res.code == 0) {
+            layer.confirm('操作成功', {
+              title: '操作提示',
+              btn: ['返回列表','继续操作'],
+              yes: function (index, layero) {
+                location.hash = ns.hash("virtualevaluation://shop/comment/goodslists")
+				layer.close(index);
+              },
+              btn2: function (index, layero) {
+                listenerHash(); // 刷新页面
+                layer.close(index);
+              }
+            });
+          } else {
+            layer.msg(res.message);
+          }
+        }
+      })
+    })
+
+  });
+  function maxNum(el){
+  	var value = $(el).val();
+	if(value > 100) {
+		$(el).val(100);
+		layer.msg('添加条数不能超过100条');
+	}
+  }
+</script>

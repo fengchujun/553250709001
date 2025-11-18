@@ -1,0 +1,294 @@
+<style>
+	.input-text span{margin-right: 15px;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item balance-boday">
+		<label class="layui-form-label">加签模式：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline">
+				{if $info}
+				<input type="radio" name="countersign_type" lay-filter="type" value="0" title="公钥" autocomplete="off" class="layui-input len-long" {if $info.countersign_type == 0} checked {/if} >
+				<input type="radio" name="countersign_type" lay-filter="type" value="1" title="公钥证书" autocomplete="off" class="layui-input len-long" {if $info.countersign_type == 1} checked {/if} >
+				{else/}
+				<input type="radio" name="countersign_type" lay-filter="type" value="0" title="公钥" autocomplete="off" class="layui-input len-long" checked>
+				<input type="radio" name="countersign_type" lay-filter="type" value="1" title="公钥证书" autocomplete="off" class="layui-input len-long">
+				{/if}
+			</div>
+		</div>
+		<div class="word-aux">支付宝配置规则加签模式。</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">支付宝应用ID：</label>
+		<div class="layui-input-block">
+			<input name="app_id" type="text" value="{$info.app_id ?? ''}" class="layui-input len-long">
+		</div>
+		<div class="word-aux"><span>[API_ID]</span>支付宝分配给开发者的应用ID</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">应用私钥：</label>
+		<div class="layui-input-block">
+			<textarea name="private_key" class="layui-textarea len-long" placeholder="请输入应用私钥">{$info.private_key ?? ''}</textarea>
+		</div>
+	</div>
+
+	{if empty($info) || $info.countersign_type == 0}
+	<div class="countersign_type_zero" >
+		<div class="layui-form-item " >
+			<label class="layui-form-label">应用公钥：</label>
+			<div class="layui-input-block">
+				<textarea name="public_key" class="layui-textarea len-long" placeholder="请输入应用公钥">{$info.public_key ?? ''}</textarea>
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝公钥：</label>
+			<div class="layui-input-block">
+				<textarea name="alipay_public_key" class="layui-textarea len-long" placeholder="请输入支付宝公钥">{$info.alipay_public_key ?? ''}</textarea>
+			</div>
+		</div>
+	</div>
+	<div class="countersign_type_one" style="display: none">
+		<div class="layui-form-item ">
+			<label class="layui-form-label">应用公钥证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.public_key_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="public_key_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="public_key_crt" class="layui-input len-long" value="{$info.public_key_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传appCertPublicKey文件</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝公钥证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.alipay_public_key_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="alipay_public_key_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="alipay_public_key_crt" class="layui-input len-long" value="{$info.alipay_public_key_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传alipayCertPublicKey文件</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝根证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.alipay_with_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="alipay_with_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="alipay_with_crt" class="layui-input len-long" value="{$info.alipay_with_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传alipayRootCert文件</div>
+		</div>
+	</div>
+	{else/}
+	<div class="countersign_type_zero" style="display: none">
+		<div class="layui-form-item " >
+			<label class="layui-form-label">应用公钥：</label>
+			<div class="layui-input-block">
+				<textarea name="public_key" class="layui-textarea len-long" placeholder="请输入应用公钥">{$info.public_key ?? ''}</textarea>
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝公钥：</label>
+			<div class="layui-input-block">
+				<textarea name="alipay_public_key" class="layui-textarea len-long" placeholder="请输入支付宝公钥">{$info.alipay_public_key ?? ''}</textarea>
+			</div>
+		</div>
+	</div>
+	<div class="countersign_type_one">
+		<div class="layui-form-item ">
+			<label class="layui-form-label">应用公钥证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.public_key_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="public_key_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="public_key_crt" class="layui-input len-long" value="{$info.public_key_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传appCertPublicKey文件</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝公钥证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.alipay_public_key_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="alipay_public_key_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="alipay_public_key_crt" class="layui-input len-long" value="{$info.alipay_public_key_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传alipayCertPublicKey文件</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">支付宝根证书：</label>
+			<div class="layui-input-block">
+				{notempty name="$info.alipay_with_crt"}
+				<p class="file-upload">已上传</p>
+				{else/}
+				<p class="file-upload">未上传</p>
+				{/notempty}
+				<button type="button" class="layui-btn" id="alipay_with_upload">
+					<i class="layui-icon">&#xe67c;</i>上传文件
+				</button>
+				<input type="hidden" name="alipay_with_crt" class="layui-input len-long" value="{$info.alipay_with_crt ?? ''}">
+			</div>
+			<div class="word-aux">上传alipayRootCert文件</div>
+		</div>
+	</div>
+	{/if}
+	<div class="layui-form-item">
+		<label class="layui-form-label">支持端口：</label>
+		<div class="input-text">
+			{foreach $app_type as $app_type_k => $app_type_v}
+				{if condition="$app_type_v['name'] !='微信小程序' && $app_type_v['name'] !='微信公众号'"}
+				<span>{$app_type_v['name']}</span>
+				{/if}
+			{/foreach}
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用支付：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="pay_status" value="1" lay-skin="switch" {if condition="$info && $info.pay_status == 1"} checked {/if} />
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用退款：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="refund_status" value="1" lay-skin="switch" {if condition="$info && $info.refund_status == 1"} checked {/if} />
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用转账：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="transfer_status" value="1" lay-skin="switch" {if condition="$info && $info.transfer_status == 1"} checked {/if} />
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="back()">返回</button>
+	</div>
+</div>
+
+<script>
+	layui.use('form', function() {
+		var form = layui.form;
+		var repeat_flag = false; //防重复标识
+		form.render();
+
+		layui.form.on('radio(type)', function(data){
+			if(data.value == 0){
+				$(".countersign_type_zero").show();
+				$(".countersign_type_one").hide();
+			}else{
+				$(".countersign_type_one").show();
+				$(".countersign_type_zero").hide();
+			}
+		});
+
+		var public_key_upload = new Upload({
+			elem: '#public_key_upload',
+			url: ns.url("alipay://shop/pay/uploadalipaycrt"), //改成您自己的上传接口
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='public_key_crt']").val(res.data.path);
+					$("input[name='public_key_crt']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		var alipay_public_key_upload = new Upload({
+			elem: '#alipay_public_key_upload',
+			url: ns.url("alipay://shop/pay/uploadalipaycrt"), //改成您自己的上传接口
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='alipay_public_key_crt']").val(res.data.path);
+					$("input[name='alipay_public_key_crt']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		var alipay_with_upload = new Upload({
+			elem: '#alipay_with_upload',
+			url: ns.url("alipay://shop/pay/uploadalipaycrt"), //改成您自己的上传接口
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='alipay_with_crt']").val(res.data.path);
+					$("input[name='alipay_with_crt']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		/**
+		 * 监听提交
+		 */
+		form.on('submit(save)', function(data) {
+			if (repeat_flag) return false;
+			repeat_flag = true;
+			$.ajax({
+				url: ns.url("alipay://shop/pay/config"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res){
+					repeat_flag = false;
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续编辑'],
+							yes: function(index, layero) {
+								location.hash = ns.hash("shop/config/pay");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		});
+	});
+	
+	function back(){
+		location.hash = ns.hash("shop/config/pay");
+	}
+
+</script>

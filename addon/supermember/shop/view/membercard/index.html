@@ -1,0 +1,302 @@
+<link rel="stylesheet" href="SUPERMEMBER_CSS/supermember.css">
+<style>
+	.layui-card-body .content{width: 25%;padding-top: 15px}
+	.layui-card-body .bottom-title{color: #909399;font-size: 14px;margin-top: 5px;}
+	.load { display: flex; width: 100%; height: 400px; justify-content: center; align-items: center; }
+</style>
+
+<div class="nav panel-content">
+	<div class="nav-screen">
+		<div class="screen-tab">
+			<div class="tab-item bgcolorse activeTab" onclick="datePick(1, this);return false;">今日</div>
+			<div class="tab-item" onclick="datePick(2, this);return false;">昨日</div>
+			<div class="tab-item" onclick="datePick(7, this);return false;">近七天</div>
+		</div>
+		<form class="layui-form layui-show" lay-filter="order_list">
+			<div class="screen-time layui-form-item">
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="layui-card-body">
+
+		<div class="content">
+			<p class="title">售卡数</p>
+			<p class="money" id="sale_num">0</p>
+		</div>
+		<div class="content">
+			<p class="title">售卡金额</p>
+			<p class="money" id="sale_money">0</p>
+		</div>
+		<div class="content">
+			<p class="title">累计售卡数</p>
+			<p class="money" id="total_num">0</p>
+		</div>
+		<div class="content">
+			<p class="title">累计售卡金额</p>
+			<p class="money" id="total_money">0</p>
+		</div>
+
+	</div>
+</div>
+<div class="section">
+	<div class="section-left">
+		<div class="membership">
+			<div>会员持卡总数量</div>
+			<div id="has_card_member">0</div>
+		</div>
+		<div class="member-detail">
+			<div class="load">
+				<i style="font-size: 30px;" class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="section-right">
+		<div class="membership">
+			<div>普通会员与会员卡用户占比</div>
+		</div>
+		<div class="load mycenter">
+			<i style="font-size: 30px;" class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i>
+		</div>
+		<div id="main" style="width:600px;height:600px;margin-top: 100px;margin-left: 100px;"></div>
+	</div>
+</div>
+<script type="text/html" id="card_list">
+	{{# d.forEach(function(item, index){ }}
+	<div class="member-detail-item vip-list" data-level-id="{{ item.level_id }}">
+		<div class="base-data-name">
+			{{# if (index == 0){ }}
+			<span><img src="SUPERMEMBER_IMG/one.png"></span>
+			{{# } else if(index == 1) { }}
+			<span><img src="SUPERMEMBER_IMG/two.png"></span>
+			{{# } else if(index == 2) { }}
+			<span><img src="SUPERMEMBER_IMG/three.png"></span>
+			{{# } else { }}
+			<span>{{ index+1 }}</span>
+			{{# } }}
+			{{ item.level_name }}
+		</div>
+		<div class="base-data-name">{{ item.member_num }}</div>
+	</div>
+	{{# }) }}
+</script>
+	<script src="SHOP_JS/echarts.min.js"></script>
+	<script type="text/javascript">
+		var laytpl;
+		var form;
+		//初始化时间
+		var startTime = new Date(new Date().setHours(0, 0, 0, 0));
+		var endTime = new Date();
+		//开始时间转换为时间戳
+		var start_times = $('input[name="start_time"]').val()
+		var start_time = new Date(start_times ? start_times : startTime).getTime()
+		//结束时间转换为时间戳
+		var end_times = $('input[name="end_time"]').val()
+		var end_time = new Date(end_times ? end_times : endTime).getTime()
+		$('.screen-tab .tab-item').click(function() {
+			$(this).addClass("bgcolorse activeTab").siblings().removeClass('bgcolorse activeTab');
+			start_times = $('input[name="start_time"]').val()
+			end_times = $('input[name="end_time"]').val()
+			sendAjax(start_times,end_times)
+		});
+		$('.vip-list').click(function(data){
+			let levelId = $(this).attr('data-level-id')
+			location.hash = ns.hash("shop/member/memberlist",{levelId:levelId});
+		})
+		function sendAjax(starTimes,enTimes){
+			if(starTimes){start_times = starTimes}else{start_times = $('input[name="start_time"]').val()}
+			if(enTimes){end_times = enTimes}else{end_times = $('input[name="end_time"]').val()}
+			$.ajax({
+				url: ns.url("supermember://shop/membercard/salesStatistics"),
+				data: {
+					start_time: start_times,
+					end_time: end_times
+				},
+				dataType: 'JSON', //服务器返回json格式数据
+				type: 'POST', //http请求类型
+				success: function(res) {
+					if (res.code == 0) {
+						$('#sale_num').html(res.data.sale_num);
+						$('#sale_money').html(res.data.sale_money);
+					} else {
+						layer.msg(res.message);
+					}
+				}
+			});
+		}
+		layui.use(['form', 'laydate', 'laytpl'], function() {
+			var laydate = layui.laydate;
+			form = layui.form;
+			laytpl = layui.laytpl;
+			form.render();
+			//渲染时间
+			laydate.render({
+				elem: '#start_time',
+				type: 'datetime',
+				value: startTime,
+				done: function(value, date, endDate) {
+					$(".screen-tab .tab-item").removeClass("bgcolorse activeTab");
+					start_times = value
+					let start_time = ns.date_to_time(value);
+					let end_time = ns.date_to_time($('#end_time').val());
+					if(end_time > start_time){
+						sendAjax(start_times,'')
+					}else {
+						$('#end_time').val('');
+					}
+				}
+			});
+			laydate.render({
+				elem: '#end_time',
+				type: 'datetime',
+				value: endTime,
+				done: function(value, date, endDate) {
+					$(".screen-tab .tab-item").removeClass("bgcolorse activeTab");
+					end_times = value
+
+					let start_time = ns.date_to_time($('#start_time').val());
+					let end_time = ns.date_to_time(value);
+					if(end_time > start_time){
+						sendAjax('',end_times)
+					}else {
+						$('#start_time').val('');
+					}
+				}
+			});
+		});
+		/**
+		 * 七天时间
+		 */
+		function datePick(date_num, event_obj) {
+			$(".date-picker-btn").removeClass("selected");
+			$(event_obj).addClass('selected');
+			var now_date = new Date();
+
+			Date.prototype.Format = function(fmt, date_num) { //author: meizz
+				this.setDate(this.getDate() - date_num);
+				var o = {
+					"M+": this.getMonth() + 1, //月份
+					"d+": this.getDate(), //日
+					"H+": this.getHours(), //小时
+					"m+": this.getMinutes(), //分
+					"s+": this.getSeconds(), //秒
+					"q+": Math.floor((this.getMonth() + 3) / 3), //季度
+					"S": this.getMilliseconds() //毫秒
+				};
+				if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1
+				.length));
+				for (var k in o)
+					if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[
+						k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+				return fmt;
+			};
+			if (date_num == 2) {
+				var now_time = new Date().Format("yyyy-MM-dd 23:59:59", date_num - 1); //当前日期
+			} else {
+				// var now_time =  new Date().Format("yyyy-MM-dd 23:59:59",0);//当前日期
+				var now_time = new Date().Format("yyyy-MM-dd HH:mm:ss", 0); //当前日期
+			}
+
+			var before_time = new Date().Format("yyyy-MM-dd 00:00:00", date_num - 1); //前几天日期
+			$("input[name=start_time]").val(before_time, 0);
+			$("input[name=end_time]").val(now_time, date_num - 1);
+
+		}
+
+		var names = [];
+		var nums = [];
+		names.push('普通会员')
+
+		if($('#main').length) {
+			var myChart = echarts.init(document.getElementById('main'));
+			var option = {
+				color: ['#ff7a14', '#47b73d', '#fcc36e', '#448ffd', "#228b22", "#00adac", "#000086", "#a963a1", "#cf675a", "#607e82"],//饼图颜色
+				tooltip: {
+					trigger: 'item',
+					formatter: '{a} <br/>{b}: {c} ({d}%)'
+				},
+				legend: {
+					orient: 'horizontal',
+					left: 'center',
+					bottom: 260,
+					itemGap: 50,
+					data: names
+				},
+				series: [{
+					width: 265,
+					height: 265,
+					top: 0,
+					x: "center",
+					name: '会员比例',
+					type: 'pie',
+					radius: ['50%', '70%'],
+					avoidLabelOverlap: false,
+					label: {
+						show: false,
+						position: 'center'
+					},
+					emphasis: {
+						label: {
+							show: true,
+							fontSize: '12',
+							color: '#333'
+						}
+					},
+					labelLine: {
+						show: false
+					},
+					data: nums
+				}]
+			};
+			// myChart.setOption(option);
+		}
+
+		getMemberCardStat()
+		function getMemberCardStat(){
+			$.ajax({
+				url: ns.url("supermember://shop/membercard/stat"),
+				data: {
+					start_time: start_times,
+					end_time: end_times
+				},
+				dataType: 'JSON', //服务器返回json格式数据
+				type: 'POST', //http请求类型
+				success: function(res) {
+					$('.mycenter').css("display", 'none')
+					$("#total_num").html(res.total_num)
+					$("#total_money").html(res.total_money)
+					$("#has_card_member").html(res.has_card_member)
+
+					laytpl($('#card_list').html()).render(res.card_list, function (string) {
+						$('.member-detail').html(string);
+					});
+
+					nums.push({
+						value: res.no_has_card_member,
+						name: '普通会员'
+					});
+
+					for(var i=0;i<res.card_list.length;i++){
+						names.push(res.card_list[i].level_name)
+						nums.push({
+							value: res.card_list[i].member_num,
+							name: res.card_list[i].level_name
+						});
+					}
+					myChart.setOption(option);
+				}
+			});
+		}
+
+	</script>

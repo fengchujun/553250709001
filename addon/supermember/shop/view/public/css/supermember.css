@@ -1,0 +1,29 @@
+.nav{background: #fff;padding: 20px;}
+.nav-bottom{display: flex;justify-content: space-between;}
+.flex-box{width: 24%;height: 85px;margin-right: 20px;display: flex;flex-direction: column;justify-content: space-between;align-items: center;padding: 20px 0;border-radius: 2px;}
+.flex-box:nth-child(4){margin-right:0px;}
+.title{font-size: 18px;}
+.num{font-size: 30px;font-weight: 400;text-align: center;color: #333;}
+.section{display: flex;justify-content: space-between;}
+.section-left{width: 830px;height: 600px;background: #fff;margin: 16px 20px 0 0;position: relative;}
+.member-detail{margin: 0 30px;height: 510px;overflow-y: auto;}
+.member-detail-item{padding: 010px;line-height: 50px;border-bottom: 1px solid #f8f8f8;display: flex;justify-content: space-between;}
+.member-detail-item .base-data-name span{display: inline-block;margin-right: 15px;}
+.section-right{width: 830px;height: 600px;background: #fff;margin-top: 16px;}
+.membership{font-size: 16px;display: flex;flex-direction: row;justify-content: space-between;align-items: center;}
+.no-data{font-size: 16px;font-weight: 100;text-align: center;margin-top: 300px;}
+.bottom{display: flex;justify-content: space-between;border-top:1px rgb(247,247,247)solid ;position: relative;bottom: -180px;}
+.card-number{font-size: 16px;font-weight: 100;margin:20px 30px 10px 30px;justify-content: space-around;}
+.membership{font-size: 16px;padding: 15px 20px;border-bottom: 1px solid #f8f8f8;}
+.membership-percent{font-size: 16px;margin-top: 20px;margin-left: 30px;}
+.layui-layout-admin .layui-body .body-content{background-color: #f8f8f8 !important;}
+.nav-screen{display: flex;flex-direction: row;}
+.screen-tab{display: flex;flex-direction: row;align-items: center;margin-bottom: 20px;}
+.screen-time{margin-left: 20px;}
+.screen-tab .tab-item{border: 1px solid #e6e6e6;border-right: 0;width: 60px;height: 30px;line-height: 30px;text-align: center;}
+.screen-tab .tab-item:last-of-type{border-right: 1px solid #e6e6e6;}
+.tab-item:hover, .timecursor:hover, .member-detail-item{cursor:pointer}
+.tab-item{position: relative;}
+.bgcolorse{background: var(--base-color);color: #fff;}
+.activeTab:after{content: "";display: block;position: absolute;border: 1px solid var(--base-color);top: 0;left: 0;right: 0;bottom: 0;}
+.layui-layout-admin .layui-body .body-content{padding: 0px !important;background-color: transparent !important;}

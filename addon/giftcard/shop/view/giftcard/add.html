@@ -1,0 +1,732 @@
+
+<style>
+	.hide{display: none;}
+    .goods_num {padding-left: 20px;}
+    .goods-image-wrap .js-goods-image{margin-bottom: 0;line-height: 1;display: flex}
+    .card-common .goods-image-wrap .item{width: 185px;height: 119.7px;line-height: 119.7px;margin-top: 5px;margin-bottom: 5px;float: unset}
+    .card-common .goods-image-wrap .item .img-wrap{width: 100%;height: 100%;}
+    .card-common .goods-image-wrap .item .img-wrap img{max-height: 100%;max-width: 100%;width: auto;height: auto;display: flex;align-items: center;justify-content: center;}
+    .card-common .goods-image-wrap .item .operation{width: 100%;height: 100%;line-height: 5;}
+    .layui-table .goods-title{display: flex;align-items: center;}
+    .layui-table .goods-title .goods-img{width: 55px;height: 55px;line-height: 55px;flex-shrink: 0;margin-right: 10px;}
+    .layui-table .goods-title .goods-img img{max-width: 100%;max-height: 100%;}
+    #real-goods .layui-table{margin-bottom: 0;margin-top: 0;}
+    #real-goods #goods{border: 0;}
+    #real-goods .layui-table-body{overflow: auto;max-height: 500px;margin-bottom: 15px;border-bottom: 1px solid #e6e6e6;}
+    #real-goods .layui-table-body tbody tr:last-of-type td{border: none;}
+    .layui-table-head tr th:last-of-type{text-align: right;}
+    .layui-table-body tr td:last-of-type .table-btn{justify-content: flex-end;}
+    .disabled-click{pointer-events: none;color: #999 !important;}
+    .period-validity .layui-input-block>div{margin: 8px 0;display: flex;align-items: center;}
+    .period-validity .layui-input-block>div .layui-input-inline{margin: 0 8px;}
+    .period-validity .layui-input-block .layui-form-radio{margin-right: 0;padding-right: 0;}
+    .layui-input-inline.totality-num{float: none;}
+    .commodity-type-box{display: flex;}
+    .commodity-type-item{
+        margin-right: 15px;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        border: 1px solid #e5e5e5;
+        cursor: pointer;
+    }
+</style>
+
+<div class="layui-form">
+    <!-- 礼品卡类型 -->
+    <div class="layui-tab layui-tab-brief" lay-filter="goods_tab">
+        <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+                <div class="layui-card card-common card-brief">
+                    <div class="layui-card-header">
+                        <span class="card-title">礼品卡类型</span>
+                    </div>
+                    <div class="layui-card-body commodity-type-box" >
+                        <div class="commodity-type-item {if $card_type == 'virtual'}border-color{/if}" onclick="location.hash = ns.hash('giftcard://shop/giftcard/add?card_type=virtual')">
+                            <span class="{if $card_type == 'virtual'}text-color{/if}">电子卡</span>
+                            <span class="text-color-gray">(线上购买)</span>
+                        </div>
+                        <div class="commodity-type-item {if $card_type == 'real'}border-color{/if}" onclick="location.hash = ns.hash('giftcard://shop/giftcard/add?card_type=real')">
+                            <span class="{if $card_type == 'real'}text-color{/if}">实体卡</span>
+                            <span class="text-color-gray">(线下发放)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+	<div class="layui-card card-common card-brief">
+        <input name="card_type" value="{$card_type}" type="hidden">
+		<div class="layui-card-header">
+			<span class="card-title">基础设置</span>
+		</div>
+		<div class="layui-card-body">
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>礼品卡名称：</label>
+				<div class="layui-input-block">
+					<input type="text" name="card_name" value="" lay-verify="required" autocomplete="off" class="layui-input len-long" maxlength="40">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>分组：</label>
+				<div class="layui-input-inline len-mid">
+					<select class="category_id" name="category_id" lay-verify="required" lay-filter="categoryId">
+						<option value="">请选择</option>
+						{foreach $category_list as $k=>$v}
+						<option value="{$v['category_id']}">{$v['category_name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div id="card-cover" class="layui-form-item goods-image-wrap">
+				<label class="layui-form-label"><span class="required">*</span>礼品卡封面：</label>
+				<div class="layui-input-block">
+					<!--素材图片-->
+					<div class="js-goods-image"></div>
+				</div>
+				<div class="word-aux">至少传一张封面，最多上传3张封面</div>
+            </div>
+            {if $card_type == 'virtual'}
+            <div class="layui-form-item">
+                <label class="layui-form-label">销售价：</label>
+                <div class="layui-input-inline">
+                    <input type="number" min="0" name="card_price" onchange="detectionNumType(this,'positiveNumber')" class="layui-input len-short integral" autocomplete="off" value="0.00">
+                </div>
+                <div class="layui-form-mid">元</div>
+            </div>
+            {/if}
+			<div class="layui-form-item">
+				<label class="layui-form-label">排序：</label>
+				<div class="layui-input-block">
+					<input type="number" min="0" name="sort" value="0" lay-verify='sort' onchange="detectionNumType(this,'integral')" autocomplete="off" class="layui-input len-short">
+				</div>
+			</div>
+            {if $card_type == 'virtual'}
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否允许转赠：</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="is_allow_transfer" value="1" lay-verify="required" title="是" checked>
+                    <input type="radio" name="is_allow_transfer" value="0" lay-verify="required" title="否">
+                </div>
+                <div class="word-aux">转赠开启后，用户可以将自己的礼品卡作为礼包赠送给其他用户</div>
+            </div>
+            {/if}
+        </div>
+
+        {if $card_type == 'real'}
+        <div class="layui-card-header">
+            <span class="card-title">制卡规则</span>
+        </div>
+        <div class="layui-card-body ">
+
+            <div class="layui-form-item participation-condition">
+                <label class="layui-form-label"><span class="required">*</span>秘钥内容：</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" class="cdk_type" name="cdk_type[]" value="0-9" lay-skin="primary" title="0-9" checked>
+                    <input type="checkbox" class="cdk_type" name="cdk_type[]" value="a-z" lay-skin="primary" title="a-z">
+                    <input type="checkbox" class="cdk_type" name="cdk_type[]" value="A-Z" lay-skin="primary" title="A-Z">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>秘钥位数：</label>
+                <div class="layui-input-block">
+                    <input type="number" min="4" name="cdk_length" lay-verify="required|cdk_length" onchange="detectionNumType(this,'integral')" class="layui-input len-short" autocomplete="off" value="6">
+                </div>
+                <div class="word-aux">
+                    卡密位数仅限制卡密内容长度
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">卡号前缀：</label>
+                <div class="layui-input-block">
+                    <input type="text" name="card_prefix" value="" autocomplete="off" class="layui-input len-long">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">卡号后缀：</label>
+                <div class="layui-input-block">
+                    <input type="text" name="card_suffix" value="" autocomplete="off" class="layui-input len-long">
+                </div>
+            </div>
+        </div>
+        {/if}
+        <div class="layui-card-header">
+            <span class="card-title">礼品卡权益</span>
+        </div>
+        <div class="layui-card-body">
+            <!--类型选择-->
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>权益类型：</label>
+                <div class="layui-input-block">
+                    {foreach $card_right_type_list as $k=>$v}
+                    <input type="radio" name="card_right_type" value="{$k}" lay-verify="required" lay-filter="cardRightType" title="{$v}" {if $k=='balance' }checked{/if}>
+                    {/foreach}
+                </div>
+            </div>
+            <!--储值-->
+            <div id="real-balance" class="layui-show">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">储值余额：</label>
+                    <div class="layui-input-inline">
+                        <input type="number" min="0" name="balance" onchange="detectionNumType(this,'positiveNumber')" class="layui-input len-short" autocomplete="off" value="0">
+                    </div>
+                    <div class="layui-form-mid">元</div>
+                </div>
+            </div>
+            <!--商品-->
+            <div id="real-goods" class="layui-hide">
+                <!--数量类型选择-->
+                <div class="layui-form-item goods-number">
+                    <label class="layui-form-label"><span class="required">*</span>礼品卡中商品选赠规则：</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="card_right_goods_type" value="item" lay-verify="required" lay-filter="cardTightGoodsType" title="礼品卡由下列商品及其数量打包而成" checked>
+                    </div>
+                </div>
+
+                <div class="layui-form-item goods-number">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="card_right_goods_type" value="all" lay-verify="required" lay-filter="cardTightGoodsType" title="礼品卡持卡人兑换时可从以下商品列表中任选N件商品">
+                        <div class="layui-input-inline totality-num">
+                            <input type="number" min="0" disabled name="card_right_goods_count" onchange="detectionNumType(this,'integral')" class="layui-input len-short" autocomplete="off" value="0">
+                        </div>
+                        <span class="sub-text totality-num disabled-click">件</span>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">商品：</label>
+                    <div class="layui-input-block">
+                        <div class="layui-table-head">
+                            <table class="layui-table show" lay-skin="line" lay-size="lg">
+                                <colgroup>
+                                    <col width="45%">
+                                    <col width="15%">
+                                    <col class="goods_num_col" width="15%">
+                                    <col width="15%">
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>商品名称</th>
+                                        <th>原价</th>
+                                        <th class="goods_num_col">数量</th>
+                                        <th class="operation">操作</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div class="layui-table-body">
+                            <table class="layui-table show" id="goods" lay-skin="line" lay-size="lg">
+                                <colgroup>
+                                    <col width="45%">
+                                    <col width="15%">
+                                    <col class="goods_num_col" width="15%">
+                                    <col width="15%">
+                                </colgroup>
+                                <tbody>
+                                    <tr class="goods-empty">
+                                        <td colspan="4">
+                                            <div>未添加商品</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="layui-btn" onclick="addGoods()">添加商品</button>
+                        <span class="goods_num">已选商品（<span id="goods_num" class="text-color">0</span>）</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-card-header">
+            <span class="card-title">有效期</span>
+        </div>
+        <div class="layui-card-body">
+            <div class="layui-form-item period-validity">
+                <label class="layui-form-label"><span class="required">*</span>有效期：</label>
+                <div class="layui-input-block">
+                    <div>
+                        <input type="radio" name="validity_type" value="forever" lay-filter="validityType" checked>
+                        <span class="sub-text">永久有效</span>
+                    </div>
+                    <div>
+                        <input type="radio" name="validity_type" value="date" lay-filter="validityType">
+                        <span class="sub-text disabled-click">有效期至</span>
+                        <div class="layui-input-inline" style="float: none">
+                            <input type="text" class="layui-input sub-text disabled-click" name="validity_time" lay-verify="time" placeholder="有效期限" id="start_time" readonly>
+                            <i class="iconrili iconfont calendar"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="radio" name="validity_type" value="day" lay-filter="validityType">
+                        <span class="sub-text disabled-click">领取后</span>
+                        <div class="layui-input-inline" style="float: none">
+                            <input type="number" min="0" name="validity_day" onchange="detectionNumType(this,'integral')" autocomplete="off" class="layui-input len-short sub-text disabled-click" value="0" lay-verify='time_day' readonly>
+                        </div>
+                        <span class="sub-text disabled-click">天有效</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-card-header">
+            <span class="card-title">使用须知</span>
+        </div>
+        <div class="layui-card-body">
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required"></span>使用须知：</label>
+                <div class="layui-input-block">
+                    <script id="instruction" type="text/plain" style="width:800px;height:400px;"></script>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-card-header">
+            <span class="card-title">礼品卡详情</span>
+        </div>
+        <div class="layui-card-body">
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required"></span>详情：</label>
+                <div class="layui-input-block">
+                    <script id="editor" type="text/plain" style="width:800px;height:400px;"></script>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+        <button class="layui-btn layui-btn-primary" onclick="backGiftCardList()">返回</button>
+    </div>
+</div>
+
+<!--素材图片列表-->
+<script type="text/html" id="mediaImage">
+    {{# if(d.list.length){ }}
+        {{# for(var i=0;i<d.list.length;i++){ }}
+        <div class="item upload_img_square_item" data-index="{{i}}">
+            <div class="img-wrap">
+                <img src="{{ns.img(d.list[i])}}" layer-src="{{ns.img(d.list[i])}}">
+            </div>
+            <div class="operation">
+                <i title="图片预览" class="iconfont iconreview js-preview"></i>
+                <i title="删除图片" class="layui-icon layui-icon-delete js-delete" data-index="{{i}}"></i>
+                <div class="replace_img" data-index="{{i}}">点击替换</div>
+            </div>
+        </div>
+        {{# } }}
+        {{# if(d.list.length < d.max){ }}
+        <div class="item js-add-media-image upload_img_square">+</div>
+        {{# } }}
+    {{# }else{ }}
+        <div class="item js-add-media-image upload_img_square">+</div>
+    {{# } }}
+</script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/ueditor.all.js"> </script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/lang/zh-cn/zh-cn.js"></script>
+<script type="text/javascript" src="GIFTCARD_JS/media.js"></script>
+<script>
+    var form,laytpl,laydate,
+        repeat_flag = false,
+        selectGoodsSkuId = [],
+        selectGoodsId = [],
+        num_list = [],
+        goods = [],
+        currentDate = new Date(),
+        mediaImage = [],
+        mediaIds = [],
+        activityInstruction,
+        activityDetail;
+
+    var GOODS_IMAGE_MAX = 3; //素材上传数量
+
+    var default_instruction = `1. 礼品卡有效期为购买日起三年内有效，过期失效，请在有效期内使用。<br>2. 本卡可在指定门店，可以本人使用，或者转赠他人，本卡仅限于店铺或者外带时消费使用，不适用于会员卡购买或者充值。<br>3. 本卡不记名、不挂失、不可兑换现金、不找零。可多次使用。<br>4. 如有疑问请拨打：`;
+
+    layui.use(['form', 'laytpl', 'laydate'], function() {
+        laydate = layui.laydate;
+        form = layui.form;
+        laytpl = layui.laytpl;
+        refreshGoodsImage();
+
+        activityDetail = UE.getEditor('editor', {
+            autoHeightEnabled: false
+        });
+        activityInstruction = UE.getEditor('instruction', {
+            autoHeightEnabled: false
+        });
+
+        currentDate.setDate(currentDate.getDate() + 30);
+        form.render();
+        laydate.render({
+            elem: '#start_time',
+            type: 'datetime',
+            change: function(value, date, endDate) {
+                $(".date-picker-btn").removeClass("selected");
+            }
+        });
+
+        //权益类型
+        form.on('radio(cardRightType)', function(data) {
+            if (data.value.trim() == 'balance') {
+                $('#real-balance').removeClass('layui-hide').addClass('layui-show');
+                $('#real-goods').removeClass('layui-show').addClass('layui-hide');
+                $('.goods_num_col').find('input').attr('lay-verify','required');
+            } else if (data.value.trim() == 'goods') {
+                $('#real-goods').removeClass('layui-hide').addClass('layui-show');
+                $('#real-balance').removeClass('layui-show').addClass('layui-hide');
+                $('input[name="balance"]').val(0);
+                $('.goods_num_col').find('input').attr('lay-verify','required|number');
+            }
+        });
+
+        //有效期
+        form.on('radio(validityType)', function(data) {
+            $(data.elem).parent("div").siblings().find(".sub-text").addClass("disabled-click");
+            $(data.elem).parent("div").find(".sub-text").removeClass("disabled-click");
+            if (data.value.trim() == 'forever') {
+                $('input[name="validity_day"]').val('').attr('readonly', 'readonly');
+                $('input[name="validity_time"]').val('');
+            } else if (data.value.trim() == 'date') {
+                $('input[name="validity_day"]').val('').attr('readonly', 'readonly');
+            } else if (data.value.trim() == 'day') {
+                $('input[name="validity_day"]').removeAttr('readonly');
+                $('input[name="validity_time"]').val('');
+            }
+        });
+
+        //商品数量类型
+        form.on('radio(cardTightGoodsType)', function(data) {
+            if (data.value.trim() == 'all') {
+                $(".goods-number .word-aux").addClass("layui-hide");
+                $('.goods_num_col').removeClass('show').addClass('hide');
+                $('.goods_num_col').find('input').attr('lay-verify','required');
+
+                $(".totality-num input").attr("disabled", false);
+                $(".totality-num input").attr('lay-verify','required|number');
+                $(".totality-num").removeClass('disabled-click');
+
+            } else if (data.value.trim() == 'item') {
+                $(".goods-number .word-aux").removeClass("layui-hide");
+                $(".totality-num input").attr("disabled", true);
+                $(".totality-num").addClass('disabled-click');
+                $(".totality-num input").attr('lay-verify','');
+                $('input[name="card_right_goods_count"]').val(0);
+                $('.goods_num_col').removeClass('hide').addClass('show');
+                $('.goods_num_col').find('input').attr('lay-verify','required|number');
+            }
+        });
+
+        /**
+        * 表单提交
+        */
+        form.on('submit(save)', function(data) {
+            if (mediaImage.length < 1) {
+                layer.msg("至少选择一个礼品封面");
+                return false;
+            }
+            data.field.media_ids = mediaIds.toString();
+            data.field.card_cover = mediaImage.toString();
+
+            if (data.field.card_right_type == 'goods') {
+                goods = [];
+                var num_list = [];
+                $(".goods_num").each(function() {
+                    // 商品按数量
+                    if (data.field.card_right_goods_type == 'all') {
+                        num_list.push(0);
+                    } else {
+                        num_list.push($(this).val());
+                    }
+                });
+
+                for (var i = 0; i < selectGoodsSkuId.length; i++) {
+                    var obj = {};
+                    obj.sku_id = selectGoodsSkuId[i];
+                    obj.goods_id = selectGoodsId[i];
+                    obj.goods_num = num_list[i];
+                    goods.push(obj)
+                }
+                data.field.goods_sku_list = JSON.stringify(goods);
+                if (goods.length == 0) {
+                    layer.msg("请选择商品");
+                    return;
+                }
+            }else{
+                data.field.goods_sku_list = '';
+                if (data.field.balance == 0) {
+                    layer.msg("请输入储值余额");
+                    return;
+                }
+            }
+
+            if(data.field.card_type == 'real'){
+                if(data.field['cdk_type[0]'] == undefined && data.field['cdk_type[1]'] == undefined && data.field['cdk_type[2]'] == undefined){
+                    layer.msg("卡密内容不能为空");
+                    return;
+                }
+            }
+
+            data.field.desc = activityDetail.getContent();
+            data.field.instruction = activityInstruction.getContent();
+
+            if (repeat_flag) return;
+            repeat_flag = true;
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("giftcard://shop/giftcard/add"),
+                data: data.field,
+                async: false,
+                success: function(res) {
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        layer.confirm('添加成功', {
+                            title: '操作提示',
+                            btn: ['返回列表', '继续添加'],
+                            closeBtn: 0,
+                            yes: function(index, layero) {
+                                location.hash = ns.hash("giftcard://shop/giftcard/lists");
+								layer.close(index);
+                            },
+                            btn2: function(index, layero) {
+                                listenerHash(); // 刷新页面
+                                layer.close(index);
+                            }
+                        });
+                    } else {
+                        layer.msg(res.message);
+                    }
+                }
+            })
+        });
+
+        //表单验证
+        form.verify({
+            number: function(value) {
+                if (value <= 0) {
+                    return "数量不能小于或等于0"
+                }
+            },
+            sort: function(value) {
+                if (value < 0) {
+                    return "排序不能小于0"
+                }
+            },
+            nums: function(value) {
+                if (value < 10) {
+                    return "请输入大于10的数"
+                }
+            },
+            time: function(value) {
+                var time_type = $('[name="time_type"]:checked').val();
+                if (time_type == 2) {
+                    var now_time = (new Date()).getTime();
+                    var end_time = (new Date(value)).getTime();
+                    if (!end_time) {
+                        return '有效期不能为空'
+                    }
+                    if (now_time > end_time) {
+                        return '有效期不能小于当前时间!'
+                    }
+                }
+            },
+            time_day: function(value) {
+                var time_type = $('[name="time_type"]:checked').val();
+                if (time_type == 3) {
+                    if (value <= 0) {
+                        return '有效期天数至少为一天!'
+                    }
+                }
+            },
+            cdk_length: function(value) {
+                if (value <= 0) {
+                    return "密钥位数不能小于或等于0"
+                }
+            },
+        });
+    });
+
+    //添加素材
+    $("body").off("click", ".js-add-media-image").on("click", ".js-add-media-image", function() {
+        openMedia(function(data) {
+            for (var i = 0; i < data.length; i++) {
+                if (mediaImage.length < GOODS_IMAGE_MAX) {
+                    mediaImage.push(data[i].media_path);
+                    mediaIds.push(data[i].media_id);
+                }
+            }
+            refreshGoodsImage();
+        }, GOODS_IMAGE_MAX - mediaImage.length);
+    });
+
+    //替换商品主图
+    $("body").off("click", ".replace_img").on("click", ".replace_img", function () {
+        var index = $(this).data('index');
+        openMedia(function (data) {
+            for (var i = 0; i < data.length; i++) {
+                mediaImage[index] = data[i].media_path;
+                mediaIds[index] = data[i].media_id;
+            }
+            refreshGoodsImage();
+        },1);
+    });
+
+    //渲染商品主图列表
+    function refreshGoodsImage() {
+        var goods_image_template = $("#mediaImage").html();
+        var data = {
+            list: mediaImage,
+            max: GOODS_IMAGE_MAX
+        };
+
+        laytpl(goods_image_template).render(data, function(html) {
+
+            $(".js-goods-image").html(html);
+
+            //加载图片放大
+            loadImgMagnify();
+
+            if (mediaImage.length) {
+
+                //预览
+                $(".js-goods-image .js-preview").click(function() {
+                    $(this).parent().prev().find("img").click();
+                });
+
+                //图片删除
+                $(".js-goods-image .js-delete").click(function() {
+                    var index = $(this).attr("data-index");
+                    mediaImage.splice(index, 1);
+                    mediaIds.splice(index, 1);
+                    refreshGoodsImage();
+                });
+            }
+
+            //最多传十张图
+            if (mediaImage.length < GOODS_IMAGE_MAX) {
+                $(".js-add-goods-image").show();
+            } else {
+                $(".js-add-goods-image").hide();
+            }
+        });
+    }
+
+    function backGiftCardList() {
+        location.hash = ns.hash("giftcard://shop/giftcard/lists");
+    }
+
+    //检测数据类型
+    function detectionNumType(el, type) {
+        var value = $(el).val();
+        //大于零 且 不是小数
+        if (value < 0 && type == 'integral')
+            $(el).val(0);
+        else if (type == 'integral')
+            $(el).val(Math.round(value));
+
+        //大于1 且 不是小数
+        if (value < 1 && type == 'positiveInteger')
+            $(el).val(1);
+        else if (type == 'positiveInteger')
+            $(el).val(Math.round(value));
+        //大于零可以是小数
+        if (type == 'positiveNumber') {
+            value = parseFloat(value).toFixed(2);
+            if (value < 0)
+                $(el).val(0);
+            else
+                $(el).val(value);
+        }
+    }
+
+    /**
+    * 添加商品
+    */
+    function addGoods() {
+        goodsSelect(function (data) {
+            if (Object.keys(data).length == 0) {
+                selectGoodsSkuId = [];
+                selectGoodsId = [];
+                $('.goods-empty').show();
+                $("#goods_num").text(selectGoodsSkuId.length);
+                $("#goods tbody tr:not(.goods-empty)").remove();
+                return;
+            }
+
+            var price = 0.00;
+            var card_right_goods_type_change = $('input[name="card_right_goods_type"]:checked').val();
+
+            var th_display = card_right_goods_type_change == 'item' ? 'show' : 'hide';
+            if (th_display == 'show') {
+                $('.goods_num_col').removeClass('hide').addClass('show');
+            } else {
+                $('.goods_num_col').removeClass('show').addClass('hide');
+            }
+
+            var html = '';
+
+            for (var key in data) {
+                for (var sku in data[key].selected_sku_list) {
+                    var item = data[key].selected_sku_list[sku];
+                    if (selectGoodsSkuId.indexOf(parseInt(item.sku_id)) != -1) {
+                        continue;
+                    }
+                    html += `<tr data-sku_id="${item.sku_id}" data-goods_id="${item.goods_id}">`;
+                    html += `
+                <td>
+                    <div class="goods-title">
+                        <div class="goods-img">
+                            <img layer-src src="${item.sku_image ? ns.img(item.sku_image) : ''}" alt="">
+                        </div>
+                        <p class="multi-line-hiding goods-name">${item.sku_name}</p>
+                    </div>
+                </td>`;
+                    html += `<td class='price-one'>${item.price}</td>`;
+                    html += `<td class="goods_num_col ` + th_display +
+                            `"><input type="number" name="" min="1" onchange="detectionNumType(this,'integral')" lay-verify="required|number" class="layui-input goods_num" value='1'></td>`;
+                    html +=
+                            `<td class='operation'> <div class='table-btn '><a href='javascript:;' class='layui-btn' onclick='deleteGoods(this)'>删除商品</a></div></td>`;
+                    html += `</tr>`;
+                    price += Number(item.price);
+                    selectGoodsSkuId.push(item.sku_id);
+                    selectGoodsId.push(item.goods_id);
+                }
+            }
+
+            if(selectGoodsSkuId.length) {
+                $('.goods-empty').hide();
+                $("#goods tbody").append(html);
+            } else {
+                $('.goods-empty').show();
+            }
+            $("#goods_num").text(selectGoodsSkuId.length);
+
+        }, selectGoodsSkuId, {
+            mode: "sku",
+            goods_class: 1,
+            is_disabled_goods_class: 1
+        });
+    }
+
+    /**
+    * 删除商品
+    */
+    function deleteGoods(data) {
+        var obj = $(data).parent().parent().parent();
+        $(obj).remove();
+        for (var i in selectGoodsSkuId) {
+            if (selectGoodsSkuId[i] == Number($(obj).attr("data-sku_id"))) {
+                selectGoodsSkuId.splice(i, 1);
+                num_list.splice(i, 1);
+            }
+        }
+        $("#goods_num").text(selectGoodsSkuId.length)
+
+        if(selectGoodsSkuId.length) $('.goods-empty').hide();
+        else $('.goods-empty').show();
+    }
+</script>

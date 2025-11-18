@@ -1,0 +1,439 @@
+<style>
+	.layui-form-selected dl{z-index: 1000;}
+	.upload-img-block .upload-img-box .upload-default{position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);}
+	.multiple-uploading{display: flex;flex-wrap: wrap;}
+	.multiple-uploading .multiple-item{position: relative;display: flex;justify-content: center;align-items: center;flex-direction: column;margin-bottom: 10px;padding: 10px;width: 100px;height: 100px;border: 1px dashed #ddd;text-align: center;box-sizing: border-box;line-height: 1;color: #5a5a5a;}
+	.multiple-uploading .multiple-item p{line-height: 20px;margin-top: 5px;}
+	.multiple-uploading .multiple-item span{display: none;position: absolute;top: -10px;right: -7px;width: 20px;height: 20px;border: 1px solid #999;color: #999;background-color: #fff;border-radius: 50%;line-height: 1;font-size: 18px;cursor: pointer;}
+	.multiple-uploading .multiple-item:hover .icon{display: block;}
+	.multiple-uploading .multiple-item ~ .multiple-item{margin-left: 10px;}
+	.multiple-uploading .iconfont{font-size: 30px;color: #6D7278;}
+	#multiple_uploading{cursor: pointer;}
+	.multiple-item img{max-width: 100%;max-height: 100%;}
+</style>
+
+<div class="layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label short-label"><span class="required">*</span>笔记标题：</label>
+		<div class="layui-input-inline">
+			<input type="text" name="note_title" lay-verify="required" maxlength="40" autocomplete="off" placeholder="笔记标题最多40个字" class="layui-input len-long">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label short-label">摘要：</label>
+		<div class="layui-input-block">
+			<textarea name="note_abstract" class="layui-textarea len-long" maxlength="100"></textarea>
+		</div>
+		<div class="word-aux">笔记摘要最多可输入100个字</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>封面：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="cover_type" value="0" title="单图" lay-filter="cover_type" checked>
+			<input type="radio" name="cover_type" value="1" title="多图" lay-filter="cover_type">
+		</div>
+	</div>
+
+	<!-- 图片上传 -->
+	<div class="layui-form-item">
+		<label class="layui-form-label"></label>
+		<div class="layui-input-block img-upload">
+			<div class="upload-img-block square simple-uploading">
+				<div class="upload-img-box" id="img">
+					<div class="upload-default">
+						<i class="iconfont iconshangchuan"></i>
+						<p>点击上传</p>
+					</div>
+				</div>
+				<input type="hidden" name="image" />
+				<i class="del">x</i>
+			</div>
+
+			<div class="multiple-uploading layui-hide">
+				<div class="multiple-item" id="multiple_uploading">
+					<i class="iconfont iconshangchuan"></i>
+					<p>点击上传</p>
+				</div>
+			</div>
+		</div>
+		<div class="word-aux">推荐使用 750x420 像素的图片 最多上传1张</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>笔记分组：</label>
+		<div class="layui-input-inline">
+			<select name="group_id" lay-verify="required">
+				<option value="">请选择</option>
+				{foreach $group_list as $v}
+				<option value="{$v['group_id']}">{$v['group_name']}</option>
+				{/foreach}
+			</select>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>正文：</label>
+		<div class="layui-input-inline">
+			<script id="editor" type="text/plain" class="special-length" style="height:500px;"></script>
+            <input type="hidden" name="note_content" id="note_content" />
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">发布时间：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_show_release_time" value="1" title="显示" checked>
+			<input type="radio" name="is_show_release_time" value="0" title="不显示">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">阅读次数：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_show_read_num" value="1" title="显示" checked>
+			<input type="radio" name="is_show_read_num" value="0" title="不显示">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">点赞次数：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_show_dianzan_num" value="1" title="显示" checked>
+			<input type="radio" name="is_show_dianzan_num" value="0" title="不显示">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">虚拟阅读数：</label>
+		<div class="layui-input-inline">
+			<input type="number" min="0" name="initial_read_num" onchange="detectionNumType(this,'integral')" class="layui-input">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">虚拟点赞数：</label>
+		<div class="layui-input-inline">
+			<input type="number" min="0" name="initial_dianzan_num" onchange="detectionNumType(this,'integral')" class="layui-input">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">排序：</label>
+		<div class="layui-input-inline">
+			<input type="number" min="0" name="sort" class="layui-input">
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">立即发布</button>
+		<button class="layui-btn" lay-submit lay-filter="saveDrafts">保存至草稿箱</button>
+		<button class="layui-btn layui-btn-primary" onclick="backNotesList()">返回</button>
+	</div>
+
+	<input type="hidden" name="goods_ids" value="" />
+	<input type="hidden" name="note_type" value="{$note_type}" />
+</div>
+
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/ueditor.config.js?time=20240614"></script>
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/ueditor.all.js?time=20240614"></script>
+<script type="text/javascript" charset="utf-8" src="STATIC_EXT/ueditor/lang/zh-cn/zh-cn.js"></script>
+<script>
+    //实例化富文本
+	UE.registerUI('添加商品', function(editor, uiName) {
+		//注册按钮执行时的command命令，使用命令默认就会带有回退操作
+		editor.registerCommand(uiName, {
+			execCommand: function() {
+				alert('execCommand:' + uiName)
+			}
+		});
+		//创建一个button
+		var btn = new UE.ui.Button({
+			//按钮的名字
+			name: uiName,
+			//提示
+			title: uiName,
+			label:'添加商品',
+			//添加额外样式，指定icon图标，这里默认使用一个重复的icon
+			cssRules: 'background-position: -500px 0;',
+			showIcon:false,
+			//点击时执行的命令
+			onclick: function() {
+				//这里可以不用执行命令,做你自己的操作也可
+				// editor.execCommand(uiName);
+				addGoods();
+			}
+		});
+		//当点到编辑内容上时，按钮要做的状态反射
+		editor.addListener('selectionchange', function() {
+			var state = editor.queryCommandState(uiName);
+			if (state == -1) {
+				btn.setDisabled(true);
+				btn.setChecked(false);
+			} else {
+				btn.setDisabled(false);
+				btn.setChecked(state);
+			}
+		});
+		//因为你是添加button,所以需要返回这个button
+		return btn;
+	});
+
+    var ue = UE.getEditor('editor');
+    if($("#note_content").val()){
+        ue.ready(function() {
+            ue.setContent($("#note_content").val());
+        });
+    }
+
+    var form,repeat_flag,
+		IMAGE_MAX = 9, //最多可以上传多少张图片
+		imageCollection = [], //图片集合
+		selectedGoodsId = [],
+		goods_id = [],
+		goods_list =[];
+
+    layui.use(['form'], function() {
+		form = layui.form;
+		repeat_flag = false;
+
+		form.render();
+
+		/**
+		 * 图片切换
+		 */
+		form.on('radio(cover_type)', function(data){
+			//0单图  1多图
+			if (data.value == 0){
+
+				if(imageCollection.length) {
+					imageCollection.splice(1, imageCollection.length);
+					var val = '<img src="' + ns.img(imageCollection[0]) + '" alt="">';
+					$("#img").html(val);
+				}
+
+				$(".simple-uploading").removeClass("layui-hide");
+				$(".multiple-uploading").addClass("layui-hide");
+				$(".simple-uploading").parents(".layui-form-item").find('.word-aux').text('推荐使用 750x420 像素的图片 最多上传1张');
+
+			} else{
+				if(imageCollection.length) {
+					var html = '';
+					html += `<div class="multiple-item" id="multiple_uploading">`;
+					html += `<i class="iconfont iconshangchuan"></i>`;
+					html += `<p>点击上传</p>`;
+					html += `</div>`;
+
+					for (var i = 0; i < imageCollection.length; i++) {
+						html += `<div class="multiple-item">`;
+						html += `<img src="${ns.img(imageCollection[i])}" alt="">`;
+						html += `<span class="icon">x</span>`;
+						html += `</div>`;
+					}
+
+					$(".multiple-uploading").html(html);
+				}
+
+				$(".simple-uploading").addClass("layui-hide");
+				$(".multiple-uploading").removeClass("layui-hide");
+				$(".simple-uploading").parents(".layui-form-item").find('.word-aux').text('推荐使用 350x350 像素的图片，最多上传9张');
+			}
+		});
+
+		/* var upload = new Upload({
+			elem: '#img',
+			callback:function (res) {
+				if (res.code >= 0) {
+					imageCollection = [];
+					imageCollection.push(res.data.pic_path)
+				}
+			},
+			deleteCallback:function () {
+				upload.delete();
+				imageCollection = [];
+			}
+		}); */
+
+		// 单图上传
+		$("body").off("click", "#img").on("click", "#img", function () {
+		    openAlbum(function (data) {
+				imageCollection = [];
+				imageCollection.push(data[0].pic_path);
+				imageCollection.splice(1, imageCollection.length);
+				var val = '<img src="' + ns.img(imageCollection[0]) + '" alt="">';
+				$("#img").html(val);
+		    }, 1);
+		});
+
+		//多图上传
+		$("body").off("click","#multiple_uploading").on("click","#multiple_uploading", function () {
+			var html = '';
+			openAlbum(function (data) {
+				for (var i = 0; i < data.length; i++) {
+					if (imageCollection.length < IMAGE_MAX){
+						imageCollection.push(data[i].pic_path);
+
+						html += `<div class="multiple-item">`;
+							html += `<img src="${ns.img(data[i].pic_path)}" alt="">`;
+							html += `<span class="icon">x</span>`;
+						html += `</div>`;
+					}
+				}
+				if (imageCollection.length >= IMAGE_MAX)
+					$("#multiple_uploading").addClass("layui-hide");
+
+				$(".multiple-uploading").append(html);
+
+			}, IMAGE_MAX);
+		});
+
+		$("body").off('click', '.multiple-item .icon').on('click', '.multiple-item .icon', function () {
+			var index = $(this).parent().index() - 1;
+			imageCollection.splice(index,1);
+			$(this).parent().remove();
+
+			if (imageCollection.length < IMAGE_MAX) $("#multiple_uploading").removeClass("layui-hide");
+		});
+
+        /**
+         * 表单提交(立即发布)
+         */
+        form.on('submit(save)', function(data){
+            var field = data.field;
+            field.status = 1;
+            formSubmit(field)
+        });
+
+        /**
+         * 表单提交(草稿箱)
+         */
+        form.on('submit(saveDrafts)', function(data){
+            var field = data.field;
+            field.status = 0;
+            formSubmit(field)
+        });
+    });
+
+    /**
+     *  提交
+     */
+    function formSubmit(data)
+    {
+		if (!imageCollection.length){
+			layer.msg('请选择封面图！', {icon: 5, anim: 6});
+			return;
+		}
+
+		// if (selectedGoodsId.length == 0) {
+		// 	layer.msg('请选择参与活动的商品！', {icon: 5, anim: 6});
+		// 	return;
+		// }
+
+		data.cover_img = imageCollection.join();
+
+		var goodsHighlights = [];
+		$(".lightspot-item").each(function (index,item) {
+			goodsHighlights.push($(item).find('input').val());
+		});
+		data.goods_highlights = goodsHighlights.toString();
+
+		if (!ue.getContent()){
+			layer.msg("笔记内容不能为空");
+			return false;
+		}
+
+		if(data.sort < 0){
+			layer.msg("排序号不能小于0");
+			return false;
+		}
+
+		data.note_content = ue.getContent();
+
+		if(repeat_flag) return;
+		repeat_flag = true;
+
+		$.ajax({
+			type: 'POST',
+			dataType: 'JSON',
+			url: ns.url("notes://shop/notes/add"),
+			data: data,
+			async: false,
+			success: function(res){
+				repeat_flag = false;
+
+				if (res.code == 0) {
+					layer.confirm('添加成功', {
+						title:'操作提示',
+						btn: ['返回列表', '继续添加'],
+						closeBtn: 0,
+						yes: function(index, layero){
+							if(data.status == 0){
+								location.hash = ns.hash("notes://shop/notes/drafts");
+							}else{
+								location.hash = ns.hash("notes://shop/notes/lists");
+							}
+							layer.close(index);
+						},
+						btn2: function(index, layero) {
+							listenerHash(); // 刷新页面
+							layer.close(index);
+						}
+					});
+				}else{
+					layer.msg(res.message);
+				}
+			}
+		})
+    }
+
+	/* 添加商品 */
+	function addGoods(){
+		goodsSelect(function (data) {
+
+			for (var key in data) {
+				var item = data[key];
+
+				var temp_html = `<div style="margin-bottom:20px;">`;
+				temp_html += `<div style="width:100%;padding:8px;box-sizing:border-box;border-radius:4px;background:#f8f8f8;display:flex">`;
+				temp_html += `<img style='width:74px;height:74px;border-radius:4px' src="${item.goods_image ? ns.img(item.goods_image) : ''}">`;
+				temp_html += `<div style="margin-left: 10px;width: 200px;flex: 1;min-height: 0;min-width: 0;">`;
+				temp_html += `<div style="font-size:14px;color:#202021;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" >${item.goods_name}</div>`;
+				temp_html += `<div style="font-size:13px;color:#5e6066;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>`;
+				temp_html += `<div style="font-size:14px;color:#fd463e;font-weight:700;margin-top:10px"><span>￥</span>${item.price}</div>`;
+				temp_html += `</div>`;
+				temp_html += `</div></div>`;
+				ue.setContent(temp_html, true);
+			}
+
+		},selectedGoodsId, {mode: "spu"});
+	}
+
+    function backNotesList() {
+        location.hash = ns.hash("notes://shop/notes/lists");
+    }
+
+	//检测数据类型
+	function detectionNumType(el, type) {
+        var value = $(el).val();
+        //大于零 且 不是小数
+        if (value < 0 && type == 'integral')
+            $(el).val(0);
+        else if (type == 'integral')
+            $(el).val(Math.round(value));
+
+        //大于1 且 不是小数
+        if (value < 1 && type == 'positiveInteger')
+            $(el).val(1);
+        else if (type == 'positiveInteger')
+            $(el).val(Math.round(value));
+        //大于零可以是小数
+        if (type == 'positiveNumber') {
+            value = parseFloat(value).toFixed(2);
+            if (value < 0)
+                $(el).val(0);
+            else
+                $(el).val(value);
+        }
+    }
+</script>

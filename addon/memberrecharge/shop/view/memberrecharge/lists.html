@@ -1,0 +1,280 @@
+<style>
+	.multi-line-hiding .point-left{margin-right: 14px}
+	.layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+	.layui-layout-admin .single-filter-box{padding: 0;}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label sm">开启充值：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="is_use" lay-filter="is_use" value="1" lay-skin="switch" {if !empty($config) && $config.is_use==1 }checked{/if}>
+		</div>
+	</div>
+</div>
+
+<!-- 搜索框 -->
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="add()">添加充值套餐</button>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="status">
+	<ul class="layui-tab-title">
+		<li class="layui-this" data-status="">全部</li>
+		<li data-status="1">正常</li>
+		<li data-status="2">关闭</li>
+	</ul>
+	
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="charge_list" lay-filter="charge_list"></table>
+	</div>
+</div>
+
+<!-- 封面 -->
+<script type="text/html" id="cover_img">
+	<div class="table-title">
+<!--		<div class="title-pic">-->
+<!--			<img layer-src src="{{ns.img(d.cover_img.split(',')[0])}}" onerror="this.src = 'SHOP_IMG/goods_empty.gif' "/>-->
+<!--		</div>-->
+		<div class='title-content'>
+			<p class="multi-line-hiding">面值：{{d.face_value}}</p>
+			<p class="multi-line-hiding">价格：{{d.buy_price}}</p>
+		</div>
+	</div>
+</script>
+
+<!-- 礼包 -->
+<script type="text/html" id="libao">
+	<p class="multi-line-hiding"><span class="point-left">积分</span>：{{d.point}}</p>
+	<p class="multi-line-hiding">成长值：{{d.growth}}</p>
+</script>
+
+<!-- 状态 -->
+<script type="text/html" id="status">
+	{{d.status == 1 ? '正常' : '关闭'}}
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" lay-event="detail">详情</a>
+		<a class="layui-btn" lay-event="card">客户列表</a>
+		<a class="layui-btn" lay-event="del">删除</a>
+		<a class="layui-btn" lay-event="records">充值记录</a>
+		{{# if(d.status == 1){ }}
+			<a class="layui-btn" lay-event="close">关闭</a>
+		{{# }else if(d.status == 2){ }}
+			<a class="layui-btn" lay-event="open">开启</a>
+		{{# } }}
+	</div>
+</script>
+
+<script>
+	layui.use(['form', 'element'], function() {
+		var table,
+			form = layui.form,
+			element = layui.element,
+			repeat_flag = false; //防重复标识
+		form.render();
+		
+		form.on('switch(is_use)', function(data) {
+			$.ajax({
+				url: ns.url("memberrecharge://shop/memberrecharge/setConfig"),
+				data: {
+					is_use: (data.elem.checked ? 1 : 0)
+				},
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res) {
+					layer.msg(res.message);
+				}
+			});
+		});
+
+		table = new Table({
+			elem: '#charge_list',
+			url: ns.url("memberrecharge://shop/memberrecharge/lists"),
+			cols: [
+				[{
+                    field: 'recharge_name',
+                    title: '套餐名称',
+                    unresize: 'false',
+                    width: '10%'
+                },{
+					title: '套餐信息',
+					unresize: 'false',
+					width: '15%',
+					templet: '#cover_img'
+				}, {
+					field: 'point',
+					title: '礼包信息',
+					unresize: 'false',
+					width: '15%',
+                    templet: '#libao'
+				}, {
+				    field: 'sale_num',
+				    title: '购买数量',
+				    unresize: 'false',
+				    width: '10%'
+				}, {
+					title: '创建时间',
+					unresize: 'false',
+					width: '20%',
+					templet: function(data) {
+						return ns.time_to_date(data.create_time);
+					}
+				}, {
+					title: '状态',
+					unresize: 'false',
+					width: '10%',
+					templet: '#status'
+				}, {
+					title: '操作',
+					toolbar: '#operation',
+					unresize: 'false',
+					align : 'right'
+				}]
+			],
+
+		});
+
+		//监听Tab切换
+		element.on('tab(status)', function(data) {
+			var status = $(this).attr("data-status");
+			table.reload( {
+				page: {
+					curr: 1
+				},
+				where: {
+					'status': status
+				}
+			});
+		});
+
+		/**
+		 * 监听工具栏操作
+		 */
+		table.tool(function(obj) {
+			var data = obj.data;
+			switch (obj.event) {
+				case 'edit': //编辑
+					location.hash = ns.hash("memberrecharge://shop/memberrecharge/edit?recharge_id=" + data.recharge_id);
+					break;
+				case 'detail': //详情
+					location.hash = ns.hash("memberrecharge://shop/memberrecharge/detail?recharge_id=" + data.recharge_id);
+					break;
+				case 'card': //卡片列表
+					location.hash = ns.hash("memberrecharge://shop/memberrecharge/cardlists?recharge_id=" + data.recharge_id);
+					break;
+				case 'records': // 订单列表
+					location.hash = ns.hash("memberrecharge://shop/memberrecharge/orderlists?recharge_id=" + data.recharge_id);
+					break;
+				case 'del': //删除
+					deleteMemberRecharge(data.recharge_id);
+					break;
+				case 'close': //关闭
+                    invalidMemberRecharge(data.recharge_id);
+					break;
+				case 'open': //开启
+                    openMemberRecharge(data.recharge_id);
+					break;
+			}
+		});
+		
+		/**
+		 * 删除
+		 */
+		function deleteMemberRecharge(recharge_id) {
+			layer.confirm('确定要删除该充值套餐吗?', function(index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+
+				$.ajax({
+					url: ns.url("memberrecharge://shop/memberrecharge/delete"),
+					data: {
+						recharge_id: recharge_id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						if (res.code == 0) {
+							table.reload({
+							    page: {
+							        curr: 1
+							    },
+							});
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+
+		//使失效
+		function invalidMemberRecharge(recharge_id) {
+
+			layer.confirm('确定关闭该充值套餐吗?', function(index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+
+				$.ajax({
+					url: ns.url("memberrecharge://shop/memberrecharge/invalid"),
+					data: {
+						recharge_id: recharge_id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+		//使开启
+		function openMemberRecharge(recharge_id) {
+
+			layer.confirm('确定重新开启充值套餐吗?', function(index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+
+				$.ajax({
+					url: ns.url("memberrecharge://shop/memberrecharge/open"),
+					data: {
+						recharge_id: recharge_id
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function(res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+	});
+
+	function add() {
+		location.hash = ns.hash("memberrecharge://shop/memberrecharge/add");
+	}
+</script>

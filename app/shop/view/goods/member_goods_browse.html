@@ -1,0 +1,102 @@
+<!-- 搜索框 -->
+<div class="single-filter-box" style="margin:15px 0;">
+
+    <div class="layui-form">
+        <div class="layui-input-inline">
+            <input type="text" name="search" placeholder="请输入商品名称" class="layui-input" autocomplete="off">
+            <button type="button" class="layui-btn layui-btn-primary" lay-filter="goods_browse_search" lay-submit>
+                <i class="layui-icon">&#xe615;</i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 列表 -->
+<table id="goods_browse_list" lay-filter="goods_browse_list"></table>
+
+<!-- 商品 -->
+<script type="text/html" id="goodsBrowseInfo">
+    <div class="table-title">
+        <div class="title-pic">
+            {{# if(d.sku_image){ }}
+            <img layer-src src="{{ns.img(d.sku_image.split(',')[0],'small')}}"/>
+            {{# } }}
+        </div>
+        <div class="title-content">
+            <a href="javascript:;" class="multi-line-hiding text-color-sub">{{d.sku_name}}</a>
+        </div>
+    </div>
+</script>
+<script>
+    var form, goods_browse_table, laytpl;
+    layui.use(['form', 'laytpl'], function () {
+        form = layui.form;
+        laytpl = layui.laytpl;
+        form.render();
+
+        goods_browse_table = new Table({
+            elem: '#goods_browse_list',
+            url: '{:addon_url("shop/goods/membergoodsbrowse")}',
+            async: false,
+            where: {'member_id': "{$member_id}"},
+            parseData: function (res) {
+                return {
+                    "code": res.code,
+                    "msg": res.message,
+                    "count": res.data.count,
+                    "data": res.data.list,
+                };
+            },
+            cols: [
+                [{
+                    title: '商品',
+                    unresize: 'false',
+                    width: '30%',
+                    templet: '#goodsBrowseInfo'
+                }, {
+                    field: 'price',
+                    title: '商品价格',
+                    unresize: 'false',
+                    width: '10%',
+                    align: 'left',
+                    templet: function (data) {
+                        return '￥<span class="goods-price">' + data.price + '</span>'
+                    }
+                }, {
+                    title: '商品状态',
+                    unresize: 'false',
+                    width: '10%',
+                    align: 'left',
+                    templet: function (data) {
+                        return data.goods_state == 1 ? '正常' : '下架';
+                    }
+                }, {
+                    title: '浏览量',
+                    unresize: 'false',
+                    width: '10%',
+                    align: 'left',
+                    templet: function (data) {
+                        return data.click_num;
+                    }
+                }, {
+                    title: '浏览时间',
+                    unresize: 'false',
+                    width: '20%',
+                    align: 'left',
+                    templet: function (data) {
+                        return ns.time_to_date(data.browse_time);
+                    }
+                }]
+            ]
+        });
+
+        form.on('submit(goods_browse_search)', function (data) {
+            goods_browse_table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+    });
+</script>

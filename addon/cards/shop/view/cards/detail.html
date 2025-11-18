@@ -1,0 +1,241 @@
+<link rel="stylesheet" href="SHOP_CSS/game.css">
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+<style>
+    .layui-table-body{max-height: 480px !important;}
+</style>
+
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+    </div>
+    <div class="layui-card-body">
+        <div class="promotion-view">
+            <div class="promotion-view-item">
+                <label>活动名称：</label>
+                <span>{$info.game_name}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>活动状态：</label>
+                <span>{$info.status_name}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>开始时间：</label>
+                <span>{:date('Y-m-d H:i:s',$info.start_time)}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>结束时间：</label>
+                <span>{:date('Y-m-d H:i:s',$info.end_time)}</span>
+            </div>
+
+            <div class="promotion-view-item">
+                <label>参与条件：</label>
+                <span>{if $info.level_id == 0} 全部会员 {else/} {$info.level_name} {/if}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>消耗积分：</label>
+                <span>{$info.points}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>参与次数：</label>
+                <span>{if $info.join_type == 1} 每天{$info.join_frequency}次{else/} 一人{$info.join_frequency}次{/if}</span>
+            </div>
+            <!-- 中奖配置 -->
+            <div class="promotion-view-item">
+                <label>整体中奖概率：</label>
+                <span>{$info.winning_rate}%</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>未中奖提示语：</label>
+                <span>{$info.no_winning_desc}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>中奖名单是否显示：</label>
+                <span>{if $info.is_show_winner == 0} 不显示{else/}显示{/if}</span>
+            </div>
+        </div>
+        <div class="promotion-view">
+            <div class="promotion-view-item-line">
+                <label class="promotion-view-item-custom-label">活动说明：</label>
+                <div class="promotion-view-item-custom-box">{$info.remark}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">奖品设置</span>
+    </div>
+    <div class="layui-card-body">
+        <div class='promotion-view-list'>
+            <table id="promotion_list"></table>
+        </div>
+    </div>
+</div>
+<div class="layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">抽奖记录</span>
+    </div>
+    <div class="layui-card-body">
+        <div class='promotion-view-list'>
+            <!-- 搜索框 -->
+            <div class="single-filter-box">
+
+                <div class="layui-form">
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <input type="text" name="member_nick_name" placeholder="会员昵称" class="layui-input" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <div class="layui-input-inline">
+                            <input type="text" name="start_time" id="start_time" placeholder="开始时间" class="layui-input" autocomplete="off" readonly>
+                            <i class=" iconrili iconfont calendar"></i>
+                        </div>
+                        <div class="layui-input-inline end-time">
+                            <input type="text" name="end_time" id="end_time" placeholder="结束时间" class="layui-input" autocomplete="off" readonly>
+                            <i class=" iconrili iconfont calendar"></i>
+                        </div>
+                        <button class="layui-btn layui-btn-primary" lay-submit lay-filter="search">搜索</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="layui-tab table-tab" lay-filter="record_tab">
+                <ul class="layui-tab-title">
+                    <li class="layui-this" data-status="">全部</li>
+                    <li data-status="1">中奖</li>
+                    <li data-status="0">未中奖</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <!-- 列表 -->
+                    <table id="record_list" lay-filter="record_list"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var promotion_list = {:json_encode($info.game_award, JSON_UNESCAPED_UNICODE)};
+    layui.use(['form', 'element','laydate'], function() {
+        new Table({
+            elem: '#promotion_list',
+            cols: [
+                [{
+                    field: 'award_name',
+                    title: '名称',
+                    width: '20%',
+                }, {
+                    title: '奖品',
+                    templet: function(data) {
+                        var type = data.award_type == 1 ? '积分' : data.award_type == 2 ? '红包' : '优惠券';
+                        return type;
+                    }
+                }, {
+                    field:'award_num',
+                    title: '奖品数量',
+
+                }, {
+                    field:'award_winning_rate',
+                    title: '奖项权重'
+                }]
+            ],
+            data: promotion_list
+        });
+
+        var table,
+            form = layui.form,
+            laydate = layui.laydate,
+            element = layui.element; //防重复标识
+        form.render();
+
+        //开始时间
+        laydate.render({
+            elem: '#start_time' //指定元素
+        });
+        //结束时间
+        laydate.render({
+            elem: '#end_time' //指定元素
+        });
+
+        element.on('tab(record_tab)', function() {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    'status': this.getAttribute('data-status')
+                }
+            });
+        });
+
+        table = new Table({
+            elem: '#record_list',
+            url: ns.url("shop/gamesrecords/lists"),
+            where:{
+                'game_id':"{$info.game_id}"
+            },
+            cols: [
+                [{
+                    field:'member_nick_name',
+                    title: '会员昵称',
+                    unresize: 'false',
+                    width:'45%'
+                }, {
+                    field: '',
+                    title: '中奖信息',
+                    unresize: 'false',
+                    templet: function(data){
+                        if(data.is_winning == 1){
+                            if(data.award_type == 1){
+                                return data.award_name + "【"+data.point+"积分】";
+                            }
+                            if(data.award_type == 2){
+                                return data.award_name + "【"+data.balance+"红包】";
+                            }
+                            if(data.award_type == 3){
+                                return data.award_name + "【"+data.relate_name+"】";
+                            }
+                        }else{
+                            return '未中奖';
+                        }
+                    }
+                }, {
+                    title: '抽奖时间',
+                    unresize: 'false',
+                    templet: function(data){
+                        return ns.time_to_date(data.create_time);
+                    }
+                }]
+            ]
+
+        });
+
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+
+        //监听Tab切换
+        element.on('tab(status)', function(data) {
+            var status = $(this).attr("data-status");
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    'status': status
+                }
+            });
+        });
+
+    });
+</script>

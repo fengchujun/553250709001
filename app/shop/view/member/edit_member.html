@@ -1,0 +1,366 @@
+<link rel="stylesheet" type="text/css" href="__STATIC__/ext/layui/extend/cascader/cascader.css"/>
+<style>
+	.layui-layer-content .form-wrap {padding: 0}
+	.layui-layer-page .layui-layer-content {overflow-y: auto!important;}
+	.layui-layout-admin .layui-body .body-content {background: none;padding: 0}
+	.info-wrap {display: flex}
+	.info-wrap .layui-card {flex: 1;margin-top: 0}
+	.info-wrap .layui-card:first-child {margin-right: 15px}
+	.member-info {display: flex}
+	.member-info .headimg {margin-right: 15px;width: 70px;height: 70px;display: flex;align-items: center;justify-content: center;overflow: hidden}
+	.member-info .headimg img {max-width: 100%;height: auto}
+	.member-info .info {flex: 1;width: 0;display: flex;flex-wrap: wrap}
+	.member-info .info .data-item {width: 50%;padding-right: 10px;box-sizing: border-box;line-height: 30px}
+	.member-info .data-item .layui-icon {cursor: pointer}
+	.layui-tab-content {padding: 0}
+	.screen {margin: 15px 0}
+    .select-level-layer .layui-layer-content {overflow: unset!important;}
+    .card-common{padding-top: 20px;}
+</style>
+
+<div class="info-wrap">
+	<div class="layui-card card-common card-brief head">
+		<div class="layui-card-header">
+            <span class="card-title">基本信息</span>
+		</div>
+		<div class="layui-card-body">
+			<div class="member-info">
+				<div class="headimg">
+					{notempty name="$member_info.data.headimg"}
+					<img src="{:img($member_info.data.headimg)}" alt="">
+					{else/}
+					<img src="{:img('public/static/img/default_img/head.png')}" alt="">
+					{/notempty}
+				</div>
+				<div class="info">
+					<div class="data-item">
+						<span>用户名：</span>
+						<span>{$member_info.data.username}</span>
+					</div>
+					<div class="data-item">
+						<span>昵称：</span>
+						<span>{$member_info.data.nickname}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editNickname(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>手机号：</span>
+						<span>{notempty name="$member_info.data.mobile"}{$member_info.data.mobile}{else/}暂无{/notempty}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editMobile(this)"> </i>
+					</div>
+					{if $member_info.data.is_member}
+					<div class="data-item">
+						<span>会员码：</span>
+						<span>{notempty name="$member_info.data.member_code"}{$member_info.data.member_code}{else/}--{/notempty}</span>
+					</div>
+					{/if}
+					<div class="data-item">
+						<span>真实姓名：</span>
+						<span>{notempty name="$member_info.data.realname"}{$member_info.data.realname}{else/}暂无{/notempty}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editRealName(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>性别：</span>
+						<span>
+							{switch name="$member_info.data.sex"}
+							{case value="0"}未知{/case}
+							{case value="1"}男{/case}
+							{case value="2"}女{/case}
+							{/switch}
+						</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editSex(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span data-value="{$member_info.data.birthday}">生日：</span>
+						<span>{notempty name="$member_info.data.birthday"}{:date('Y-m-d', $member_info.data.birthday)}{else/}未知{/notempty}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editBirthday(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>会员等级：</span>
+						<span>{$member_info.data.member_level_name}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editMemberLevel(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>注册时间：</span>
+						<span>{:time_to_date($member_info.data.reg_time)}</span>
+					</div>
+					<div class="data-item">
+						<span>来源渠道：</span>
+						<span>{$member_info.data.login_type_name}</span>
+					</div>
+					<div class="data-item">
+						<span>最后访问时间：</span>
+						<span>{:time_to_date($member_info.data.last_visit_time)}</span>
+					</div>
+					<div class="data-item" style="width: 100%">
+						<span>会员地址：</span>
+						<span>{$member_info.data.full_address ? $member_info.data.full_address : '--'} {$member_info.data.address ? $member_info.data.address : ''}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" onclick="editMemberAddress(this)"> </i>
+					</div>
+
+					<input type="hidden" name="member_id" value="{$member_info.data.member_id}" />
+					<input type="hidden" class="birthday" value="{$member_info.data.birthday}" />
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief head">
+		<div class="layui-card-header">
+            <span class="card-title">账户信息</span>
+		</div>
+		<div class="layui-card-body">
+			<div class="member-info">
+				<div class="info">
+					<div class="data-item">
+						<span>储值余额：</span>
+						<span id="member_balance">{:moneyFormat($member_info.data.balance)}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" data-num="{$member_info.data.balance}" onclick="saveBalance(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>现金余额：</span>
+						<span>{:moneyFormat($member_info.data.balance_money)}</span>
+					</div>
+					<div class="data-item">
+						<span>积分：</span>
+						<span id="member_point">{:round($member_info.data.point)}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" data-num="{$member_info.data.point}" onclick="savePoint(this)"> </i>
+					</div>
+					<div class="data-item">
+						<span>成长值：</span>
+						<span id="member_growth">{$member_info.data.growth}</span>
+						<i class="layui-icon text-color" style="margin-left: 5px;" data-num="{$member_info.data.growth}" onclick="saveGrowth(this)"> </i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="layui-card card-common card-brief head">
+	<div class="layui-card-header">
+        <span class="card-title">账户明细</span>
+	</div>
+	<div class="layui-card-body layui-tab layui-tab-brief" lay-filter="edit_member_tab">
+		<ul class="layui-tab-title">
+			<li class="layui-this" lay-id="account">余额</li>
+			<li lay-id="account">积分</li>
+			<li lay-id="account">成长值</li>
+			<li lay-id="basic_info">订单管理</li>
+			<li lay-id="basic_info">收货地址</li>
+			<li lay-id="basic_info">收藏记录</li>
+			<li lay-id="basic_info">浏览记录</li>
+			<li lay-id="basic_info">优惠券</li>
+			{if addon_is_exit('cardservice') == 1 }
+			<li lay-id="basic_info">卡项</li>
+			{/if}
+		</ul>
+		<div class="layui-tab-content">
+
+			<div class="layui-tab-item layui-show">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'account', 'account_type' => 'balance,balance_money' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'account', 'account_type' => 'point' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'account', 'account_type' => 'growth' ], true)}
+			</div>
+
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'order' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'address_detail' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'member_goods_collect' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'member_goods_browse' ], true)}
+			</div>
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'member_coupon' ], true)}
+			</div>
+
+			{if addon_is_exit('cardservice') == 1 }
+			<div class="layui-tab-item">
+				{:event('MemberDetail', [ 'member_id' => $member_info.data.member_id, 'type' => 'member_goods_card' ], true)}
+			</div>
+			{/if}
+
+		</div>
+	</div>
+</div>
+
+<!-- 积分弹框html -->
+<script type="text/html" id="point">
+	<div class="layui-form integral-bounced">
+		<div class="layui-form-item">
+			<label class="layui-form-label">当前积分：</label>
+			<div class="layui-input-block account-value">{{ parseInt(d.point) }}</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">调整数额：</label>
+			<div class="layui-input-block amount">
+				<input type="number" value="0" placeholder="请输入调整数额" name="adjust_num" lay-verify="num" class="layui-input len-short">
+			</div>
+			<span class="word-aux">调整数额与当前积分数相加不能小于0</span>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">备注：</label>
+			<div class="layui-input-block len-long">
+				<textarea class="layui-textarea" name="remark" placeholder="请输入备注" maxlength="150"></textarea>
+			</div>
+		</div>
+
+		<div class="form-row" style="margin-left: 200px;">
+			<button class="layui-btn" lay-submit lay-filter="savePoint">确定</button>
+		</div>
+
+		<input type="hidden" name="member_id" value="{$member_info.data.member_id}" />
+		<input type="hidden" name="point" value="{{ d.point }}" />
+	</div>
+</script>
+
+<!-- 余额弹框html -->
+<script type="text/html" id="balance">
+	<div class="layui-form">
+		<div class="layui-form-item">
+			<label class="layui-form-label">当前储值余额：</label>
+			<div class="layui-input-block account-value">{{ d.balance }}</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">调整数额：</label>
+			<div class="layui-input-block">
+				<input type="number" value="0" placeholder="请输入调整数额" name="adjust_num" lay-verify="num" class="layui-input len-short">
+			</div>
+			<span class="word-aux">调整数额与当前储值余额相加不能小于0</span>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">备注：</label>
+			<div class="layui-input-block len-long">
+				<textarea class="layui-textarea" name="remark" placeholder="请输入备注" maxlength="150"></textarea>
+			</div>
+		</div>
+
+		<div class="form-row" style="margin-left: 200px;">
+			<button class="layui-btn" lay-submit lay-filter="saveBalance">确定</button>
+		</div>
+
+		<input type="hidden" name="member_id" value="{$member_info.data.member_id}" />
+		<input type="hidden" name="point" value="{{ d.balance }}" />
+	</div>
+</script>
+
+<!-- 成长值弹框html -->
+<script type="text/html" id="growth">
+	<div class="layui-form">
+		<div class="layui-form-item">
+			<label class="layui-form-label">当前成长值：</label>
+			<div class="layui-input-block account-value">{{ d.growth }}</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">调整数额：</label>
+			<div class="layui-input-block">
+				<input type="number" value="0" placeholder="请输入调整数额" name="adjust_num" lay-verify="num" class="layui-input len-short">
+			</div>
+			<span class="word-aux">调整数额与当前成长值相加不能小于0</span>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">备注：</label>
+			<div class="layui-input-block len-long">
+				<textarea class="layui-textarea" name="remark" placeholder="请输入备注" maxlength="150"></textarea>
+			</div>
+		</div>
+
+		<div class="form-row" style="margin-left: 200px;">
+			<button class="layui-btn" lay-submit lay-filter="saveGrowth">确定</button>
+		</div>
+
+		<input type="hidden" name="member_id" value="{$member_info.data.member_id}" />
+		<input type="hidden" name="point" value="{{ d.growth }}" />
+	</div>
+</script>
+
+<script type="text/html" id="memberLevel">
+	<div class="layui-form" id="setMemberLevel">
+		<div class="layui-form-item">
+			<label class="layui-form-label sm">类型：</label>
+			<div class="layui-input-block">
+				<input type="radio" name="level_type" value="0" title="会员等级" checked lay-filter="level_type">
+				<input type="radio" name="level_type" value="1" title="会员卡" lay-filter="level_type">
+			</div>
+		</div>
+		<div class="level-type type-0">
+			<div class="layui-form-item">
+				<label class="layui-form-label sm">会员等级：</label>
+				<div class="layui-input-block len-mid">
+					<select name="member_level">
+						<option value="0">请选择会员等级</option>
+						{foreach name="member_level_list" item="vo"}
+						{if $vo.level_type eq 0}
+						<option value="{$vo.level_id}" {if $vo.level_id eq $member_info.data.member_level}selected{/if}>{$vo.level_name}</option>
+						{/if}
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label sm">会员卡号：</label>
+				<div class="layui-input-block">
+					<input type="text" class="layui-input len-mid" value="{$member_info.data.member_code}" name="member_code" placeholder="">
+				</div>
+				<div class="word-aux" style="margin-left: 80px;">会员卡号为会员唯一编号，若不设置将会自动生成</div>
+			</div>
+		</div>
+		<div class="level-type type-1" style="display: none">
+			<div class="layui-form-item">
+				<label class="layui-form-label sm">会员卡：</label>
+				<div class="layui-input-block len-mid">
+					<select name="member_card" lay-filter="member_card">
+						<option value="0">请选择会员卡</option>
+						{foreach name="member_level_list" item="vo"}
+						{if $vo.level_type eq 1}
+						<option value="{$vo.level_id}" {if $vo.level_id eq $member_info.data.member_level}selected{/if}>{$vo.level_name}</option>
+						{/if}
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			{foreach name="member_level_list" item="vo"}
+			{if $vo.level_type eq 1}
+			<div class="layui-form-item member-card member-card-{$vo.level_id}" style="display: none">
+				<label class="layui-form-label sm">发卡规格：</label>
+				<div class="layui-input-block">
+					{foreach :json_decode($vo.charge_rule, true) as $key => $money}
+					<input type="radio" name="member_card_{$vo.level_id}" value="{$key}" title="{$level_time[$key]}/{$money}元" checked>
+					{/foreach}
+				</div>
+			</div>
+			{/if}
+			{/foreach}
+		</div>
+	</div>
+</script>
+
+<script>
+	var date = {$member_info.data.reg_time};
+	$(".reg-time").text(ns.time_to_date(date, "Y-m-d"));
+	$("#member_point").text(parseInt("{$member_info.data.point}"));
+	var point = {$member_info.data.point};
+	var balance = {$member_info.data.balance};
+	var growth = {$member_info.data.growth};
+	var member_id = '{$member_info.data.member_id}';
+	var province_id = '{$member_info.data.province_id}';
+	var city_id = '{$member_info.data.city_id}';
+	var district_id = '{$member_info.data.district_id}';
+	var address = '{$member_info.data.address}';
+	var full_address = '{$member_info.data.full_address}';
+</script>
+<script src="SHOP_JS/member_detail.js?time=5"></script>

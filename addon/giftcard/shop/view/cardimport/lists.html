@@ -1,0 +1,407 @@
+<style>
+    .add-way .add-way-item{display: flex;margin: 8px 0;align-items: center;flex-wrap: wrap;}
+    .add-way .add-way-item input{margin: 0 10px;}
+    .add-way .add-way-item .layui-form-radio{margin-right: 0;padding-right: 0;}
+    .add-way .word-aux{flex-basis: 100%;margin-left: 0;}
+    .disabled-click{pointer-events: none;color: #999 !important;}
+    #addFile {margin-left: 10px;cursor: pointer;color: var(--base-color);}
+    .upload-file{flex-basis: 100%;padding-left: 12px;padding-top: 5px;}
+    .load-animation {
+        position: fixed;
+        z-index: 19999999;
+        background-color: rgba(255,255,255,.9);
+        width: 700px;
+        height: 400px;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+    }
+    .load-animation .load-head{
+        font-size: 16px;
+        height: 44px;
+        line-height: 44px;
+        padding-left: 10px;
+    }
+    .load-animation .load-body {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        font-size: 16px;
+    }
+    .load-animation .load-body .animation-outer{
+        position: relative;
+        margin-top: 30px;
+        border-radius: 10px;
+        width: 300px;
+        height: 10px;
+        background-color: #eee;
+    }
+    .load-animation .load-body .animation-within{
+        border-radius: 10px;
+        width: 0;
+        height: 100%;
+        background-color: var(--base-color);
+        transition: all .3s;
+    }
+    .load-animation .load-body .num{
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: -20px
+    }
+    .confirm-import{margin-left: 0 !important;}
+</style>
+
+<div class="single-filter-box">
+    <button class="layui-btn" onclick="addCard()">添加卡密</button>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="bargain_tab">
+    <div class="layui-tab-content poster_list">
+        <!-- 列表 -->
+        <table id="poster_list" lay-filter="poster_list"></table>
+    </div>
+</div>
+
+<script type='text/html' id="iog_card_cdk">
+	<div class="layui-form iog-card-cdk"> 
+        <div class="layui-form-item">
+            <label class="layui-form-label sm">添加方式：</label>
+            <div class="layui-input-block add-way">
+                <div class="add-way-item">
+                    <input type="radio" name="type" value="auto" lay-filter="validityType" checked>
+                    <span class="sub-text">在线制卡</span>
+                    <input type="number" class="layui-input len-short sub-text" name="num">
+                    <span class="sub-text">张</span>
+                    <div class="word-aux">在线制卡最多单次制作1千张，卡号及密钥按照制卡规则设置。</div>
+                </div>
+                <div class="add-way-item"> 
+                    <input type="radio" name="type" value="import" lay-filter="validityType">
+                    <span class="sub-text disabled-click">导入制卡</span>
+                    <span>(下载<a href="GIFTCARD_CSV/card_import.csv" class="text-color" target="_blank">导入模板</a>)</span>
+                    <div class="upload-file sub-text disabled-click">
+                        <div class="upload-img-block" id="addFile">
+                            <div class="upload-img-box">
+                                <div class="upload-default">
+                                    <div class="upload">
+                                        <i class="iconfont iconshangchuan"></i>
+                                        <p>导入模版</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="word-aux">导入制卡需上传卡密文档，注意不要重复，且单次最多制作1千张。</div>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <button class="layui-btn confirm-auto">确定</button>
+            <button class="layui-btn confirm-import layui-hide">确定</button>
+            <button class="layui-btn layui-btn-primary cancel">取消</button>
+        </div>
+    </div>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        <a class="layui-btn" lay-event="delete">删除</a>
+        <a class="layui-btn" lay-event="export">导出</a>
+    </div>
+</script>
+
+<script>
+    var table,form,laytpl,upload,layer_label,
+        repeat_flag = false; //防重复标识
+    var giftcard_id = {$giftcard_id};
+
+    layui.use(['form','laytpl','upload'], function () {
+        laytpl = layui.laytpl;
+        form = layui.form;
+        upload = layui.upload;
+        form.render();
+
+        table = new Table({
+            elem: '#poster_list',
+            url: ns.url("giftcard://shop/cardimport/lists",{'giftcard_id': giftcard_id}),
+            cols: [
+                [
+                {
+                    field:'type_name',
+                    title: '制卡类型',
+                    unresize: 'false',
+                    width: '15%',
+                }, {
+                    field: 'total_count',
+                    unresize: 'false',
+                    title: '在线/导入制卡数',
+                    width: '10%',
+                }, {
+                    field: 'success_count',
+                    unresize: 'false',
+                    title: '成功制卡数',
+                    width: '10%',
+                }, {
+                    field: 'fail_count',
+                    unresize: 'false',
+                    title: '导入失败数',
+                    width: '10%'
+                }, 
+                {
+                    field: 'use_count',
+                    unresize: 'false',
+                    title: '使用数',
+                    width: '10%',
+                }, {
+                    field: 'activate_count',
+                    unresize: 'false',
+                    title: '激活数',
+                    width: '10%',
+                }, {
+                    field: 'create_time',
+                    title: '制卡时间',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+					align : 'right'
+                }]
+            ]
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'export':
+                    exportFn(data.import_id);
+                    break;
+                case 'delete':
+                    del(data.import_id);
+                    break;
+            }
+        });
+      
+        /**
+         * 导出
+         */
+        function exportFn(id) {
+            window.open(ns.url("giftcard://shop/cardimport/export",{ request_mode: 'download',import_id: id}));
+        }
+
+        // 删除
+        function del(id){
+            layer.confirm('您正在执行删除操作,请谨慎处理', {
+                btn: ['确定','取消'] //按钮
+                ,cancel: function(index, layero){
+                    repeat_flag = false;
+					layer.close(index);
+                }
+            },function (index) {
+                if (repeat_flag) return false;
+                repeat_flag = true;
+				layer.close(index);
+                $.ajax({
+                    url: ns.url("giftcard://shop/cardimport/delete"),
+                    data: {
+                        import_id: id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function (res) {
+                        layer.msg(res.message);
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                        repeat_flag = false;
+                    }
+                });
+            }, function(index){
+                repeat_flag = false;
+				layer.close(index);
+            });
+        }
+    });
+
+    // 添加卡密
+    var interval;
+    var formData = new FormData();
+    var cardPup;
+    function addCard(){
+        laytpl($("#iog_card_cdk").html()).render({}, function (html) {
+            cardPup = layer.open({
+                type: 1,
+                title:"添加卡密",
+                area:['700px','400px'],
+                content: html,
+                success: function(layero, index){
+                    form.render();
+
+                    // 上传文件
+                    var uploadInst = upload.render({
+                        elem: '#addFile' //绑定元素
+                        ,url: ns.url("giftcard://shop/cardimport/create") //上传接口
+                        ,accept:'file'
+                        ,acceptMime: '.csv'
+                        ,exts: 'csv'
+                        ,auto: false
+                        ,bindAction: ".iog-card-cdk .confirm-import"
+                        ,data:{
+                            type: 'import',
+                            giftcard_id
+                        },
+                        choose:function(obj){
+                            //预读本地文件，如果是多文件，则会遍历。(不支持ie8/9)
+                            obj.preview(function(index, file, result){
+                                $("#addFile .upload").html(file.name);
+                                formData.append('file',file);
+                            });
+                        },
+                        done: function(res){
+                            if (res.code >= 0) {
+                                importing(res.data,'import');
+                            } else {
+                                layer.msg(res.message);
+                            }
+                        }
+                    });
+
+                    form.on('radio(validityType)', function(data){
+                        if(data.value == 'auto'){
+                            $(".iog-card-cdk .confirm-import").addClass("layui-hide");
+                            $(".iog-card-cdk .confirm-auto").removeClass("layui-hide");
+                        }else{
+                            $(".iog-card-cdk .confirm-import").removeClass("layui-hide");
+                            $(".iog-card-cdk .confirm-auto").addClass("layui-hide");
+                        }
+                        $(data.elem).parent(".add-way-item").siblings().find(".sub-text").addClass("disabled-click");
+                        $(data.elem).parent(".add-way-item").find(".sub-text").removeClass("disabled-click");
+                    });
+
+                    $(".iog-card-cdk .confirm-auto").click(()=>{
+                        var obj = {};
+                        obj.type = $(".iog-card-cdk input[name='type']:checked").val();
+                        obj.giftcard_id = giftcard_id;
+
+                        var num = $(".iog-card-cdk input[name='num']").val();
+                        if(obj.type == 'auto')
+                            obj.num = num;
+                        else if(obj.type == 'import')
+                            return false;
+
+                        if (repeat_flag) return;
+                        repeat_flag = true;
+
+                        $.ajax({
+                            type: 'POST',
+                            dataType: 'JSON',
+                            url: ns.url("giftcard://shop/cardimport/create"),
+                            data: obj,
+                            success: function (res) {
+                                repeat_flag = false;
+                                if (res.code >= 0) {
+                                    importing(res.data);
+                                } else {
+                                    layer.msg(res.message);
+                                }
+                            }
+                        });
+
+                    });
+
+                    $(".iog-card-cdk .form-row .cancel").click(function(){
+                        layer.closeAll();
+                    });
+                }
+            });
+
+        });
+    }
+
+    function importing(data) {
+        loadAnimation();
+        cdkLog(data);
+        getCardImportInfo(data);
+        interval = setInterval(()=>{
+            getCardImportInfo(data);
+        },1000);
+    }
+
+    function cdkLog(id) {
+        formData.append('import_id',id);
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: ns.url("giftcard://shop/cardimport/cdkLog"),
+            data: formData,
+            processData: false,
+            contentType:false,
+            success: function (res) {}
+        });
+    }
+
+    function getCardImportInfo(id) {
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: ns.url("giftcard://shop/cardimport/getCardImportInfo"),
+            data: {import_id:id},
+            success: function (res) {
+                if(res.code >= 0){
+                    var data = res.data;
+                    var num = ((parseInt(data.imported_count)/parseInt(data.total_count))*100).toFixed(2);
+                    if(num >= 100) num = 100;
+                    progress(num);
+                    if(parseInt(data.imported_count) == parseInt(data.total_count)){
+                        clearInterval(interval);
+                        layer.msg("制卡成功");
+                        formData.delete('import_id');
+                        formData.delete('file');
+                        setTimeout(()=>{
+                            closeProgress();
+                            layer.close(cardPup);
+                            table.reload();
+                        },1000)
+                    }
+                }else
+                    repeat_flag = false;
+            }
+        });
+    }
+
+    function loadAnimation(){
+        var html = `
+            <div class="load-animation">
+                <div class="load-head">正在添加</div>
+                <div class="load-body">
+                    <div>卡密正在添加中，请稍等...</div>
+                    <div class="animation-outer">
+                        <span class="num">0.00%</span>
+                        <div class="animation-within"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $("body").append(html);
+    }
+    function progress(num) {
+        $(".load-animation .animation-within").css("width",num+'%');
+        $(".load-animation .num").html(num+'%');
+    }
+    function closeProgress() {
+        $(".load-animation").remove();
+    }
+</script>

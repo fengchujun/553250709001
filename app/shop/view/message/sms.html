@@ -1,0 +1,62 @@
+<!-- 列表 -->
+<table id="sms_list" lay-filter="sms_list"></table>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" href="{{ns.href(d.shop_url)}}">配置</a>
+	</div>
+</script>
+
+<script type="text/html" id="desc">
+	<div class="over-hide-second" title="{{d.desc}}">{{d.desc}}</div>
+</script>
+
+<script type="text/html" id="status">
+	{{# if(d.status == 1){ }}
+	开启
+	{{# }else{ }}
+	关闭
+	{{# } }}
+</script>
+
+<script>
+	var table = new Table({
+		elem: '#sms_list',
+		url: ns.url("shop/message/sms"),
+		page: false,
+		parseData: function (data) {
+			return {
+				"code": data.code,
+				"msg": data.message,
+				"data": data.data
+			};
+		},
+		cols: [[
+			{
+				field: 'sms_type_name',
+				title: '短信名称',
+				width: '15%',
+				unresize: 'false'
+			}, {
+				field: 'desc',
+				title: '描述',
+				width: '65%',
+				templet: "#desc",
+				unresize: 'false'
+			}, {
+				field: 'status',
+				title: '状态',
+				width: '10%',
+				templet: "#status",
+				unresize: 'false',
+				align: 'right'
+			}, {
+				title: '操作',
+				toolbar: '#operation',
+				unresize: 'false',
+				align: 'right'
+			}]
+		],
+	});
+</script>

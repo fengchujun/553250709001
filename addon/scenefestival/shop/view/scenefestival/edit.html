@@ -1,0 +1,596 @@
+<link rel="stylesheet" href="SHOP_CSS/game.css">
+<style>
+    .choose-item > span {
+        display: inline-block;
+        padding: 0 10px;
+        height: 36px;
+        line-height: 36px;
+        text-align: center;
+        border-radius: 4px;
+        border: 1px solid #ededed;
+        position: relative;
+        cursor: pointer;
+        margin: 5px 0;
+        margin-right: 11px;
+    }
+    .choose-item > span i {
+        position: absolute;
+        bottom: -5px;
+        right: -6px;
+        border-radius: 50%;
+        color: #FFF;
+        font-size: 14px;
+        line-height: 1;
+    }
+    .holiday-active {
+        color: #fff;
+    }
+    .holiday-hidden {
+        border: none;
+        width: .1px;
+    }
+
+    .coupon-box .layui-form{
+        padding: 0!important;
+    }
+
+    .layui-layer-page .layui-layer-content{
+        overflow: auto !important;
+    }
+
+    .del-btn {
+        cursor: pointer;
+    }
+    .level-equity .layui-input {
+        display: inline-block;
+    }
+    .gods-box table:first-of-type{
+        margin-bottom: 0;
+    }
+    .gods-box table:last-of-type{
+        margin-top: 0;
+        display: block;
+        max-height: 323px;
+        overflow: auto;
+    }
+    .coupon-box .single-filter-box{
+        padding-top: 0;
+    }
+    .coupon-box .select-coupon-btn{
+        margin-top: 10px;
+    }
+    .layui-layer-page .layui-layer-content{
+        overflow-y: scroll!important;
+    }
+</style>
+
+<div class="layui-form">
+
+    <div class="layui-card card-common card-brief">
+        <div class="layui-card-header">
+            <span class="card-title">活动设置</span>
+        </div>
+
+        <div class="layui-card-body">
+
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+                <div class="layui-input-block">
+                    <input type="text" name="activity_name" lay-verify="required" maxlength="15" placeholder="最多可填写15个字" autocomplete="off" class="layui-input len-long" value="{$info.activity_name}">
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="join_time" {if($info.join_time) == 1}checked {/if} value="1" lay-verify="required" lay-filter="join_time" title="传统节日">
+                    <input type="radio" name="join_time"{if($info.join_time) == 0}checked {/if} value="0" lay-verify="required" lay-filter="join_time" title="自定义节日">
+                </div>
+            </div>
+            <div class="layui-form-item {if($info.join_time) == 0}layui-hide {/if}" id="join_time">
+                <label class="layui-form-label">节日日期：</label>
+                <div class="layui-input-block">
+                    <span class="holiday-name">{$info.festival_name}</span>
+                    <input type="hidden" class="holiday-hidden" lay-verify='holiday' value="">
+                    <button class="layui-btn" type="button" onclick="choose()">重新选择</button>
+                </div>
+            </div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">祝福语：</label>
+				<div class="layui-input-inline">
+					<textarea name="remark" class="layui-textarea len-long" value="{$info.remark}" maxlength="150">{$info.remark}</textarea>
+				</div>
+			</div>
+
+            <div class="layui-form-item {if($info.join_time) == 1}layui-hide {/if}" id="festival_name">
+                <label class="layui-form-label"><span class="required">*</span>节日名称：</label>
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" maxlength="15" placeholder="最多可填写15个字" name="festival_name" value="{$info.festival_name}" class="layui-input len-mid" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item {if($info.join_time) == 1}layui-hide {/if}" id="self_time">
+                <label class="layui-form-label"><span class="required">*</span>节日日期：</label>
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <input type="text" value="{:date('Y-m-d H:i:s', $info.start_time)}"  id="start_time" name="start_time" lay-verify="required" class="layui-input len-mid" autocomplete="off" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                    <span class="layui-form-mid">-</span>
+                    <div class="layui-input-inline end-time">
+                        <input type="hidden" value="{:date('Y-m-d H:i:s', $info.end_time)}" id="old_end_time">
+                        <input type="text" id="end_time" value="{:date('Y-m-d H:i:s', $info.end_time)}" name="end_time" lay-verify="required|time" class="layui-input len-mid" autocomplete="off" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item participation-condition">
+                <label class="layui-form-label">参与条件：</label>
+                <div class="layui-input-block">
+                    <input type="radio" name="level_id" value="0" lay-filter="participation" title="全部会员" {if $info.level_id == 0}checked{/if}>
+                    <input type="radio" name="level_id" value="1" lay-filter="participation" title="部分会员" {if $info.level_id != 0}checked{/if}>
+                </div>
+                <div class="layui-inline {if $info.level_id == 0}layui-hide{/if}">
+                    <label class="layui-form-label"></label>
+                    <div class="layui-input-block">
+                        {foreach $member_level_list as $k =>$v}
+                        <input type="checkbox" class="level-id" value="{$v.level_id}" title="{$v.level_name}" lay-skin="primary">
+                        {/foreach}
+                    </div>
+                </div>
+                <div class="word-aux">选择参与的会员等级，默认为所有会员都可参与</div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>奖励发放时间：</label>
+                <div class="layui-input-inline">
+                    <input type="radio" name="join_type" value="1" lay-verify="required" lay-filter="join_type" title="活动时间内" {if $info.join_type == 1} checked{/if}>
+                    <input type="radio" name="join_type" value="0" lay-verify="required" lay-filter="join_type" title="活动开始前" {if $info.join_type == 0} checked{/if}>
+					<span id="time" class="{if $info.join_type == 1} layui-hide{/if}">
+						<input type="number" name="join_frequency" min="0" value="{$info.join_frequency}" onchange="detectionNumType(this,'positiveInteger')" lay-verify="required" autocomplete="off" class="layui-input len-short"> 天
+					</span>
+                </div>
+            </div>
+           <!-- <div class="layui-form-item layui-hide" id="time">
+                <label class="layui-form-label"></label>
+                <div class="layui-input-block">
+                    <input type="number" name="join_frequency" min="0" value="{$info.join_frequency}" onchange="detectionNumType(this,'positiveInteger')" lay-verify="required" autocomplete="off" class="layui-input len-short"> 次
+                </div>
+            </div> -->
+        </div>
+    </div>
+    <div class="layui-card card-common card-brief">
+        <div class="layui-card-header">
+            <span class="card-title">奖励设置</span>
+        </div>
+        <div class="layui-card-body reward-wrap">
+            <div class="layui-form-item">
+                <label class="layui-form-label"><span class="required">*</span>奖励内容：</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="type" value="point" title="积分" lay-skin="primary" lay-filter="type" lay-verify="type" {if in_array('point', $info['award_type']) }checked{/if}>
+                    <input type="checkbox" name="type" value="balance" title="余额" lay-skin="primary" lay-filter="type" lay-verify="type" {if in_array('balance', $info['award_type']) }checked{/if}>
+                    <input type="checkbox" name="type" value="coupon" title="优惠券" lay-skin="primary" lay-filter="type" lay-verify="type" {if in_array('coupon', $info['award_type']) }checked{/if}>
+                </div>
+            </div>
+
+            <div class="point-wrap {if !in_array('point', $info['award_type']) }layui-hide{/if}">
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="required">*</span>奖励积分：</label>
+                    <div class="layui-input-block">
+                        <input name="point" value="{$info.point}" onchange="detectionNumType(this,'positiveInteger')" type="number" id="point" lay-verify="{if in_array('point', $info['award_type']) }required|num{/if}" class="layui-input len-short">
+                    </div>
+                </div>
+            </div>
+
+<!--            <div class="balance-wrap {if !in_array('balance', $info['award_type']) }layui-hide{/if}">-->
+<!--                <div class="layui-form-item">-->
+<!--                    <label class="layui-form-label"><span class="required">*</span>奖励红包：</label>-->
+<!--                    <div class="layui-input-block len-long">-->
+<!--                        <input name="balance" value="{$info.balance}" type="number" lay-verify="{if in_array('balance', $info['award_type']) }required|float{/if}" class="layui-input len-short">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="word-aux"><p>红包为储值余额，仅在消费时可用</p></div>-->
+<!--            </div>-->
+
+            <div class="balance-wrap {if !in_array('balance', $info['award_type']) }layui-hide{/if}">
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="required">*</span>奖励红包：</label>
+                    <div class="layui-input-block len-long">
+                        <input type="radio" name="balance_type" lay-verify="balance_type" value="0" {if $info.balance_type == 0} checked {/if} title="不可提现"><input name="balance" onchange="detectionNumType(this,'positiveNumber')" value="{$info.balance}" type="number" lay-verify="" class="layui-input len-short">元
+                    </div>
+                    <!--<label class="layui-form-label"></label>-->
+                    <!--<div class="layui-input-block len-long">-->
+                        <!--<input type="radio" name="balance_type" lay-verify="balance_type" value="1" {if $info.balance_type == 1} checked {/if} title="可提现">&nbsp&nbsp&nbsp&nbsp<input name="balance_money" onchange="detectionNumType(this,'positiveInteger')" value="{$info.balance_money}" type="number" lay-verify="" class="layui-input len-short">元-->
+                    <!--</div>-->
+                </div>
+                <!--				<div class="word-aux"><p>红包为储值余额，仅在消费时可用</p></div>-->
+            </div>
+
+            <div class="coupon-wrap {if !in_array('coupon', $info['award_type']) }layui-hide{/if}">
+                <div class="layui-form-item">
+                    <label class="layui-form-label"><span class="required">*</span>奖励优惠券：</label>
+                    <div class="layui-input-block">
+                        <div id="coupon_list"></div>
+                        <div class="word-aux text-color" style="margin-left: 0">
+                            <p>活动优惠券发放，不受优惠券自身数量和领取数量的限制</p>
+                        </div>
+                        <button class="layui-btn" id="select_coupon">选择优惠券</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="festival_id" value="{$info.festival_id}">
+            <div class="form-row">
+                <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+                <button class="layui-btn layui-btn-primary" onclick="backScenefestivalList()">返回</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加奖品 -->
+{include file="scenefestival/award_select" /}
+<script type="text/javascript" src="STATIC_JS/coupon_select.js"></script>
+<script>
+    var form,laydate,upload,laytpl,repeat_flag = false,
+    awardId = 0,
+        minDate = "",
+        coupon_id = [], addCoupon;
+    var coupon_select = new CouponSelect({
+        tableElem:'#coupon_list',
+        selectElem:'#select_coupon',
+        selectedIds:'{$info.coupon}',
+    })
+
+    layui.use(['form', 'laydate', 'laytpl'], function() {
+
+        form = layui.form;
+        laydate = layui.laydate;
+        laytpl = layui.laytpl;
+
+        form.render();
+		initTableData();
+		var time = "{$info.time}",
+            start_time = "{$info.start_time}";
+		if (time < start_time){
+            //开始时间
+            laydate.render({
+                elem: '#start_time', //指定元素
+                type: 'datetime',
+                done: function(value) {
+                    minDate = value;
+                    reRender();
+                }
+            });
+        }
+
+        //结束时间
+        laydate.render({
+            elem: '#end_time', //指定元素
+            type: 'datetime',
+        });
+
+        /**
+         * 重新渲染结束时间
+         * */
+        function reRender() {
+            $("#end_time").remove();
+            $(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input len-mid" autocomplete="off"> ');
+            laydate.render({
+                elem: '#end_time',
+                type: 'datetime',
+                min: minDate
+            });
+        }
+        //参与条件
+        form.on('radio(participation)', function(data){
+            if (parseInt(data.value))
+                $('.participation-condition .layui-inline').removeClass('layui-hide');
+            else
+                $('.participation-condition .layui-inline').addClass('layui-hide');
+        });
+
+        form.on('radio(join_type)', function(data){
+            if (data.value == 1 ) {
+                $("#time").addClass('layui-hide');
+            }else {
+                $("#time").removeClass('layui-hide');
+            }
+
+        });
+
+        form.on('radio(join_time)', function(data){
+            if (data.value == 1 ) {
+                $("#join_time").removeClass('layui-hide');
+                $("#self_time").addClass('layui-hide');
+                $("#festival_name").addClass('layui-hide');
+            }else {
+                $("#join_time").addClass('layui-hide');
+                $("#self_time").removeClass('layui-hide');
+                $("#festival_name").removeClass('layui-hide');
+            }
+
+        });
+
+        /**
+         * 表单验证
+         */
+        form.verify({
+            time: function(value) {
+                var now_time = (new Date()).getTime();
+                var start_time = (new Date($("#start_time").val())).getTime();
+                var end_time = (new Date(value)).getTime();
+                var old_end_time = (new Date($("#old_end_time").val())).getTime();
+                var time_type = $('input[name="join_time"]:checked').val();
+                if(time_type == 0){
+                    if (now_time > end_time) {
+                        return '结束时间不能小于当前时间!'
+                    }
+                    if (start_time > end_time) {
+                        return '结束时间不能小于开始时间!';
+                    }
+                    if (old_end_time > end_time){
+                        return '结束时间不能小于之前设置的时间!';
+                    }
+                }
+            },
+            holiday:function(){
+                if($('input[name = "join_time"]:checked').val() == 1 && $('.holiday-hidden').val() != 1){
+                    return "请选择节日日期";
+                }
+            },
+            type: function(){
+                if ($('.reward-wrap [name="type"]:checked').length == 0) {
+                    return '请选择领奖励内容';
+                }
+            },
+            mum: function(value, item){
+                if (/^\d{0,10}$/.test(value) === false) {
+                    return '请输入大于0的整数';
+                }
+
+                if (parseInt(value) <= 0) {
+                    return '请输入大于0的整数';
+                }
+            },
+            float: function(value, item){
+                if (/^\d{0,10}$/.test(value) === false) {
+                    return '请输入大于0的数字，支持小数点后两位';
+                }
+                if (parseInt(value) <= 0) {
+                    return '请输入大于0的数字，支持小数点后两位';
+                }
+            },
+            join_frequency: function(value){
+                if(value > 7){
+                    return '不得超过7天'
+                }
+            }
+        });
+
+        form.on('checkbox(type)', function(data) {
+            $('[name="type"]').each(function(){
+                var type = $(this).val();
+                if ($(this).is(':checked')) {
+                    $('.reward-wrap .' + type + '-wrap').removeClass('layui-hide');
+                    if (type == 'point' || type == 'coupon') {
+                        $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|mum');
+                    }
+                    if (type == 'balance') {
+                        $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|float');
+                    }
+                } else {
+                    $('.reward-wrap .' + type + '-wrap').addClass('layui-hide');
+                    $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', '');
+                }
+            })
+        })
+
+        /**
+         * 表单提交
+         */
+        form.on('submit(save)', function(data){
+            let coupon_selected_ids = coupon_select.getSelectedData().selectedIds;
+			if (parseInt(data.field.level_id)){
+			    var levelId = [],
+			        levelName = [];
+			    $('.level-id').each(function(){
+			        if($(this).prop('checked')){
+			            levelId.push($(this).val());
+			            levelName.push($(this).attr("title"));
+			        }
+			    });
+			    data.field.level_id = levelId.toString();
+			    data.field.level_name = levelName.toString();
+			}
+            var type = [];
+            $('.reward-wrap [name="type"]:checked').each(function(){
+                type.push($(this).val());
+            })
+
+            if ($.inArray('coupon', type) != -1 && coupon_selected_ids.length == 0) {
+                layer.msg('请选择优惠券', {icon: 5});
+                return;
+            }
+
+            if ($.inArray('point', type) != -1 ) {
+                if($('#point').val() <= 0){
+                    layer.msg('积分请输入正整数', {icon: 5});
+                    return;
+                }
+            }
+
+            var end_time = (new Date($("#end_time").val())).getTime();
+            var old_end_time = (new Date($("#old_end_time").val())).getTime();
+            if(old_end_time > end_time){
+                layer.msg('结束时间不能小于之前设置的时间!', {icon: 5});
+                return;
+            }
+
+            data.field.type = type.toString();
+            data.field.coupon = coupon_selected_ids.toString();
+
+            if($("input[name='level_id']:checked").val() == 1 && data.field.level_id.length == 0){
+                layer.msg('请选择会员等级', {icon: 5});
+                return;
+            }
+
+            if($('.holiday-name').html()){
+                data.field.holiday_name = $('.holiday-name').html();
+                data.field.holiday_time =$('.holiday-name').attr('date-time')
+            }else{
+                data.field.holiday_name = '';
+                data.field.holiday_time = '';
+            }
+
+            if(repeat_flag) return;
+            repeat_flag = true;
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("scenefestival://shop/scenefestival/edit"),
+                data: data.field,
+                async: false,
+                success: function(res){
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        layer.confirm('编辑成功', {
+                            title:'操作提示',
+                            btn: ['返回列表', '继续编辑'],
+                            yes: function(index, layero){
+                                location.hash = ns.hash("scenefestival://shop/scenefestival/lists");
+								layer.close(index);
+                            },
+                            btn2: function(index, layero) {
+								layer.close(index);
+                            }
+                        });
+                    }else{
+                        layer.msg(res.message);
+                    }
+                }
+            })
+        });
+
+        var upload = new Upload({
+            elem: '#no_winning_img'
+        });
+
+        //参与条件
+        form.on('radio(participation)', function(data){
+            if (parseInt(data.value))
+                $('.participation-condition .layui-inline').removeClass('layui-hide');
+            else
+                $('.participation-condition .layui-inline').addClass('layui-hide');
+        });
+
+        form.on('radio(join_type)', function(data){
+            if (data.value == 1 ) {
+                $("#time").addClass('layui-hide');
+            }else {
+                $("#time").removeClass('layui-hide');
+            }
+
+        });
+    });
+
+    //初始化数据
+    function initTableData(){
+        var levelIdStr = '{$info.level_id}',
+            levelIdArr = levelIdStr.split(",");
+        if (levelIdArr.length >= 1){
+            $(".participation-condition input.level-id").each(function (index,item) {
+                for (var i = 0; i < levelIdArr.length; i++){
+                    if (parseInt($(item).val()) == levelIdArr[i]){
+                        $(item).prop('checked',true);
+                    }
+                }
+            });
+            form.render();
+        }
+    }
+
+    function backScenefestivalList() {
+        location.hash = ns.hash("scenefestival://shop/scenefestival/lists");
+    }
+
+    // 选择节日日期
+    function choose() {
+        var data = {};
+        laytpl($("#choose_time").html()).render(data, function(html) {
+            layer.open({
+                title: '选择节日',
+                skin: 'layer-tips-class',
+                type: 1,
+                area: ['520px', 'auto'],
+                btn:['确定','取消'],
+                content: html,
+                success: function (layero, index) {
+                    $('.holiday').each(function(){
+                        if($(this).html() == $('.holiday-name').html()){
+                            $(this).addClass('holiday-active bg-color')
+                        }
+                    });
+                    form.render();
+                }
+            });
+
+        });
+    }
+
+    function holiday(data){
+        $('.holiday').removeClass('holiday-active bg-color');
+        $(data).addClass('holiday-active bg-color');
+        $('.holiday-name').html($(data).html());
+        $('.holiday-hidden').val(1);
+        $('.holiday-name').attr('date-time' , $(data).attr('date-time'))
+    }
+
+    //检测数据类型
+    function detectionNumType(el,type){
+        var value = $(el).val();
+
+        //大于零 且 不是小数
+        if (value < 0 && type == 'integral')
+            $(el).val(0);
+        else if(type == 'integral')
+            $(el).val(Math.round(value));
+
+        //大于1 且 不是小数
+        if (value < 1 && type == 'positiveInteger'){
+            $(el).val(1);
+        } else if (type == 'positiveInteger'){
+            var val = Math.round(value);
+            if(Object.is(val,NaN)){
+                $(el).val(1);
+            }else{
+                $(el).val(val);
+            }
+        }
+
+        //大于零可以是小数
+        if (type == 'positiveNumber'){
+            value = parseFloat(value);
+            if (value < 0)
+                $(el).val(0);
+            else
+                $(el).val(value);
+        }
+    }
+
+</script>
+
+<script type="text/html" id="choose_time">
+    <div class="choose-time">
+        <div class="choose-item">
+            <p>传统节日</p>
+            {foreach $jieri_list as $jieri_list_k => $jieri_list_v}
+            <span class="border-color holiday" date-time="{$jieri_list_v.date}" onclick = "holiday(this)">{$jieri_list_v.holiday_cn}</span>
+            {/foreach}
+        </div>
+    </div>
+</script>

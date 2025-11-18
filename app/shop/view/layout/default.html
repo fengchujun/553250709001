@@ -1,0 +1,86 @@
+<div class="layui-layout layui-layout-admin">
+	<div class="layui-header">
+		<div class="layui-logo">
+			<a href="{:url('shop/index/index')}">
+				<img src="__STATIC__/img/logo/shop_logo.jpg" />
+			</a>
+		</div>
+
+		<div class="layui-header-right">
+			<div class="layui-header-crumbs">
+				<div class="layui-header-crumbs-first">
+					<span><!-- 动态加载菜单名称 --></span>
+				</div>
+				<div class="layui-header-crumbs-second">
+                    <span class="layui-breadcrumb" lay-separator="-"><!-- 动态加载面包屑 --></span>
+				</div>
+			</div>
+
+			<!-- 账号 -->
+			<div class="login-box layui-layout-right">
+				<div class="shop-ewm">
+					<button class="layui-btn" onclick="getShopUrl()">访问店铺</button>
+				</div>
+
+				<div class="help-btn" onclick="goHelpDocument()">
+					<i class="iconfont iconwenhao1"></i>
+					<span>帮助</span>
+				</div>
+
+				<ul class="layui-nav head-account">
+					<li class="layui-nav-item layuimini-setting">
+						<a href="javascript:;">{$user_info['username']}</a>
+						<dl class="layui-nav-child">
+							<dd class="reset-pass" onclick="resetPassword();">
+								<a href="javascript:;">修改密码</a>
+							</dd>
+							<dd>
+								<a href="{:href_url('shop/system/cache')}">清除缓存</a>
+							</dd>
+							<dd>
+								<a href="{:addon_url('shop/login/logout')}" class="login-out">退出登录</a>
+							</dd>
+						</dl>
+					</li>
+				</ul>
+			</div>
+
+		</div>
+	</div>
+
+	<!-- 一级菜单 -->
+	<div class="layui-side first-nav">
+		<div class="layui-side-scroll">
+			<!-- 动态加载一级菜单 -->
+			<ul class="layui-nav layui-nav-tree menu-first-wrap"></ul>
+		</div>
+	</div>
+
+	<!-- 二、三级菜单 -->
+	<div class="layui-side second-nav">
+		<div class="layui-side-scroll">
+			<!-- 动态加载二、三级菜单 -->
+			<ul class="layui-nav layui-nav-tree"></ul>
+		</div>
+	</div>
+
+	<div class="body-wrap layui-body">
+
+		<!-- 动态加载四级菜单导航 -->
+
+		<!-- 内容 -->
+		<div class="body-content">
+			<!-- 加载动画 -->
+			<div class="common-loading-wrap">
+				<i class="common-loading-layer layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></i>
+			</div>
+		</div>
+
+		<!-- 版权信息 -->
+		<div class="footer">
+			<a class="footer-img" href="javascript:;"><img src="{if !empty($copyright.logo)} {:img($copyright.logo)} {else /}__STATIC__/img/copyright_logo.png{/if}" /></a>
+		</div>
+	</div>
+</div>
+
+<script src="SHOP_JS/route.js?time=20241105"></script>

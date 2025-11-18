@@ -1,0 +1,251 @@
+<style>
+    .table-btn {justify-content: center;}
+    .layui-layout-admin .screen{margin-bottom: 15px;}
+    .layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+    .layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+    .form-img .form-img-wrap {width: 25px;height: 25px;margin: 0 10px 10px 0;border: 1px solid #EAEAEA;display: flex;align-items: center;justify-items: center}
+    .form-img-wrap img {max-width: 100%;max-height: 100%;height: auto;width: 100%}
+    .layui-layer-content .layui-form-label {width: 100px}
+    .layui-layer-content .layui-form-label + .layui-input-block {margin-left: 100px}
+    .layui-table .form-data-wrap {max-height: 50px;overflow: hidden;}
+    .layui-table .layui-form-item {margin-bottom: 0}
+    .layui-table .layui-form-label {width: auto;height: 25px;line-height: 25px;}
+    .layui-table .layui-form-label + .layui-input-block {margin-left: 0; height: 25px;line-height: 25px;min-height: unset;}
+</style>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">用户昵称：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="nickname" placeholder="请输入用户昵称" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">创建时间：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <button class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 列表 -->
+<table id="formdata_list" lay-filter="formdata_list"></table>
+
+<input type="hidden" value="" id="param" />
+
+<!-- 状态 -->
+<script type="text/html" id="status">
+  {{# if(d.status == 1){ }}
+  <span style="color: green;">正常</span>
+  {{# }else if(d.status == -1){ }}
+  <span style="color: gray;">冻结</span>
+  {{# } }}
+</script>
+
+<!-- 用户信息 -->
+<script type="text/html" id="userdetail">
+    <div class='table-title'>
+        <div class='title-pic'>
+            <img layer-src src="{{ns.img(d.headimg)}}" onerror="this.src = '{:img('public/static/img/default_img/head.png')}' ">
+        </div>
+        <div class='title-content'>
+            <p class="layui-elip">{{d.nickname}}</p>
+        </div>
+    </div>
+</script>
+
+<!-- 工具栏操作 -->
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        <a class="layui-btn" lay-event="see">查看</a>
+        <a class="layui-btn" lay-event="delete">删除</a>
+    </div>
+</script>
+
+<script type="text/html" id="formData">
+    <div class="form-data-wrap">
+        {{# d.form_data.forEach(function(item){ }}
+        <div class="layui-form-item">
+            <label class="layui-form-label">{{ item.value.title }}：</label>
+            <div class="layui-input-block">
+                {{# if(item.controller == 'Img'){ }}
+                <div class="form-img">
+                    {{# item.img_lists.forEach(function(img){ }}
+                    <div class="form-img-wrap">
+                        <img src="{{ ns.img(img) }}" layer-src>
+                    </div>
+                    {{# }) }}
+                </div>
+                {{# } else { }}
+                {{ item.val }}
+                {{# } }}
+            </div>
+        </div>
+        {{# }) }}
+    </div>
+</script>
+
+<script>
+var repeat_flag = false;
+layui.use(['form', 'laydate', 'laytpl'], function() {
+    var table,
+        form = layui.form,
+        laydate = layui.laydate,
+        laytpl = layui.laytpl;
+
+    form.render();
+
+    //渲染时间
+    laydate.render({
+        elem: '#start_time',
+        type: 'datetime',
+        max: 0
+    });
+
+    laydate.render({
+        elem: '#end_time',
+        type: 'datetime',
+        max: 0
+    });
+
+    table = new Table({
+        elem: '#formdata_list',
+        url: ns.url("form://shop/form/formdata"),
+        where: {
+            form_id: "{$form_id}"
+        },
+        cols: [[
+        {
+            field: 'userdetail',
+            title: '会员信息',
+            width: '25%',
+            unresize: 'false',
+            templet: '#userdetail'
+        },
+        {
+            field: '',
+            title: '表单信息',
+            width: '25%',
+            unresize: 'false',
+            templet: '#formData'
+        },
+        {
+            field: '',
+            title: '来源订单',
+            width: '20%',
+            unresize: 'false',
+            templet: function(data) {
+                if(data.scene == 'order'){
+                    return '<a href="'+ ns.href("shop/order/detail", {order_id:data.order_info.order_id}) +'" target="_blank" class="text-color">'+ data.order_info.order_no +'</a>';
+                }else if(data.scene == 'goods'){
+                    return '<a href="'+ ns.href("shop/order/detail", {order_id:data.order_goods_info.order_id}) +'" target="_blank" class="text-color">'+ data.order_goods_info.order_no +'</a>';
+                }else{
+                    return '';
+                }
+            }
+        },
+        {
+            field: 'create_time',
+            title: '创建时间',
+            unresize: 'false',
+            width: '20%',
+            align: 'center',
+            templet: function(data) {
+                return ns.time_to_date(data.create_time);
+            }
+        },
+        {
+            title: '操作',
+            unresize: 'false',
+            align: 'right',
+            templet: '#operation'
+        }
+        ]]
+    });
+
+    table.tool(function(obj) {
+        var data = obj.data;
+
+        switch (obj.event) {
+            case 'see':
+                laytpl($('#formData').html()).render(data, function(string){
+                    layer.open({
+                        title: '查看信息',
+                        area: "400px",
+                        type: 1,
+                        content: string,
+                        btn: ['确认']
+                    })
+                });
+                break;
+            case 'delete': //删除
+                del(data.id)
+                break;
+        }
+    });
+
+    /**
+     * 搜索功能
+     */
+    form.on('submit(search)', function(data) {
+        if ($('#start_time').val() != '' && $('#end_time').val() != '' && (new Date($('#end_time').val()).getTime() <= new Date($('#start_time').val()).getTime() )) {
+            layer.msg('结束时间不能小于开始时间');
+            return false;
+        }
+
+        table.reload({
+            page: {
+                curr: 1
+            },
+            where: data.field
+        });
+        return false;
+    });
+});
+
+function del(id){
+    var del_flag = false; //防重复标识
+
+    layer.confirm('确定要删除吗?', function (index) {
+        if (del_flag) return;
+        del_flag = true;
+		layer.close(index);
+        $.ajax({
+            url: ns.url("form://shop/form/deleteFormData"),
+            data: {id:id},
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                layer.msg(res.message);
+                del_flag = false;
+                if (res.code == 0) {
+                    listenerHash(); // 刷新页面
+                    layer.closeAll();
+                }
+            }
+        });
+    });
+}
+
+function fun(callback) {
+    var param = $("#param").val();
+    callback(param);
+}
+</script>

@@ -1,0 +1,107 @@
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>订单：</label>
+				<span>{$info.order_no}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>状态：</label>
+				<span>{$info.status == 1 ? '待支付' : '已支付'}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>来源门店：</label>
+				<span>{$info.store_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>充值用户：</label>
+				<span>{$info.nickname}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>套餐面值：</label>
+				<span>{$info.face_value}</span>
+			</div>
+
+			<div class="promotion-view-item">
+				<label>金额：</label>
+				<span>{$info.buy_price}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>赠送积分：</label>
+				<span>{$info.point}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>赠送成长值：</label>
+				<span>{$info.growth}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>支付方式：</label>
+				<span>{$info.pay_type_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>支付时间：</label>
+				<span>{:date('Y-m-d H:i:s', $info.pay_time)}</span>
+			</div>
+		</div>
+
+		{if $info.cover_img}
+		<div class="promotion-view" >
+			<div class="promotion-view-item-line">
+				<label class="promotion-view-item-custom-label">横幅图片：</label>
+				<div class="promotion-view-item-custom-box img-upload">
+					<div class="upload-img-block icon">
+						<div class="upload-img-box">
+							<img layer-src  src="{:img($info.cover_img)}" >
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{/if}
+	</div>
+</div>
+
+{if !empty($info.coupon_list)}
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">赠送优惠券</span>
+	</div>
+	<div class="layui-card-body">
+		<div class='promotion-view-list'>
+			<table id="promotion_list"></table>
+		</div>
+	</div>
+</div>
+{/if}
+
+<script>
+	var promotion_list = {if !empty($info.coupon_list)} {:json_encode($info.coupon_list.data, JSON_UNESCAPED_UNICODE)}{else/}[] {/if};
+
+	layui.use('table', function() {
+		new Table({
+			elem: '#promotion_list',
+			cols: [
+				[{
+					field: 'coupon_name',
+					title: '优惠券',
+					width: '20%',
+				}, {
+					title: '优惠内容',
+					templet: function(data) {
+						if(data.at_least > 0){
+							return '满'+data.at_least+ (data.type == 'discount' ? '打'+data.discount +'折' : '减'+data.money) ;
+						}else{
+							return '无门槛'+ (data.type == 'discount' ? '打'+data.discount+'折' : '减' +data.money);
+						}
+					}
+				}]
+			],
+			data: promotion_list
+		});
+	});
+</script>

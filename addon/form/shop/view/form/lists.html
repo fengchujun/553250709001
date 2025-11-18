@@ -1,0 +1,285 @@
+<style>
+	.layui-table-box {overflow: inherit;}
+	.layui-table-header {overflow: inherit;}
+	.layui-table-header .layui-table-cell {overflow: inherit;}
+    .select-form-type {display: flex;}
+    .select-form-type .type-item {border: 2px solid #eee;cursor: pointer;width: 300px;text-align: center;margin: 0 15px 15px 0;border-radius: 10px;overflow: hidden}
+    .select-form-type .type-item .preview {width: 100%;height: auto;}
+    .select-form-type .type-item .title {line-height: 35px;font-weight: bold}
+    .select-form-type .selected {border-color: var(--base-color)}
+    .body-content {padding-top: 15px!important;}
+    .layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+    .layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+    .layui-layout-admin .screen{margin-bottom: 15px;}
+</style>
+
+<div class="single-filter-box">
+    <button class="layui-btn" onclick="clickAdd()">添加表单</button>
+</div>
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-inline">
+                <label class="layui-form-label">表单名称：</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="form_name" placeholder="请输入表单名称" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">是否启用：</label>
+                <div class="layui-input-inline">
+                    <select name="is_use">
+                        <option value="">全部</option>
+                        <option value="1">已启用</option>
+                        <option value="0">未启用</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">表单类型：</label>
+                <div class="layui-input-inline">
+                    <select name="form_type">
+                        <option value="">请选择表单类型</option>
+                        {foreach name="form_type" item="vo"}
+                        <option value="{$vo['type']}">{$vo['name']}</option>
+                        {/foreach}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <button class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table id="form_list" lay-filter="form_list"></table>
+
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        {{# if(d.is_use==1 && d.form_type == 'custom'){ }}
+        <a class="layui-btn" lay-event="promote">推广</a>
+        {{# } }}
+        <a class="layui-btn" lay-event="edit">编辑</a>
+        <a class="layui-btn" lay-event="data">数据</a>
+        {{# if(d.is_use==0){ }}
+        <a class="layui-btn" lay-event="start">启用</a>
+        {{# } }}
+        {{# if(d.is_use==1){ }}
+        <a class="layui-btn" lay-event="stop">禁用</a>
+        {{# } }}
+        <a class="layui-btn" lay-event="del">删除</a>
+        <a class="layui-btn" lay-event="export">导出</a>
+    </div>
+</script>
+
+<script type="text/html" id="selectFromType">
+    <div class="select-form-type">
+        {foreach name="form_type" item="v" key="k" index="index"}
+        <div class="type-item {if $index eq 1}selected{/if}" form-type="{$k}">
+            <img src="{:img($v.preview_img)}" alt="" class="preview">
+            <div class="title">{$v.name}</div>
+        </div>
+        {/foreach}
+    </div>
+</script>
+
+<!-- 推广 -->
+{include file="app/shop/view/component/promote_show.html"}
+
+<script>
+    var table,laytpl,repeat_flag = false, formType = {:json_encode($form_type)};
+    layui.use(['form', 'laytpl'], function() {
+        laytpl = layui.laytpl;
+        form = layui.form;
+
+        table = new Table({
+            elem: '#form_list',
+            url: ns.url("form://shop/form/lists"),
+            cols: [
+                [{
+                    field: 'form_name',
+                    title: '表单名称',
+                    unresize: 'false',
+                    width: '30%',
+                }, {
+                    field: 'level_name',
+                    title: '表单类型',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function (data) {
+                        return formType[data.form_type] ? formType[data.form_type].name : '';
+                    }
+                },{
+                    title: '状态',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function(data) {
+                        return data.is_use == 1 ? '<span class="text-color">已启用</span>' : '<span>未启用</span>'
+                    }
+                },
+                {
+                    title: '创建时间',
+                    unresize: 'false',
+                    width: '20%',
+                    templet: function(data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                },{
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+					align:'right'
+                }]
+            ],
+
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function(obj) {
+            var data = obj.data;
+
+            switch (obj.event) {
+                case 'del': //删除
+                    del(data.id);
+                    break;
+                case 'start': //启用
+                    start_status(data.id,1,data.form_type);
+                    break;
+                case 'stop': //停用
+                    stop_status(data.id,0);
+                    break;
+                case 'edit': //编辑
+                    location.hash = ns.hash("form://shop/form/editform", {"id": data.id});
+                    break;
+                case 'data': //更多
+                    location.hash = ns.hash("form://shop/form/formdata", {form_id: data.id});
+                    break;
+                case 'promote':
+                    promote(data);
+                    break;
+                case 'export':
+                    window.open(ns.url("form://shop/form/exportform", {request_mode: 'download',id: data.id}))
+                    break;
+            }
+        });
+
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+            return false;
+        });
+    });
+
+    function promote(data){
+        new PromoteShow({
+            url:ns.url("form://shop/form/promote"),
+            param:{form_id:data.id},
+        })
+    }
+
+    function clickAdd() {
+        layer.open({
+            type: 1,
+            title: '添加表单',
+            content: $('#selectFromType').html(),
+            area: ['960px', '660px'],
+            btn: ['确定', '取消'],
+            success: function () {
+                $('.select-form-type .type-item').click(function () {
+                    $(this).addClass('selected').siblings().removeClass('selected');
+                })
+            },
+            yes: function(index, layero) {
+                var type = $('.select-form-type .type-item.selected').attr('form-type');
+                location.hash = ns.hash('form://shop/form/addform?form_type=' + type);
+				layer.close(index);
+            }
+        })
+    }
+
+    /**
+     * 启用
+     */
+    function start_status(id,is_use,form_type){
+        var use_flag = false; //防重复标识
+
+        layer.confirm('确定要启用吗?', function (index) {
+            if (use_flag) return;
+            use_flag = true;
+			layer.close(index);
+            $.ajax({
+                url: ns.url("form://shop/form/editIsUse"),
+                data: {id:id,is_use:is_use,form_type:form_type},
+                dataType: 'JSON',
+                type: 'POST',
+                success: function(res) {
+                    layer.msg(res.message);
+                    use_flag = false;
+                    if (res.code == 0) {
+                        listenerHash(); // 刷新页面
+                    }
+                }
+            });
+        });
+    }
+
+    /**
+     * 停用
+     */
+    function stop_status(id,is_use){
+        var stop_flag = false; //防重复标识
+
+        layer.confirm('确定要禁用吗?', function (index) {
+            if (stop_flag) return;
+            stop_flag = true;
+			layer.close(index);
+            $.ajax({
+                url: ns.url("form://shop/form/editIsUse"),
+                data: {id:id,is_use:is_use},
+                dataType: 'JSON',
+                type: 'POST',
+                success: function(res) {
+                    layer.msg(res.message);
+                    stop_flag = false;
+                    if (res.code == 0) {
+                        listenerHash(); // 刷新页面
+                    }
+                }
+            });
+        });
+    }
+
+    function del(id){
+        var del_flag = false; //防重复标识
+
+        layer.confirm('确定要删除吗?', function (index) {
+            if (del_flag) return;
+            del_flag = true;
+			layer.close(index);
+            $.ajax({
+                url: ns.url("form://shop/form/deleteForm"),
+                data: {id:id},
+                dataType: 'JSON',
+                type: 'POST',
+                success: function(res) {
+                    layer.msg(res.message);
+                    del_flag = false;
+                    if (res.code == 0) {
+                        listenerHash(); // 刷新页面
+                    }
+                }
+            });
+        });
+    }
+</script>

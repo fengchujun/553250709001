@@ -1,0 +1,140 @@
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>活动名称：</label>
+				<span>{$info.recommend_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>活动状态：</label>
+				<span>{$info.status_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>开始时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.start_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>结束时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.end_time)}</span>
+			</div>
+
+			<div class="promotion-view-item">
+				<label>添加时间：</label>
+				<span>{:date('Y-m-d H:i:s',$info.create_time)}</span>
+			</div>
+			{if in_array('point', $info['type'])}
+			<div class="promotion-view-item">
+				<label>奖励积分：</label>
+				<span>{$info.point}</span>
+			</div>
+			{/if}
+			{if in_array('balance', $info['type'])}
+			<div class="layui-form-item">
+				<label>奖励红包：</label>
+				<span>{$info.balance}</span>
+			</div>
+			{/if}
+
+		</div>
+        {if !empty($info.remark)}
+		<div class="promotion-view">
+			<div class="promotion-view-item-line">
+				<label class="promotion-view-item-custom-label">活动说明：</label>
+				<div class="promotion-view-item-custom-box">{$info.remark}</div>
+			</div>
+		</div>
+        {/if}
+	</div>
+</div>
+{if in_array('coupon', $info['type']) && !empty($info['coupon_list'])}
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">奖励优惠券</span>
+	</div>
+	<div class="layui-card-body">
+		<div class='promotion-view-list'>
+			<table id="promotion_list"></table>
+		</div>
+	</div>
+</div>
+{/if}
+
+<script type='text/html' id="promotion_list_item_box_html">
+    <div class="promotion-list-item-title">
+        <div class="promotion-list-item-title-icon">
+            {{#  if(d.image != ''){ }}
+            <img src="{{ ns.img(d.image) }}">
+            {{#  }else{ }}
+            <img src="__ROOT__/public/uniapp/game/coupon.png">
+            {{#  } }}
+        </div>
+        <p class="promotion-list-item-title-name multi-line-hiding">{{ d.coupon_name }}</p>
+    </div>
+</script>
+<script>
+	var promotion_list = {:json_encode($info['coupon_list'] ?? [], JSON_UNESCAPED_UNICODE)};
+
+	layui.use('table', function() {
+		new Table({
+			elem: '#promotion_list',
+			cols: [
+				[{
+					title: '优惠券名称',
+					width: '30%',
+					unresize: 'false',
+					templet: '#promotion_list_item_box_html'
+				}, {
+					title: '类型',
+					templet: function(data) {
+						return data.type == 'reward' ? '满减': '折扣';
+					}
+				}, {
+					title: '优惠金额/折扣',
+					templet: function(data) {
+						return data.type == 'reward' ? data.money  : data.discount;
+					}
+				}, {
+					title: '适用商品',
+					templet: function (data) {
+						return data.goods_type_name;
+					}
+				}, {
+					field: 'max_fetch',
+					title: '领取人限制',
+				}, {
+					field: 'price',
+					title: '已领取/发放数',
+					templet: function(data) {
+						return data.count == -1 ? data.lead_count+'/不限量': data.lead_count+'/'+data.count;
+					}
+				}, {
+					field: 'stock',
+					title: '结束时间',
+					unresize: 'false',
+                    width:'20%',
+					templet: function(data) {
+						var str = '';
+						switch(data.validity_type) {
+							case 0:
+								str = ns.time_to_date(data.end_time);
+								break;
+							case 1:
+								str = '领取之日起' + data.fixed_term + '天有效';
+								break;
+							default:
+								str = '长期有效';
+								break;
+						}
+						return str;
+					}
+				}]
+			],
+			data: promotion_list
+		});
+	});
+</script>

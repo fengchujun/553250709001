@@ -1,0 +1,44 @@
+@charset "UTF-8";
+/**
+ Sass函数--颜色函数--HSL函数：https://www.sass.hk/skill/sass25.html
+ Scss转换：https://www.sassmeister.com
+*/
+/* 文字基本颜色 */
+:root {
+  --base-color: #105CFB;
+}
+
+.draggable-element.selected {
+  box-shadow: 0 0 5px #a6c3fe;
+}
+
+.component-list ul li:not(.disabled):hover {
+  background: #d9e5fe;
+  color: #427efc !important;
+}
+.component-list ul li:not(.disabled):hover i {
+  color: #427efc !important;
+}
+.component-list ul li:not(.disabled):hover span:last-child {
+  color: #427efc;
+}
+
+.border-color-light-9 {
+  border-color: #d9e5fe !important;
+}
+
+.bg-color-light-9 {
+  background: #d9e5fe !important;
+}
+
+.layui-layout-admin .second-nav .layui-side-scroll .layui-nav-item a:hover {
+  background-color: rgba(16, 92, 251, 0.08) !important;
+}
+
+.layui-layout-admin .second-nav .layui-side-scroll .layui-nav-tree > .layui-this > .second-selected-nav {
+  background-color: rgba(16, 92, 251, 0.08) !important;
+}
+
+.layui-layout-admin .second-nav .layui-side-scroll .layui-nav-child dd.layui-this .layui-left-nav {
+  background-color: rgba(16, 92, 251, 0.08);
+}

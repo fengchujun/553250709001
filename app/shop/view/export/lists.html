@@ -1,0 +1,266 @@
+
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-form-item">
+                <div class="layui-inline {if count($from_type_list) <= 1}layui-hide{/if}">
+                    <label class="layui-form-label">导出类型</label>
+                    <div class="layui-input-inline">
+                        <select name="from_type">
+                            {foreach $from_type_list as $val}
+                            <option value="{$val.id}">{$val.name}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">导出状态</label>
+                    <div class="layui-input-inline">
+                        <select name="status">
+                            <option value="all">请选择</option>
+                            {foreach $status_list as $val}
+                            <option value="{$val.id}">{$val.name}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">导出时间</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                    <button class="layui-btn layui-btn-primary date-picker-btn date-picker-btn-seven" onclick="datePick(7, this);return false;">近7天</button>
+                    <button class="layui-btn layui-btn-primary date-picker-btn date-picker-btn-thirty" onclick="datePick(30, this);return false;">近30天</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <button class="layui-btn" lay-submit="" id="search" lay-filter="search">筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table id="table_list" lay-filter="table_list"></table>
+
+<!-- 操作 -->
+<script type="text/html" id="action">
+    <div class="table-btn">
+        <a class="layui-btn" lay-event="download">下载</a>
+        <a class="layui-btn" lay-event="delete">删除</a>
+    </div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarOperation">
+    <button class="layui-btn layui-btn-primary" lay-event="delete">批量删除</button>
+</script>
+
+<script>
+    var form, laydate;
+    layui.use(['laydate','form', 'element'], function(){
+        form = layui.form;
+        laydate = layui.laydate;
+
+        form.on('submit(search)', function(data) {
+            if ($('#start_time').val() != '' && $('#end_time').val() != '' && (new Date($('#end_time').val()).getTime() <= new Date($('#start_time').val()).getTime() )) {
+                layer.msg('结束时间不能小于开始时间');
+                return false;
+            }
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+            return false;
+        });
+
+        laydate.render({
+            elem: '#start_time',
+            type: 'datetime',
+            max: 0,
+            change: function(value, date, endDate){
+                $(".date-picker-btn").removeClass("selected");
+            }
+        });
+        laydate.render({
+            elem: '#end_time',
+            type: 'datetime',
+            max: 0,
+            change: function(value, date, endDate){
+                $(".date-picker-btn").removeClass("selected");
+            }
+        });
+
+        table = new Table({
+            elem: '#table_list',
+            url: ns.url('{$lists_url}'),
+            where: {
+                from_type:"{:join(',', array_column($from_type_list, 'id'))}"
+            },
+            cols: [
+                [{
+                    type: 'checkbox',
+                    unresize: 'false',
+                    width: '3%'
+                },{
+                    field:'from_type_name',
+                    title: '导出类型',
+                    width: '12%',
+                    unresize: 'false',
+                },{
+                    field:'status_name',
+                    title: '导出状态',
+                    width: '12%',
+                    unresize: 'false',
+                },{
+                    field:'condition',
+                    title: '筛选条件',
+                    width: '25%',
+                    unresize: 'false',
+                    templet: function(data) {
+                        let html = '';
+                        let condition = JSON.parse(data.condition);
+                        if(condition.length > 0){
+                            condition.forEach((item)=>{
+                                html += '<div class="text"><span style="display:inline-block;min-width: 60px;">'+ item.name + '</span>：' + item.value +'</div>';
+                            })
+                        }else{
+                            html += '全部';
+                        }
+                        return html;
+                    }
+                },{
+                    field:'data_num',
+                    title: '数据总数',
+                    width: '20%',
+                    unresize: 'false',
+                }, {
+                    field: 'create_time',
+                    title: '导出时间',
+                    width: '16%',
+                    unresize: 'false',
+                    templet: function(data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }, {
+                    title: '操作',
+                    toolbar: '#action',
+                    align:'right',
+                    unresize: 'false'
+                }]
+            ],
+            toolbar: '#toolbarOperation',
+            bottomToolbar: "#toolbarOperation",
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function(obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'download':
+                    window.open(ns.img(data.path));
+                    break;
+                case 'delete':
+                    deleteExport(data.export_id);
+                    break;
+            }
+        });
+
+        // 批量操作
+        table.bottomToolbar(function (obj) {
+            batchAction(obj);
+        });
+
+        table.toolbar(function(obj){
+            batchAction(obj);
+        });
+
+        function batchAction(obj) {
+            if (obj.data.length < 1) {
+                layer.msg('请选择要操作的数据');
+                return;
+            }
+            var id_array = [];
+            for (i in obj.data) id_array.push(obj.data[i].export_id);
+            switch (obj.event) {
+                case "delete":
+                    deleteExport(id_array.toString());
+                    break;
+            }
+        }
+    })
+
+    /**
+     * 七天时间
+     */
+    function datePick(date_num,event_obj){
+        $(".date-picker-btn").removeClass("selected");
+        $(event_obj).addClass('selected');
+        // alert(new Date().format("yyyy-MM-dd hh:mm"));
+        var now_date = new Date();
+
+        Date.prototype.Format = function (fmt,date_num) { //author: meizz
+            this.setDate(this.getDate()-date_num);
+            var o = {
+                "M+": this.getMonth() + 1, //月份
+                "d+": this.getDate(), //日
+                "H+": this.getHours(), //小时
+                "m+": this.getMinutes(), //分
+                "s+": this.getSeconds(), //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        };
+        // var now_time =  new Date().Format("yyyy-MM-dd HH:mm:ss",0);//当前日期
+        var now_time =  new Date().Format("yyyy-MM-dd 23:59:59",0);//当前日期
+        var before_time =  new Date().Format("yyyy-MM-dd 00:00:00",date_num-1);//前几天日期
+        $("input[name=start_time]").val(before_time,0);
+        $("input[name=end_time]").val(now_time,date_num-1);
+    }
+
+    /**
+     * 删除导出记录
+     */
+    var flag_delete = false;
+    function deleteExport(export_ids) {
+        layer.confirm('确定要删除导出记录吗？', {
+            btn: ['确定', '取消']
+        }, function (index) {
+            if (flag_delete) return;
+            flag_delete = true;
+            layer.close(index);
+            $.ajax({
+                type: "POST",
+                async: true,
+                url: ns.url('{$delete_url}'),
+                data: {
+                    export_ids: export_ids,
+                },
+                dataType: "JSON",
+                success: function (data) {
+                    layer.msg(data.message);
+                    flag_delete = false;
+                    if (data.code == 0) {
+                        table.reload();
+                    }
+                }
+            });
+        }, function () {
+            layer.close();
+        });
+    }
+</script>

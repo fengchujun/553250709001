@@ -1,0 +1,587 @@
+<link rel="stylesheet" href="SHOP_CSS/game.css">
+<style>
+	.choose-item > span {
+		display: inline-block;
+		padding: 0 10px;
+		height: 36px;
+		line-height: 36px;
+		text-align: center;
+		border-radius: 4px;
+		border: 1px solid #ededed;
+		position: relative;
+		cursor: pointer;
+		margin: 5px 0;
+		margin-right: 11px;
+	}
+	.choose-item > span i {
+		position: absolute;
+		bottom: -5px;
+		right: -6px;
+		border-radius: 50%;
+		color: #FFF;
+		font-size: 14px;
+		line-height: 1;
+	}
+	.holiday-active {
+		color: #fff;
+	}
+	.holiday-hidden {
+		border: none;
+		width: .1px;
+	}
+
+	.coupon-box .layui-form{
+		padding: 0!important;
+	}
+
+	.layui-layer-page .layui-layer-content{
+		overflow: auto !important;
+	}
+
+	.del-btn {
+		cursor: pointer;
+	}
+	.level-equity .layui-input {
+		display: inline-block;
+	}
+	.gods-box table:first-of-type{
+		margin-bottom: 0;
+	}
+	.gods-box table:last-of-type{
+		margin-top: 0;
+		display: block;
+		max-height: 323px;
+		overflow: auto;
+	}
+	.coupon-box .single-filter-box{
+		padding-top: 0;
+	}
+	.coupon-box .select-coupon-btn{
+		margin-top: 10px;
+	}
+	.layui-layer-page .layui-layer-content{
+		overflow-y: scroll!important;
+	}
+</style>
+
+<div class="layui-form">
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-header">
+			<span class="card-title">活动设置</span>
+		</div>
+
+		<div class="layui-card-body">
+
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+				<div class="layui-input-block">
+					<input type="text" name="activity_name" lay-verify="required" maxlength="15" placeholder="最多可填写15个字" autocomplete="off" class="layui-input len-long">
+				</div>
+			</div>
+			
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+				<div class="layui-input-block">
+					<input type="radio" name="join_time" value="1" lay-verify="required" lay-filter="join_time" title="传统节日" checked>
+					<input type="radio" name="join_time" value="0" lay-verify="required" lay-filter="join_time" title="自定义节日">
+				</div>
+			</div>
+			<div class="layui-form-item layui-hide" id="festival_name">
+				<label class="layui-form-label"><span class="required">*</span>节日名称：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" maxlength="15" placeholder="最多可填写15个字" name="festival_name"  class="layui-input len-mid" autocomplete="off">
+					</div>
+				</div>
+			</div>
+
+			<div class="layui-form-item layui-hide" id="self_time">
+				<label class="layui-form-label"><span class="required">*</span>节日日期：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" id="start_time" name="start_time" lay-verify="required" class="layui-input len-mid" autocomplete="off" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<span class="layui-form-mid">-</span>
+					<div class="layui-input-inline end-time">
+						<input type="text" id="end_time" name="end_time" lay-verify="required|time" class="layui-input len-mid" autocomplete="off" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+			
+			<div class="layui-form-item" id="join_time">
+				<label class="layui-form-label"><span class="required">*</span>节日日期：</label>
+				<div class="layui-input-block">
+					<span class="holiday-name"></span>
+					<input type="hidden" class="holiday-hidden" lay-verify='holiday'>
+					<button class="layui-btn" type="button" onclick="choose()">重新选择</button>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<label class="layui-form-label">祝福语：</label>
+				<div class="layui-input-inline">
+					<textarea name="remark" class="layui-textarea len-long" maxlength="150"></textarea>
+				</div>
+			</div>
+
+			<div class="layui-form-item participation-condition">
+				<label class="layui-form-label">参与条件：</label>
+				<div class="layui-input-block">
+					<input type="radio" name="level_id" value="0" lay-filter="participation" title="全部会员" checked>
+					<input type="radio" name="level_id" value="1" lay-filter="participation" title="部分会员">
+				</div>
+				<div class="layui-inline layui-hide">
+					<label class="layui-form-label"></label>
+					<div class="layui-input-block">
+						{foreach $member_level_list as $k =>$v}
+						<input type="checkbox" class="level-id" value="{$v.level_id}" title="{$v.level_name}" lay-skin="primary">
+						{/foreach}
+					</div>
+				</div>
+				<div class="word-aux">选择参与的会员等级，默认为所有会员都可参与</div>
+			</div>
+
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>奖励发放时间：</label>
+				<div class="layui-input-block">
+					<input type="radio" name="join_type" value="1" lay-verify="required" lay-filter="join_type" title="活动时间内" checked>
+					<input type="radio" name="join_type" value="0" lay-verify="required" lay-filter="join_type" title="活动开始前">
+					<span id="time" class="layui-hide">
+						<input type="number" name="join_frequency" min="0" max="7" lay-verify="required|join_frequency" onchange="detectionNumType(this,'positiveInteger')" autocomplete="off" class="layui-input len-short" value="1">天
+					</span>
+				</div>
+			</div>
+
+			<!-- <div class="layui-form-item layui-hide" id="time">
+				<label class="layui-form-label"></label>
+				<div class="layui-input-block">
+					<input type="number" name="join_frequency" min="0" max="7" lay-verify="required|join_frequency" onchange="detectionNumType(this,'positiveInteger')" autocomplete="off" class="layui-input len-short" value="1">天
+				</div>
+			</div> -->
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-header">
+			<span class="card-title">奖品设置</span>
+		</div>
+
+		<!--    	    <div class="layui-card-body">-->
+
+		<!--    	        <div class="layui-form-item">-->
+		<!--    	            <label class="layui-form-label">奖品明细：</label>-->
+		<!--    	            <div class="layui-input-block">-->
+		<!--    	                <table id="award_list"></table>-->
+		<!--    	            </div>-->
+		<!--    	            <div class="word-aux">-->
+		<!--    	                <span class="aux-title">注意：</span>-->
+		<!--    	                <div class="aux-item">1、奖项设置包含优惠券时,请保证优惠券数量充足</div>-->
+		<!--    	                <div class="aux-item">2、奖品奖项不能少于1项且不能超过7项。</div>-->
+		<!--    	            </div>-->
+		<!--    	            <div class="word-aux">-->
+		<!--    	                <button class="layui-btn" onclick="addAward()">添加奖品</button>-->
+		<!--    	            </div>-->
+		<!--    	        </div>-->
+
+		<!--    	    </div>-->
+
+		<div class="layui-card-body reward-wrap">
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>奖励内容：</label>
+				<div class="layui-input-block">
+					<input type="checkbox" name="type" value="point" title="积分" lay-skin="primary" lay-filter="type" lay-verify="type" checked>
+					<input type="checkbox" name="type" value="balance" title="余额" lay-skin="primary" lay-filter="type" lay-verify="type">
+					<input type="checkbox" name="type" value="coupon" title="优惠券" lay-skin="primary" lay-filter="type" lay-verify="type">
+				</div>
+			</div>
+
+			<div class="point-wrap">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励积分：</label>
+					<div class="layui-input-block">
+						<input name="point" value="1" type="number" onchange="detectionNumType(this,'positiveInteger')" lay-verify="required|mum" class="layui-input len-short">
+					</div>
+				</div>
+			</div>
+
+			<div class="balance-wrap layui-hide">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励红包：</label>
+						<div class="layui-input-block len-long">
+							<input type="radio" name="balance_type" value="0" checked title="不可提现" lay-verify="balance_type"><input name="balance" onchange="detectionNumType(this,'positiveNumber')" value="1" type="number" lay-verify="" class="layui-input len-short">元
+						</div>
+						<!--<label class="layui-form-label"></label>-->
+						<!--<div class="layui-input-block len-long">-->
+							<!--<input type="radio" value="1" name="balance_type" title="可提现" lay-verify="balance_type"><input name="balance_money" onchange="detectionNumType(this,'positiveInteger')" value="1" type="number" lay-verify="" class="layui-input len-short" style="margin-left: 14px;">元-->
+						<!--</div>-->
+				</div>
+<!--				<div class="word-aux"><p>红包为储值余额，仅在消费时可用</p></div>-->
+			</div>
+
+			<div class="coupon-wrap layui-hide">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励优惠券：</label>
+					<div class="layui-input-block">
+						<div id="coupon_list"></div>
+						<div class="word-aux text-color" style="margin-left: 0">
+							<p>活动优惠券发放，不受优惠券自身数量和领取数量的限制</p>
+						</div>
+						<button class="layui-btn" id="select_coupon">选择优惠券</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backScenefestivalList()">返回</button>
+	</div>
+</div>
+
+<!-- 添加奖品 -->
+{include file="scenefestival/award_select"/}
+<script type="text/javascript" src="STATIC_JS/coupon_select.js"></script>
+<script>
+	var form,laydate,laytpl,upload,tableData = [],
+			repeat_flag = false,
+			awardId = 0,
+			currentDate = new Date(),
+			minDate = "",
+			coupon_id = [], addCoupon;
+
+	var coupon_select = new CouponSelect({
+		tableElem:'#coupon_list',
+		selectElem:'#select_coupon',
+	})
+
+	layui.use(['form', 'laydate', 'laytpl'], function() {
+
+		form = layui.form;
+		laydate = layui.laydate;
+		laytpl = layui.laytpl;
+
+		currentDate.setDate(currentDate.getDate() + 30);
+		form.render();
+
+		//开始时间
+		laydate.render({
+			elem: '#start_time', //指定元素
+			type: 'datetime',
+			value: new Date(),
+			done: function(value) {
+				minDate = value;
+				reRender();
+			}
+		});
+
+		//结束时间
+		laydate.render({
+			elem: '#end_time', //指定元素
+			type: 'datetime',
+			value: new Date(currentDate)
+		});
+
+		/**
+		 * 重新渲染结束时间
+		 * */
+		function reRender() {
+			$("#end_time").remove();
+			$(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input len-mid" autocomplete="off"> ');
+			laydate.render({
+				elem: '#end_time',
+				type: 'datetime',
+				min: minDate
+			});
+		}
+
+		//参与条件
+		form.on('radio(participation)', function(data){
+			if (parseInt(data.value))
+				$('.participation-condition .layui-inline').removeClass('layui-hide');
+			else
+				$('.participation-condition .layui-inline').addClass('layui-hide');
+		});
+
+		form.on('radio(join_type)', function(data){
+			if (data.value == 1 ) {
+                 $("#time").addClass('layui-hide');
+			}else {
+				$("#time").removeClass('layui-hide');
+			}
+
+		});
+		
+		form.on('radio(join_time)', function(data){
+			if (data.value == 1 ) {
+		         $("#join_time").removeClass('layui-hide');
+				$("#self_time").addClass('layui-hide');
+				$("#festival_name").addClass('layui-hide');
+			}else {
+				 $("#join_time").addClass('layui-hide');
+				$("#self_time").removeClass('layui-hide');
+				$("#festival_name").removeClass('layui-hide');
+			}
+		
+		});
+		
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			time: function(value) {
+				var now_time = (new Date()).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+				var end_time = (new Date(value)).getTime();
+				var time_type = $('input[name="join_time"]:checked').val();
+				if(time_type == 0){
+					if (now_time > end_time) {
+						return '结束时间不能小于当前时间!'
+					}
+					if (start_time > end_time) {
+						return '结束时间不能小于开始时间!';
+					}
+				}
+
+			},
+			
+			holiday:function(){
+				if($('input[name = "join_time"]:checked').val() == 1 && $('.holiday-hidden').val() != 1){
+					return "请选择节日日期";
+				}
+			},
+			type: function(){
+				if ($('.reward-wrap [name="type"]:checked').length == 0) {
+					return '请选择领奖励内容';
+				}
+			},
+			mum: function(value, item){
+				if (/^\d{0,10}$/.test(value) === false) {
+					return '请输入大于0的整数';
+				}
+
+				if (parseInt(value) <= 0) {
+					return '请输入大于0的整数';
+				}
+			},
+			// float: function(value, item){
+			// 	if (/^\d{0,10}$/.test(value) === false) {
+			// 		return '请输入大于0的数字，支持小数点后两位';
+			// 	}
+			// 	if (parseInt(value) <= 0) {
+			// 		return '请输入大于0的数字，支持小数点后两位';
+			// 	}
+			// },
+			join_frequency: function(value){
+				if(value > 7){
+					return '不得超过7天'
+				}
+			}
+		});
+		form.on('checkbox(type)', function(data) {
+			$('[name="type"]').each(function(){
+				var type = $(this).val();
+				if ($(this).is(':checked')) {
+					$('.reward-wrap .' + type + '-wrap').removeClass('layui-hide');
+					if (type == 'point' || type == 'coupon') {
+						$('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|mum');
+					}
+					if (type == 'balance') {
+						$('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|float');
+					}
+				} else {
+					$('.reward-wrap .' + type + '-wrap').addClass('layui-hide');
+					$('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', '');
+				}
+			})
+		});
+
+		/**
+		 * 表单提交
+		 */
+		form.on('submit(save)', function(data){
+			let coupon_selected_ids = coupon_select.getSelectedData().selectedIds;
+			var type = [];
+			$('.reward-wrap [name="type"]:checked').each(function(){
+				type.push($(this).val());
+			});
+			if ($.inArray('coupon', type) != -1 && coupon_selected_ids.length == 0) {
+				layer.msg('请选择优惠券', {icon: 5});
+				return;
+			}
+			if(data.field.join_time == 0 && data.field.festival_name == '') {
+				layer.msg('请输入节日名称');
+				return;
+			}
+
+			if(data.field.max_fetch == ''){
+				layer.msg('请输入邀请奖励上限', {icon: 5});
+				return;
+			}else if (data.field.max_fetch < 0){
+				layer.msg('请输入大于或等于0的整数', {icon: 5});
+				return;
+			}
+
+			data.field.type = type.toString();
+			data.field.coupon = coupon_selected_ids.toString();
+
+			if (parseInt(data.field.level_id)){
+				var levelId = [],
+						levelName = [];
+				$('.level-id').each(function(){
+					if($(this).prop('checked')){
+						levelId.push($(this).val());
+						levelName.push($(this).attr("title"));
+					}
+				});
+				data.field.level_id = levelId.toString();
+				data.field.level_name = levelName.toString();
+			}
+
+			if($("input[name='level_id']:checked").val() == 1 && data.field.level_id.length == 0){
+				layer.msg('请选择会员等级', {icon: 5});
+				return;
+			}
+
+			if (!data.field.no_winning_img && upload.path != 'public/uniapp/game/no_winning.png') upload.delete();
+
+			if(repeat_flag) return;
+			repeat_flag = true;
+
+			if($('.holiday-name').html()){
+				data.field.holiday_name = $('.holiday-name').html();
+				data.field.holiday_time =$('.holiday-name').attr('date-time')
+			}else{
+				data.field.holiday_name = '';
+				data.field.holiday_time = '';
+			}
+			
+			// console.log($('input[name = "join_time"]:checked').val())
+			// console.log($('.holiday-hidden').val())
+
+			// console.log($('input[name = "join_time"]:checked').val() == 1 && $('.holiday-hidden').val() > 0)
+			
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("scenefestival://shop/scenefestival/add"),
+				data: data.field,
+				async: false,
+				success: function(res){
+					repeat_flag = false;
+
+					if (res.code == 0) {
+						layer.confirm('添加成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续添加'],
+							closeBtn: 0,
+							yes: function(index, layero){
+								location.hash = ns.hash("scenefestival://shop/scenefestival/lists");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								listenerHash(); // 刷新页面
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			})
+		});
+
+		var upload = new Upload({
+			elem: '#no_winning_img'
+		});
+	});
+
+	function backScenefestivalList() {
+		location.hash = ns.hash("scenefestival://shop/scenefestival/lists");
+	}
+
+	//检测数据类型
+	function detectionNumType(el,type){
+		var value = $(el).val();
+
+		//大于零 且 不是小数
+		if (value < 0 && type == 'integral')
+			$(el).val(0);
+		else if(type == 'integral')
+			$(el).val(Math.round(value));
+
+		//大于1 且 不是小数
+		if (value < 1 && type == 'positiveInteger'){
+			$(el).val(1);
+		} else if (type == 'positiveInteger'){
+			var val = Math.round(value);
+			if(Object.is(val,NaN)){
+				$(el).val(1);
+			}else{
+				$(el).val(val);
+			}
+		}
+
+		//大于零可以是小数
+		if (type == 'positiveNumber'){
+			value = parseFloat(value).toFixed(2);
+			if (value < 0)
+				$(el).val(0);
+			else
+				$(el).val(value);
+		}
+		//大于零可以是小数
+		if (type == 'positiveMoney'){
+			value = parseFloat(value).toFixed(2);
+			if (value < 0)
+				$(el).val(0);
+			else
+				$(el).val(value);
+		}
+	}
+	
+	// 选择节日日期
+	function choose() {
+		var data = {};
+		laytpl($("#choose_time").html()).render(data, function(html) {
+			coupon_list = layer.open({
+				title: '选择节日',
+				skin: 'layer-tips-class',
+				type: 1,
+				area: ['520px', 'auto'],
+				btn:['确定','取消'],
+				content: html,
+			});
+			form.render();
+
+			$('.holiday').each(function(){
+				if($(this).html() == $('.holiday-name').html()){
+					$(this).addClass('holiday-active bg-color')
+				}
+			});
+
+		});
+	}
+
+	function holiday(data){
+		$('.holiday').removeClass('holiday-active bg-color');
+		$(data).addClass('holiday-active bg-color');
+		$('.holiday-name').html($(data).html());
+		$('.holiday-hidden').val(1);
+		$('.holiday-name').attr('date-time' , $(data).attr('date-time'))
+	}
+
+</script>
+
+<script type="text/html" id="choose_time">
+	<div class="choose-time">
+		<div class="choose-item">
+			<p>传统节日</p>
+			{foreach $jieri_list as $jieri_list_k => $jieri_list_v}
+				<span class="border-color holiday" date-time="{$jieri_list_v.date}" onclick = "holiday(this)">{$jieri_list_v.holiday_cn}</span>
+			{/foreach}
+		</div>
+	</div>
+</script>

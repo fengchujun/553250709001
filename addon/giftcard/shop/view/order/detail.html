@@ -1,0 +1,150 @@
+<style>
+.layui-layout-admin .layui-body .body-content{background:none;padding:0;}
+.order-detail{padding: 15px;box-sizing: border-box;background: white;}
+.order-information{max-width:1500px;width:100%;min-height:40px;display: flex;}
+.order-information-bottom{margin-bottom: 38px;}
+.order-information-contentOne{width:400px;height:100%;padding-right: 48px;box-sizing: border-box;}
+.order-information-contentTwo{width:600px;height:100%;padding:0 80px;box-sizing: border-box}
+.order-information>div{border-left: 1px solid rgb(245,245,245);}
+.order-information>div:nth-child(1){border-left: none;}
+.contentOne-content{display: flex; font-size:14px;color:rgb(164,164,164);margin-bottom:14px;}
+.contentOne-content:after{overflow: hidden;display: block;content: "";height: 0;clear: both;}
+.contentOne-content-text{max-width:70%;min-width: 20%;color:#333333;margin-left:16px;float: left;display: -webkit-box;-webkit-line-clamp:2;overflow: hidden;text-overflow: ellipsis;-webkit-box-orient: vertical}
+.contentOne-content-title{min-width:85px;float: left;}
+.contentOne-content-text-die{line-height:24px;}
+.shop-information{width: 100%;background:white;padding:15px;box-sizing: border-box;margin-top:15px}
+.shop-information-table{width: 100%;padding:0 48px;box-sizing: border-box;margin-bottom:10px;}
+.shop-information-table>table{width: 100%;border: 1px solid rgb(238,238,238);}
+.table-trOne{height: 48px;background:rgb(245,245,245) ;}
+th{text-align: left;padding-left:28px;box-sizing: border-box;font-weight: 500;color:#333333;border-right:1px solid rgb(238,238,238);}
+th:last-child{border:none;}
+.table-trTow{width:100%;height:60px;border-top:1px solid rgb(238,238,238);}
+.table-trTow>td{text-align: left;padding-left:28px;box-sizing: border-box;font-weight: 500;color:#333333;border-right:1px solid rgb(238,238,238);}
+.table-trTow>td:nth-child(5){color:var(--base-color)}
+.to-detail{cursor: pointer;}
+</style>
+
+<!-- 订单详情、订单状态 -->
+<div class="order-detail layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">订单详情</span>
+    </div>
+	<div class="order-information order-information-bottom layui-card-body">
+		<div class="order-information-contentOne">
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">交易流水号：</div>
+				<div class="contentOne-content-text text-num">{$order_detail['out_trade_no']}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">订单编号：</div>
+				<div class="contentOne-content-text text-num">{$order_detail['order_no']}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">订单来源：</div>
+				<div class="contentOne-content-text">{$order_detail.order_from_name}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">订单状态：</div>
+				<div class="contentOne-content-text">{$order_detail.order_status_name}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">购买人：</div>
+				<div class="contentOne-content-text">{$order_detail.nickname}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">买家留言：</div>
+				<div class="contentOne-content-text contentOne-content-text-die">
+					{if $order_detail['buyer_message'] == ""}
+					-
+					{else/}
+					{$order_detail['buyer_message']}
+					{/if}
+				</div>
+			</div>
+		</div>
+		<div class="order-information-contentTwo">
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">礼品卡名称：</div>
+				<div class="contentOne-content-text text-num">{$order_detail['order_name']}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">权益类型：</div>
+				<div class="contentOne-content-text">{if $order_detail['card_right_type'] == 'goods'}礼品卡{else/}储值卡{/if}</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">礼品卡数量：</div>
+				<div class="contentOne-content-text">{$order_detail['num']}份</div>
+			</div>
+			<div class="contentOne-content">
+				<div class="contentOne-content-title">卡内容：</div>
+				<div class="contentOne-content-text">在使用时任选{$order_detail['card_right_goods_count']}件</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 商品信息 -->
+{if $order_detail['card_right_type'] == 'goods'}
+<div class="shop-information layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">商品信息</span>
+    </div>
+	<div class="shop-information-table layui-card-body">
+		<table lay-filter="parse-table-order-product" lay-skin="line">
+			<thead>
+				<tr class="table-trOne">
+					<th lay-data="{field:'product_name', width:200}">商品</th>
+					<th lay-data="{field:'price'}">价格</th>
+					{if $order_detail.card_right_goods_type != 'all'}
+					<th lay-data="{field:'sale_num'}">数量</th>
+					{/if}
+				</tr>
+			</thead>
+			<tbody>
+				{foreach $order_detail['order_goods_list'] as $list_k => $order_goods_item}
+				<tr class="table-trTow">
+					<td>{$order_goods_item.sku_name}</td>
+					<td>{$order_goods_item.price}</td>
+					{if $order_detail.card_right_goods_type != 'all'}
+					<td>{$order_goods_item.num}</td>
+					{/if}
+				</tr>
+				{/foreach}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/if}
+
+<!-- 卡密信息 -->
+<div class="shop-information layui-card card-common card-brief">
+    <div class="layui-card-header">
+        <span class="card-title">礼品卡信息</span>
+    </div>
+	<div class="shop-information-table layui-card-body">
+		<table lay-filter="parse-table-order-product" lay-skin="line">
+			<thead>
+				<tr class="table-trOne">
+					<th lay-data="{field:'product_name', width:200}">卡编号</th>
+					<th lay-data="{field:'product_name', width:200}">权益类型</th>
+					<th lay-data="{field:'sale_num'}">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				{foreach $card_list as $list_k => $card_item}
+				<tr class="table-trTow">
+					<td>{$card_item.card_no}</td>
+					<td>{if $card_item.card_right_type == 'goods'}礼品卡{else/}储值卡{/if}</td>
+					<td><span onclick="toDetail({$card_item.card_id})" class="text-color to-detail">查看详情</span></td>
+				</tr>
+				{/foreach}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+	function toDetail(id){
+		window.open(ns.href('giftcard://shop/card/detail',{'card_id': id}));
+	}
+</script>

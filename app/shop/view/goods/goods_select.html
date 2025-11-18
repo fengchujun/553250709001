@@ -1,0 +1,152 @@
+<link rel="stylesheet" href="SHOP_CSS/goods_select.css">
+
+<div class="select-goods">
+
+	<!-- 左侧固定展示商品分类 -->
+	<div class="select-goods-left">
+		<div class="select-goods-classification layui-collapse" lay-accordion lay-filter="oneCategory">
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title classification-item text-color" data-category_id="">全部分类</h2>
+			</div>
+			{foreach $category_list as $category_one_item}
+			<div class="layui-colla-item">
+				<h2 class="layui-colla-title classification-item {notempty name="$category_one_item.children"}arrow{/notempty}" data-category_id="{$category_one_item.category_id}">{$category_one_item.title}</h2>
+				{notempty name="category_one_item.children"}
+				{foreach $category_one_item.children as $category_two_item}
+				<div class="layui-colla-content">
+					<div class="select-goods-classification layui-collapse" lay-accordion lay-filter="twoCategory">
+						<div class="layui-colla-item">
+							<h2 class="layui-colla-title classification-item {notempty name="category_two_item.children"}arrow{/notempty}" data-category_id="{$category_two_item.category_id}">{$category_two_item.title}</h2>
+							{notempty name="category_two_item.children"}
+							{foreach $category_two_item.children as $category_three_item}
+							<div class="layui-colla-content classification-item" data-category_id="{$category_three_item.category_id}">{$category_three_item.title}</div>
+							{/foreach}
+							{/notempty}
+						</div>
+					</div>
+				</div>
+				{/foreach}
+				{/notempty}
+			</div>
+			{/foreach}
+		</div>
+	</div>
+
+	<!-- 右侧固定展示筛选和商品列表 -->
+	<div class="select-goods-right">
+
+		<!-- 筛选 -->
+		<div class="single-filter-box">
+			<div></div>
+			<div class="layui-form">
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<select name="select_type" lay-filter="select_type">
+							<option value="all">全部商品</option>
+							<option value="selected">已选择商品</option>
+						</select>
+					</div>
+				</div>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<select name="label_id" lay-filter="label_id">
+							<option value="">选择商品标签</option>
+							{foreach name="$label_list" item="vo"}
+							<option value="{$vo['id']}">{$vo['label_name']}</option>
+							{/foreach}
+						</select>
+					</div>
+				</div>
+				{if $is_disabled_goods_class == 0}
+				<div class="layui-input-inline">
+					<select name="goods_class" lay-filter="goods_class">
+						<option value="{:join(',', array_column($goods_class_arr, 'goods_class'))}">选择商品类型</option>
+						{foreach name="$goods_class_arr" item="vo"}
+							<option value="{$vo.goods_class}" {if $goods_class == $vo.goods_class} selected{/if}>{$vo.goods_class_name}</option>
+						{/foreach}
+					</select>
+				</div>
+				{/if}
+				<div class="layui-input-inline">
+					<input type="text" name="search_text" placeholder="请输入商品名称{if in_array($promotion, ['', 'all', 'module'])}或编码{/if}" autocomplete="off" class="layui-input len-mid">
+					<button type="button" class="layui-btn layui-btn-primary" lay-filter="search" lay-submit>
+						<i class="layui-icon">&#xe615;</i>
+					</button>
+				</div>
+				<!-- 分类id -->
+				<input type="hidden" name="category_id" value=""/>
+			</div>
+		</div>
+
+		<!-- 列表 -->
+		<table id="goods_list" lay-filter="goods_list"></table>
+
+	</div>
+
+	<input type="hidden" name="mode" value="{$mode}" title="商品类型，模式" />
+	<input type="hidden" name="maxNum" value="{$max_num}" title="最大商品数量" />
+	<input type="hidden" name="minNum" value="{$min_num}" title="最小商品数量" />
+	<input type="hidden" name="disabled" value="{$disabled}" title="不可选中" />
+	<input type="hidden" name="promotion" value="{$promotion}" title="营销标识" />
+
+	<input type="hidden" name="is_virtual" value="{$is_virtual}" title="是否虚拟" />
+	<input type="hidden" name="goods_class" value="{$goods_class}" title="商品类型" />
+	<input type="hidden" name="is_weigh" value="{$is_weigh}" title="是否称重" />
+	<input type="hidden" name="sale_channel" value="{$sale_channel ?? ''}" title="销售渠道" />
+
+</div>
+
+<script type="text/html" id="checkbox">
+	{{# if('{$promotion}'  == "pintuan"){ }}
+	<div class="layui-hide">{{ d.goods_name = d.pintuan_name }}</div>
+	{{# } }}
+	<input type="checkbox" data-goods-id="{{d.goods_id}}" name="goods_checkbox" lay-skin="primary" lay-filter="goods_checkbox">
+	<input type="hidden" data-goods-id="{{d.goods_id}}" name="goods_json" value='{{ JSON.stringify(d) }}' />
+	<input type="hidden" data-goods-id="{{d.goods_id}}" name="goods_sku_list_json" value='{{ d.sku_list ? JSON.stringify(d.sku_list) : "" }}' />
+</script>
+
+<!-- 商品信息 -->
+<script type="text/html" id="goods_info">
+	<div class="table-title">
+		{{# if(goodsSelectObj.mode == "sku"){ }}
+		<div class="contraction" data-goods-id="{{d.goods_id}}" data-open="0">
+			<span>+</span>
+		</div>
+		{{# } }}
+
+		<div class="title-pic" id="goods_img_{{d.goods_id}}">
+			<img layer-src src="{{ns.img(d.goods_image.split(',')[0], 'small')}}"/>
+		</div>
+		<div class="title-content">
+			<a href="javascript:;" class="multi-line-hiding text-color" title="{{d.goods_name}}">{{d.goods_name}}</a>
+			{{# if('{$promotion}' != 'pintuan' && '{$promotion}' != 'groupbuy' && '{$promotion}' != 'fenxiao'){ }}
+			<a href="javascript:;" class="multi-line-hiding text-color" >￥{{d.price}}</a>
+			{{# } }}
+		</div>
+	</div>
+</script>
+
+<!-- SKU商品列表 -->
+<script type="text/html" id="skuList">
+	{{# for(var i=0;i<d.list.length;i++){ }}
+	<tr class="sku-list js-sku-list-{{d.list[i].goods_id}}" id="sku_img_{{d.list[i].goods_id}}">
+		<td></td>
+		<td>
+			<input type="checkbox" data-goods-id="{{d.list[i].goods_id}}" data-sku-id="{{d.list[i].sku_id}}" name="goods_sku_checkbox" lay-skin="primary" lay-filter="goods_sku_checkbox">
+			<input type="hidden" data-goods-id="{{d.list[i].goods_id}}" data-sku-id="{{d.list[i].sku_id}}" value='{{ JSON.stringify(d.list[i]) }}' name="goods_sku_json" />
+			<div class="table-title">
+				<div class="title-pic" id="sku_img_{{d.sku_id}}">
+					<img layer-src src="{{ns.img(d.list[i].sku_image, 'small')}}"/>
+				</div>
+				<div class="title-content">
+					<a href="javascript:;" class="multi-line-hiding text-color" title="{{d.list[i].sku_name}}" lay-event="preview">{{d.list[i].sku_name}}</a>
+					<a href="javascript:;" class="multi-line-hiding text-color" >￥{{d.list[i].price}}</a>
+				</div>
+			</div>
+		</td>
+		<td>{{d.list[i].stock}}</td>
+		<td>{{d.list[i].goods_class_name}}</td>
+	</tr>
+	{{# } }}
+</script>
+<script src="SHOP_JS/goods_select.js?time=20241218"></script>

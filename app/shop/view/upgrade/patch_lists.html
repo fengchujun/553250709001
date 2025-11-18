@@ -1,0 +1,164 @@
+
+<div class="layui-collapse tips-wrap" style="margin-bottom: 15px;">
+	<div class="layui-colla-item">
+		<h2 class="layui-colla-title">操作提示</h2>
+		<ul class="layui-colla-content layui-show">
+			<li>一、下载补丁文件后一般是根目录解压覆盖即可，特殊情况请根据补丁文件中的说明文档进行操作</li>
+			<li>二、如果对补丁文件有疑问，请联系官方售后进行处理</li>
+		</ul>
+	</div>
+</div>
+
+<table id="data_list" lay-filter="data_list"></table>
+
+<!-- 操作 -->
+<script type="text/html" id="action">
+	<div class="table-btn">
+		{{# if(!d.patch_res || d.patch_res.patch_res == 'not'){ }}
+		<a class="layui-btn" lay-event="complete">已处理</a>
+		<a class="layui-btn" lay-event="ignore">无需处理</a>
+		{{# } }}
+		<a class="layui-btn" lay-event="download">下载</a>
+	</div>
+</script>
+
+<a id="patch_download"><span></span></a>
+
+<script>
+	var patch_res_config = {
+		complete : '已处理',
+		ignore: '无需处理',
+	};
+	var form, table;
+	layui.use(['table', 'form'], function() {
+		form = layui.form;
+		form.render();
+
+		table = new Table({
+			elem: '#data_list',
+			url: ns.url("shop/upgrade/patchlists"),
+			cols: [
+				[{
+					field: 'patch_name',
+					width: '25%',
+					title: '补丁名称',
+					unresize: 'false',
+					templet: function(data) {
+						var html = '';
+						html += '<p class="text">'+ data.patch_name +'</p>'
+						return html;
+					}
+				},{
+					field: 'version',
+					width: '8%',
+					title: '适用版本',
+					unresize: 'false'
+				},{
+					width: '10%',
+					title: '发布时间',
+					unresize: 'false',
+					templet: function(data) {
+						return ns.time_to_date(data.create_time);
+					}
+				},{
+					width: '25%',
+					title: '说明',
+					unresize: 'false',
+					templet: function(data) {
+						var html = '';
+						html += '<p class="text">'+ data.patch_desc +'</p>'
+						return html;
+					}
+				},{
+					width: '20%',
+					title: '处理结果',
+					unresize: 'false',
+					templet: function(data) {
+						var html = '';
+						if(data.patch_res && data.patch_res.patch_res !== 'not'){
+							html += '<div class="text">'+(patch_res_config[data.patch_res.patch_res] || '') + ' ' + ns.time_to_date(data.patch_res.patch_time)+'</div>';
+						}else{
+							html += '--';
+						}
+						return html;
+					}
+				},{
+					title: '操作',
+					width: '12%',
+					toolbar: '#action',
+					align:'right',
+					unresize: 'false'
+				}]
+			]
+		});
+
+		/**
+		 * 监听工具栏操作
+		 */
+		table.tool(function(obj) {
+			var data = obj.data;
+			switch (obj.event) {
+				case 'complete':
+					patchRes(data, 'complete');
+					break;
+				case 'ignore':
+					patchRes(data, 'ignore');
+					break;
+				case 'download':
+					patchDownload(data);
+					break;
+			}
+		});
+
+		/**
+		 * 补丁处理
+		 */
+		function patchRes(data, patch_res) {
+			layer.confirm('确定要标记为'+ patch_res_config[patch_res] +'吗？', function(index) {
+				layer.close(index);
+				$.ajax({
+					url: ns.url("shop/upgrade/patchres"),
+					data: {
+						patch_id: data.id,
+						patch_res: patch_res,
+					},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function (res) {
+						layer.msg(res.message);
+						if (res.code == 0) {
+							table.reload();
+						}
+					}
+				});
+			});
+		}
+
+		/**
+		 * 补丁处理
+		 */
+		function patchDownload(data) {
+			$.ajax({
+				url: ns.url("shop/upgrade/patchdownload"),
+				data: {
+					patch_id: data.id,
+					patch_link: data.patch_link,
+				},
+				dataType: 'JSON',
+				type: 'POST',
+				beforeSend: function () {layer_index = layer.load();},
+				complete: function () {layer.close(layer_index);},
+				success: function (res) {
+					if (res.code == 0) {
+						$("#patch_download").attr({
+							href : ns.img(res.data.patch_link),
+							download: data.patch_name+'.zip',
+						}).find('span').click();
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		}
+	});
+</script>

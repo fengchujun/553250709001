@@ -1,0 +1,162 @@
+<style type="text/css">
+	.examples {cursor: pointer;}
+	.keywords-item{position:relative;margin-bottom:10px}
+	.keywords-item .layui-icon-close{font-size:12px;position:absolute;top:-8px;right:-8px;width:16px;height:16px;line-height:16px;text-align:center;color:#fff;-webkit-border-radius:10px;-moz-border-radius:10px;border-radius:10px;background:rgba(0,0,0,.3);cursor:pointer}
+	.layui-form .card-common .layui-card-body{padding:0px}
+</style>
+
+<div class="layui-form layui-card card-common card-brief head">
+	<div class="layui-card-header">
+		<span class="card-title">默认搜索</span>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">默认搜索关键词：</label>
+		<div class="layui-input-block len-long">
+			<textarea name="default_words" class="layui-textarea" maxlength="150">{$default_search_words['words']}</textarea>
+		</div>
+		<div class="word-aux">默认搜索，将显示在前台搜索框，前台点击时直接作为关键词进行搜索  <a onclick="showDemo()" class="examples text-color">查看示例</a></div>
+	</div>
+	<div class="layui-card-header">
+		<span class="card-title">热门搜索</span>
+	</div>
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-body">
+			<div class="layui-form-item">
+				<label class="layui-form-label">首页搜索的关键字：</label>
+				<div class="layui-input-block keywords-block">
+					{if !empty($hot_search_words.words_array)}
+					{foreach $hot_search_words.words_array as $k => $v}
+					<div class="layui-input-inline keywords-item">
+						<input type="text" name="words[]" lay-verify="required" value="{$v}" placeholder="" autocomplete="off" class="layui-input len-short">
+						<i class="layui-icon layui-icon-close" ></i>
+					</div>
+					{/foreach}
+					{else/}
+					<div class="layui-input-inline keywords-item">
+						<input type="text" name="words[]" lay-verify="required" value="" placeholder="" autocomplete="off" class="layui-input len-short">
+						<i class="layui-icon layui-icon-close" ></i>
+					</div>
+					{/if}
+				</div>
+
+			</div>
+			<div class="layui-form-item">
+				<div class="word-aux">首页显示的搜索关键字,可以通过拖拽来调整顺序</div>
+				<label class="layui-form-label"></label>
+				<div class="layui-input-block">
+					<div class="layui-input-inline">
+						<a class="text-color" href="javascript:void(0)" onclick="addKeywords()">添加</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="layui-card-header">
+		<span class="card-title">百度拆词服务 <a target="_blank" href="https://www.kancloud.cn/niucloud/niushop_b2c_v5/3268653" class="examples text-color">接入指南</a></span>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-body">
+			<div class="layui-form-item">
+				<label class="layui-form-label">是否启用：</label>
+				<div class="layui-input-block">
+					<div class="layui-input-inline">
+						<input type="radio" name="is_open" value="0" title="关闭" autocomplete="off" class="layui-input len-long" {if $split_word.is_open==0} checked {/if}>
+						<input type="radio" name="is_open" value="1" title="开启" autocomplete="off" class="layui-input len-long" {if $split_word.is_open==1} checked {/if}>
+					</div>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="word-aux">开启后，商品搜索时将会使用百度拆词接口,提供更准确的搜索结果</div>
+				<div class="word-aux">例如:会员搜索华为手机关键词后,将自动拆词为华为、手机关键词分别搜索</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-body">
+			<div class="layui-form-item">
+				<label class="layui-form-label">apiKey：</label>
+				<div class="layui-input-block">
+					<div class="layui-input-inline">
+						<input type="text" name="apiKey" value="{:empty($split_word.apiKey) ? '' : '******'}"  autocomplete="off" class="layui-input len-long" >
+					</div>
+				</div>
+				<div class="word-aux">百度apiKey <a href="https://console.bce.baidu.com/iam/#/iam/accesslist" target="_blank" class="examples text-color">获取</a></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-body">
+			<div class="layui-form-item">
+				<label class="layui-form-label">secretKey：</label>
+				<div class="layui-input-block">
+					<div class="layui-input-inline">
+						<input type="text" name="secretKey" value="{:empty($split_word.secretKey) ? '' : '******'}"  autocomplete="off" class="layui-input len-long ">
+					</div>
+				</div>
+				<div class="word-aux">百度secretKey <a href="https://console.bce.baidu.com/iam/#/iam/accesslist" target="_blank" class="examples text-color">获取</a></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+	</div>
+
+</div>
+
+<script src="__STATIC__/ext/drag-arrange.js"></script>
+<script>
+	layui.use('form', function() {
+		var form = layui.form,repeat_flag=false;
+		form.on('submit(save)', function(data) {
+			if (repeat_flag) return;
+			repeat_flag = true;
+
+			$.ajax({
+				url: ns.url("shop/goods/defaultsearchwords"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res) {
+					repeat_flag = false;
+					layer.msg(res.message);
+				}
+			});
+		});
+
+		$(".keywords-item").arrangeable({
+			//拖拽结束后执行回调
+			callback: function (e) {
+			}
+		});
+
+		$('body').off('click', ".keywords-item .layui-icon-close").on('click', ".keywords-item .layui-icon-close",function () {
+			$(this).parent().remove();
+		});
+	});
+
+	function addKeywords(){
+		var html = '<div class="layui-input-inline keywords-item"><input type="text" name="words[]" lay-verify="required" value="" placeholder=""  autocomplete="off" class="layui-input len-short"><i class="layui-icon layui-icon-close" ></i></div>';
+		$('.keywords-block').append(html);
+
+		setTimeout(function () {
+			$(".keywords-item").arrangeable({
+				//拖拽结束后执行回调
+				callback: function (e) {
+				}
+			});
+		}, 1);
+	}
+
+	function showDemo(){
+	    layer.open({
+	        title: '查看示例',
+	        type: 1,
+	        area: ['500px', '660px'],
+	        content: '<img style="margin: 20px 80px;" src="SHOP_IMG/hot_search.png">'
+	    })
+	}
+</script>

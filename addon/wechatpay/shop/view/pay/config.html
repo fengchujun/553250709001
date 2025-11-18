@@ -1,0 +1,525 @@
+<style>
+	.input-text span{margin-right: 15px;}
+	.file-upload {display: inline-block; margin-right: 5px;}
+	.api-type-config, .transfer-type {display: none;}
+	.scene-config-content{
+		border: 1px dashed #ccc;
+		padding-top:15px;
+		margin-bottom: 15px;
+		width: 50%;
+	}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label">商户号：</label>
+		<div class="layui-input-block">
+			<input name="mch_id" type="text" value="{$info.mch_id ?? ''}" class="layui-input len-long" lay-verify="required">
+		</div>
+		<div class="word-aux"><span>[MCHID]</span>微信支付商户号</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">支付接口类型：</label>
+		<div class="layui-input-block">
+			<input type="radio" title="v2" name="api_type" lay-filter="api_type" value="v2" {if !$info || ($info && $info.api_type eq 'v2')}checked{/if}>
+			<input type="radio" title="v3" name="api_type" lay-filter="api_type" value="v3" {if $info && $info.api_type eq 'v3'}checked{/if}>
+		</div>
+	</div>
+
+	<div class="layui-form-item api-type-config v2-config" {if empty($info) || ( ($info.api_type eq 'v2') || ($info.transfer_status == 1 && $info.transfer_type eq 'v2') ) }style="display:block"{/if}>
+		<label class="layui-form-label"><span class="required">*</span>APIv2密钥 ：</label>
+		<div class="layui-input-block">
+			<input name="pay_signkey" lay-verify="pay_signkey" type="text" value="{$info.pay_signkey ?? ''}" class="layui-input len-long">
+		</div>
+		<div class="word-aux">微信商户APIv2密钥 <a href="https://kf.qq.com/faq/180830UVRZR7180830Ij6ZZz.html" class="text-color" target="_blank">查看指引</a></div>
+	</div>
+
+	<div class="layui-form-item api-type-config v3-config v3-transfer-type" {if !empty($info) && ( ($info.api_type eq 'v3') || ($info.transfer_status == 1 && $info.transfer_type eq 'v3') ) }style="display:block"{/if}>
+		<label class="layui-form-label"><span class="required">*</span>APIv3密钥 ：</label>
+		<div class="layui-input-block">
+			<input name="v3_pay_signkey" lay-verify="v3_pay_signkey" type="text" value="{$info.v3_pay_signkey ?? ''}" class="layui-input len-long">
+		</div>
+		<div class="word-aux">微信商户APIv3密钥 <a href="https://kf.qq.com/faq/180830E36vyQ180830AZFZvu.html" class="text-color" target="_blank">查看指引</a></div>
+	</div>
+
+	<div class="layui-form-item api-type-config v3-config v3-transfer-type" {if !empty($info) && ( ($info.api_type eq 'v3') || ($info.transfer_status == 1 && $info.transfer_type eq 'v3') ) }style="display:block"{/if}>
+		<label class="layui-form-label">支付公钥ID ：</label>
+		<div class="layui-input-block">
+			<input name="plateform_certificate_serial" lay-verify="plateform_certificate_serial" type="text" value="{$info.plateform_certificate_serial ?? ''}" class="layui-input len-long">
+		</div>
+		<div class="word-aux">微信支付公钥ID，没有可以不填 <a href="https://kf.qq.com/faq/180830E36vyQ180830AZFZvu.html" class="text-color" target="_blank">查看指引</a></div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>支付证书cert：</label>
+		<div class="layui-input-block">
+			{notempty name="$info.apiclient_cert"}
+			<p class="file-upload">已上传</p>
+			{else/}
+			<p class="file-upload">未上传</p>
+			{/notempty}
+			<button type="button" class="layui-btn" id="cert_upload">
+				<i class="layui-icon">&#xe67c;</i>上传文件
+			</button>
+			<input type="hidden" name="apiclient_cert" class="layui-input len-long" value="{$info.apiclient_cert ?? ''}" lay-verify="apiclient_cert">
+		</div>
+		<div class="word-aux">上传apiclient_cert.pem文件</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>支付证书key：</label>
+		<div class="layui-input-block">
+			{notempty name="$info.apiclient_key"}
+			<p class="file-upload">已上传</p>
+			{else/}
+			<p class="file-upload">未上传</p>
+			{/notempty}
+			<button type="button" class="layui-btn" id="key_upload">
+				<i class="layui-icon">&#xe67c;</i>上传文件
+			</button>
+			<input type="hidden" name="apiclient_key" class="layui-input len-long" value="{$info.apiclient_key ?? ''}" lay-verify="apiclient_key">
+		</div>
+		<div class="word-aux">上传apiclient_key.pem文件</div>
+		<div class="word-aux">微信商户API证书 <a href="https://kf.qq.com/faq/161222NneAJf161222U7fARv.html" class="text-color" target="_blank">查看指引</a></div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">支付公钥：</label>
+		<div class="layui-input-block">
+			{notempty name="$info.plateform_certificate"}
+			<p class="file-upload">已上传</p>
+			{else/}
+			<p class="file-upload">未上传</p>
+			{/notempty}
+			<button type="button" class="layui-btn" id="plateform_certificate_upload">
+				<i class="layui-icon">&#xe67c;</i>上传文件
+			</button>
+			<input type="hidden" name="plateform_certificate" class="layui-input len-long" value="{$info.plateform_certificate ?? ''}" lay-verify="plateform_certificate">
+		</div>
+		<div class="word-aux">上传pub_key.pem文件</div>
+		<div class="word-aux">微信支付公钥，没有可以不传 <a href="https://kf.qq.com/faq/161222NneAJf161222U7fARv.html" class="text-color" target="_blank">查看指引</a></div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用支付：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="pay_status" value="1" lay-skin="switch" {if condition="$info && $info.pay_status == 1"} checked {/if} />
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用退款：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="refund_status" value="1" lay-skin="switch" {if condition="$info && $info.refund_status == 1"} checked {/if} />
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否启用转账：</label>
+		<div class="layui-input-inline">
+			<input type="checkbox" name="transfer_status" value="1" lay-skin="switch" {if condition="$info && $info.transfer_status == 1"} checked {/if} lay-filter="transfer_status"/>
+		</div>
+	</div>
+
+	<div class="transfer-config" {if condition="!$info || $info.transfer_status != 1"}style="display:none;"{/if}>
+		<div class="layui-form-item api-type-config v2-api-type" {if !$info || ($info && $info.api_type eq 'v2')}style="display:block;"{/if}>
+			<label class="layui-form-label">转账使用产品：</label>
+			<div class="layui-input-inline">
+				<input type="radio" title="企业付款到零钱" name="transfer_type" lay-filter="transfer_type" value="v2" {if !$info || ($info && $info.transfer_type eq 'v2')}checked{/if}>
+				<input type="radio" title="商家转账到零钱" name="transfer_type" lay-filter="transfer_type" value="v3" {if $info && $info.transfer_type eq 'v3'}checked{/if}>
+			</div>
+		</div>
+
+		<div class="layui-form-item api-type-config v3-api-type" {if condition="$info && $info.api_type == 'v3'"} style="display:block;"{/if}>
+			<label class="layui-form-label">转账使用产品：</label>
+			<div class="layui-input-inline">
+				<input type="radio" title="商家转账到零钱" name="transfer_type" lay-filter="transfer_type" value="v3" {if $info.api_type eq 'v3' && $info.transfer_type eq 'v3'}checked{/if}>
+			</div>
+		</div>
+
+		<div class="api-type-config v3-config v3-transfer-type" {if condition="$info && $info.transfer_type == 'v3'"}style="display:block;"{/if}>
+			<div class="layui-form-item">
+				<label class="layui-form-label">V3商家转账版本：</label>
+				<div class="layui-input-inline">
+					<input type="radio" title="旧版接口(商家发起转账)" name="transfer_v3_type" lay-filter="transfer_v3_type" value="1" {if !$info || ($info && $info.transfer_v3_type eq '1')}checked{/if}>
+					<input type="radio" title="新版接口(用户确认收款)" name="transfer_v3_type" lay-filter="transfer_v3_type" value="2" {if $info && $info.transfer_v3_type eq '2'}checked{/if}>
+				</div>
+			</div>
+
+			<div class="scene-config" {if $info && $info['transfer_v3_type'] == 2} style="display:block"{else/}style="display:none;"{/if}>
+				{if addon_is_exit('memberwithdraw') == 1 }
+				<div class="scene-config-content" data-scene="member_withdraw">
+					<div class="layui-form-item">
+						<label class="layui-form-label">会员提现场景：</label>
+						<div class="layui-input-inline">
+							<select name="member_withdraw_scene" lay-filter="transfer_scene"  class="transfer_select" lay-verify="required">
+								<option value="">选择场景</option>
+								{foreach $scene_config as $group_list_k => $group_list_v}
+								<option value="{$group_list_v.num}" {if $info && $info['member_withdraw_scene'] == $group_list_v.num} selected{/if}>{$group_list_v.title}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>
+
+					<div class="scene-config">
+						{if $info && !empty($info['member_withdraw_code'])}
+						<div class="layui-form-item">
+							<label class="layui-form-label">收款提示：</label>
+							<div class="layui-input-inline">
+								<select name="member_withdraw_recv" lay-verify="required">
+									{foreach $scene_config[$info['member_withdraw_scene']]['user_recv'] as $group_list_k => $group_list_v}
+									<option value="{$group_list_v}" {if $info && $info['member_withdraw_recv'] == $group_list_v} selected{/if}>{$group_list_v}</option>
+									{/foreach}
+								</select>
+							</div>
+						</div>
+
+						<div class="layui-form-item">
+							<label class="layui-form-label">转账场景ID：</label>
+							<div class="layui-input-block">
+								<input name="member_withdraw_code" type="text" value="{$info.member_withdraw_code ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+
+						{foreach $info['member_withdraw_info'] as $group_list_k => $group_list_v}
+						<div class="layui-form-item">
+							<label class="layui-form-label">{$group_list_v['info_type']}：</label>
+							<div class="layui-input-block">
+								<input name="member_withdraw_{$group_list_k}" type="text" value="{$group_list_v['info_content'] ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+						{/foreach}
+						{/if}
+					</div>
+				</div>
+				{/if}
+				{if addon_is_exit('store') == 1 }
+				<div class="scene-config-content" data-scene="store_withdraw">
+					<div class="layui-form-item">
+						<label class="layui-form-label">门店提现场景：</label>
+						<div class="layui-input-inline">
+							<select name="store_withdraw_scene" lay-filter="transfer_scene" lay-verify="required">
+								<option value="">选择场景</option>
+								{foreach $scene_config as $group_list_k => $group_list_v}
+								<option value="{$group_list_v.num}" {if $info && $info['store_withdraw_scene'] == $group_list_v.num} selected{/if}>{$group_list_v.title}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>
+					<div class="scene-config">
+						{if $info && !empty($info['store_withdraw_code'])}
+
+						<div class="layui-form-item">
+							<label class="layui-form-label">收款提示：</label>
+							<div class="layui-input-inline">
+								<select name="store_withdraw_recv" lay-verify="required">
+									{foreach $scene_config[$info['store_withdraw_scene']]['user_recv'] as $group_list_k => $group_list_v}
+									<option value="{$group_list_v}" {if $info && $info['store_withdraw_recv'] == $group_list_v} selected{/if}>{$group_list_v}</option>
+									{/foreach}
+								</select>
+							</div>
+						</div>
+
+						<div class="layui-form-item">
+							<label class="layui-form-label">转账场景ID：</label>
+							<div class="layui-input-block">
+								<input name="store_withdraw_code" type="text" value="{$info.store_withdraw_code ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+
+						{foreach $info['store_withdraw_info'] as $group_list_k => $group_list_v}
+						<div class="layui-form-item">
+							<label class="layui-form-label">{$group_list_v['info_type']}：</label>
+							<div class="layui-input-block">
+								<input name="store_withdraw_{$group_list_k}" type="text" value="{$group_list_v['info_content'] ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+						{/foreach}
+
+						{/if}
+					</div>
+				</div>
+				{/if}
+				{if addon_is_exit('fenxiao') == 1 }
+				<div class="scene-config-content" data-scene="fenxiao_withdraw">
+					<div class="layui-form-item">
+						<label class="layui-form-label">分销提现场景：</label>
+						<div class="layui-input-inline">
+							<select name="fenxiao_withdraw_scene" lay-filter="transfer_scene" lay-verify="required">
+								<option value="">选择场景</option>
+								{foreach $scene_config as $group_list_k => $group_list_v}
+								<option value="{$group_list_v.num}" {if $info && $info['fenxiao_withdraw_scene'] == $group_list_v.num} selected{/if}>{$group_list_v.title}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>
+					<div class="scene-config">
+						{if $info && !empty($info['fenxiao_withdraw_code'])}
+
+						<div class="layui-form-item">
+							<label class="layui-form-label">收款提示：</label>
+							<div class="layui-input-inline">
+								<select name="fenxiao_withdraw_recv">
+									{foreach $scene_config[$info['fenxiao_withdraw_scene']]['user_recv'] as $group_list_k => $group_list_v}
+									<option value="{$group_list_v}" {if $info && $info['fenxiao_withdraw_recv'] == $group_list_v} selected{/if}>{$group_list_v}</option>
+									{/foreach}
+								</select>
+							</div>
+						</div>
+
+						<div class="layui-form-item">
+							<label class="layui-form-label">转账场景ID：</label>
+							<div class="layui-input-block">
+								<input name="fenxiao_withdraw_code" type="text" value="{$info.fenxiao_withdraw_code ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+
+						{foreach $info['fenxiao_withdraw_info'] as $group_list_k => $group_list_v}
+						<div class="layui-form-item">
+							<label class="layui-form-label">{$group_list_v['info_type']}：</label>
+							<div class="layui-input-block">
+								<input name="fenxiao_withdraw_{$group_list_k}" type="text" value="{$group_list_v['info_content'] ?? ''}" class="layui-input len-long" lay-verify="required">
+							</div>
+						</div>
+						{/foreach}
+
+						{/if}
+					</div>
+				</div>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPayConfig()">返回</button>
+	</div>
+
+
+<script>
+
+
+	var  old_transfer_type = "{$info.transfer_type ?? 'v2'}"
+	function refreshPage() {
+		let api_type = $("input[name='api_type']:checked").val();//支付接口类型 v2,v3
+		let transfer_status = parseInt($("input[name='transfer_status']:checked").val()) //是否启用转账 1启用
+        let transfer_type = $("input[name='transfer_type']:checked").val() //转账使用产品 v2企业付款到零钱 v3商家转账到零钱
+		let transfer_v3_type = parseInt($("input[name='transfer_v3_type']:checked").val()) //v3转账版本  1旧版接口 2新版接口
+
+		$('.api-type-config').hide();
+		$('.' + api_type + '-config').show();
+		$('.' + api_type + '-api-type').show();
+
+		if (transfer_status === 1) {
+			$('.transfer-config').show()
+
+			if(api_type === 'v3'){
+				$('.v3-api-type input[name="transfer_type"][value="v3"]').prop('checked', true);
+			}else{
+				$('.v2-api-type input[name="transfer_type"][value="'+old_transfer_type+'"]').prop('checked', true);
+			}
+
+			if(transfer_type ===  'v3'){
+				$(".transfer-type").hide()
+				$('.v3-transfer-type').show()
+				if(transfer_v3_type === 2){
+					$(".scene-config").show()
+				}else{
+					$(".scene-config").hide()
+				}
+			}
+		  }else{
+			$('.transfer-config').hide()
+		}
+	}
+
+
+	var scene_config = '{:json_encode($scene_config)}';
+	layui.use(['form'], function() {
+		var form = layui.form,
+			repeat_flag = false; //防重复标识
+
+		refreshTransferRequired();
+		form.render();
+
+		form.on('switch(transfer_status)', function (data) {
+			refreshPage()
+			refreshTransferRequired();
+			form.render();
+		})
+
+		form.on('radio(api_type)', function (data) {
+			refreshPage();
+			refreshTransferRequired();
+			form.render();
+		})
+
+
+		form.on('radio(transfer_type)', function (data) {
+			old_transfer_type = data.value;
+			refreshPage()
+			refreshTransferRequired();
+			form.render();
+		})
+
+		form.on('radio(transfer_v3_type)', function (data) {
+			refreshPage()
+			refreshTransferRequired()
+			form.render();
+		})
+
+
+		function refreshTransferRequired(){
+			var transfer_v3_type = $("input[name='transfer_v3_type']:checked").val()
+			var transfer_type = $("input[name='transfer_type']:checked").val()
+			var transfer_status = $("input[name='transfer_status']:checked").val()
+			if(transfer_type === 'v3' && transfer_v3_type == 2 && transfer_status==1){
+				$(".scene-config select,.scene-config input").attr('lay-verify', 'required');
+			}else{
+				$(".scene-config select,.scene-config input").removeAttr('lay-verify')
+			}
+		}
+
+		form.on('select(transfer_scene)', function(data){
+
+			var res = JSON.parse(scene_config)[data.value];
+			if (typeof res === "undefined") {
+				$(this).parents('.scene-config-content').children(".scene-config").empty()
+				return
+			}
+			var scene = $(this).parents('.scene-config-content').data("scene");
+
+			console.log(scene)
+			var recv_name = scene + '_recv';
+			var recv_html = "<div class='layui-form-item'>"+
+					       "<label class='layui-form-label'>收款提示：</label>"+
+			                "<div class='layui-input-inline'>"+
+					        "<select name="+recv_name+" lay-verify=\"required\" >";
+
+
+			for (let i = 0; i < res.user_recv.length; i++) {
+				var item = res.user_recv[i];
+				recv_html +=  "<option value="+item+">"+item+"</option>"
+			}
+
+			recv_html +=   "</select></div></div>"
+
+
+			console.log(recv_html)
+
+			var code_name = scene+'_code'
+			var html = recv_html + "<div class='layui-form-item'> " +
+							"<label class='layui-form-label'>转账场景ID：</label> " +
+							"<div class='layui-input-block'>"+
+							"<input name="+code_name+" type='text' value='' class='layui-input len-long' lay-verify='required'>"+
+							"</div>"+
+							"</div>"
+
+			for (let i = 0; i < res.infos.length; i++) {
+				// 遍历数组，对每个元素进行操作
+				var item = res.infos[i];
+				var name = scene+"_"+i;
+				html += "<div class='layui-form-item'> " +
+						"<label class='layui-form-label'>"+item.info_type+"：</label> " +
+						"<div class='layui-input-block'>"+
+						"<input name="+name+" type='text' value='' class='layui-input len-long' lay-verify='required'>"+
+						"</div>"+
+				        "</div>"
+			}
+           $(this).parents('.scene-config-content').children(".scene-config").empty().append(html)
+			form.render();
+		});
+
+		new Upload({
+			elem: '#cert_upload',
+			url: ns.url("wechatpay://shop/pay/uploadwechatcert"),
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='apiclient_cert']").val(res.data.path);
+					$("input[name='apiclient_cert']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		new Upload({
+			elem: '#key_upload',
+			url: ns.url("wechatpay://shop/pay/uploadwechatcert"),
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='apiclient_key']").val(res.data.path);
+					$("input[name='apiclient_key']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		new Upload({
+			elem: '#plateform_certificate_upload',
+			url: ns.url("wechatpay://shop/pay/uploadwechatcert"),
+			accept: 'file',
+			callback:function (res) {
+				if (res.code >= 0) {
+					$("input[name='plateform_certificate']").val(res.data.path);
+					$("input[name='plateform_certificate']").siblings(".file-upload").text("已上传");
+				}
+			}
+		});
+
+		form.verify({
+			pay_signkey: function(value){
+				if (!$('.v2-config').is(':hidden') && !/[\S]+/.test(value)) return '请设置微信APIv2密钥';
+			},
+			v3_pay_signkey: function(value){
+				if (!$('.v3-config').is(':hidden') && !/[\S]+/.test(value)) return '请设置微信APIv3密钥';
+			},
+			apiclient_cert: function(value){
+				if (!/[\S]+/.test(value)) return '请上传apiclient_cert.pem文件';
+			},
+			apiclient_key: function(value){
+				if (!/[\S]+/.test(value)) return '请上传apiclient_key.pem文件';
+			}
+		})
+
+		/**
+		 * 监听提交
+		 */
+		form.on('submit(save)', function(data) {
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			$.ajax({
+				url: ns.url("wechatpay://shop/pay/config"),
+				data: data.field,
+				dataType: 'JSON',
+				type: 'POST',
+				success: function(res) {
+					repeat_flag = false;
+
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero){
+								location.hash = ns.hash("shop/config/pay");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		});
+	});
+
+	function backPayConfig() {
+		location.hash = ns.hash("shop/config/pay");
+	}
+</script>

@@ -1,0 +1,755 @@
+<style>
+	.layui-form-item .layui-input-inline.end-time{float: none;}
+	.goods_list .layui-table-body{max-height: 480px !important;}
+	.goods-title{display: flex;align-items: center;}
+	.goods-title .goods-img{display: flex;align-items: center;justify-content: center;width: 55px;height: 55px;margin-right: 5px;}
+	.goods-title .goods-img img{max-height: 100%;max-width: 100%;}
+	.goods-title .goods-name{flex: 1;line-height: 1.6;width: 0;white-space: break-spaces;}
+	.form-wrap {position: relative;}
+	.examples {cursor: pointer; margin-left: 5px;}
+	.layui-carousel>[carousel-item]>* {background: #fff !important;}
+	.layui-carousel {position: absolute; top: 10px; left: 1330px; width: 300px !important; height: 610px !important; background: #fff;}
+	.goods_num {padding-left: 20px;}
+	.ladder .layui-form-label + .layui-input-block {display: flex}
+	.ladder .layui-form-label + .layui-input-block .layui-form-mid.right {margin-left: 10px}
+</style>
+
+<div class="layui-form form-wrap">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+		<div class="layui-input-block" style="display: inline-block; margin-left: 0px;">
+			<input type="text" name="pintuan_name" value="{$pintuan_name}" lay-verify="required" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+		<div class="word-aux">
+			<p>活动名称将显示在活动列表中，方便商家管理</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="start_time" name="start_time" lay-verify="required" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="end_time" name="end_time" lay-verify="required|time" class="layui-input" autocomplete="off" readonly>
+				<i class=" iconrili iconfont calendar"></i>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">拼团类型：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="pintuan_type" value="ordinary" title="普通拼团" checked lay-filter="pintuan_type">
+			<input type="radio" name="pintuan_type" value="ladder" title="阶梯拼团" lay-filter="pintuan_type">
+		</div>
+	</div>
+
+	<div class="pintuan-type ordinary">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>参团人数：</label>
+			<div class="layui-input-block">
+				<input type="number" name="pintuan_num" value="2" lay-verify="required|sum" autocomplete="off" class="layui-input len-short">
+			</div>
+			<div class="word-aux">
+				<p>最少两人成团</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="pintuan-type ladder" style="display: none">
+		<div class="layui-form-item pintuan-ladder">
+			<label class="layui-form-label"><span class="required">*</span>参团人数：</label>
+			<div class="layui-input-block">
+				<div class="layui-form-mid">第一级阶梯人数</div>
+				<input type="number" name="pintuan_num_1" value="" lay-verify="ladderNum" autocomplete="off" class="layui-input len-short">
+				<div class="layui-form-mid right">人</div>
+			</div>
+		</div>
+		<div class="layui-form-item pintuan-ladder">
+			<label class="layui-form-label"></label>
+			<div class="layui-input-block">
+				<div class="layui-form-mid">第二级阶梯人数</div>
+				<input type="number" name="pintuan_num_2" value="" lay-verify="ladderNum" autocomplete="off" class="layui-input len-short">
+				<div class="layui-form-mid right">人</div>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"></label>
+			<div class="layui-input-block">
+				<button class="layui-btn add-ladder">添加拼团阶梯</button>
+			</div>
+			<div class="word-aux">
+				<p>最少两人成团，最多支持三级阶梯</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>拼团有效期：</label>
+		<div class="layui-input-block">
+			<div class="layui-input-inline len-short">
+				<select class="pintuan-day"></select>
+			</div>
+			<div class="layui-form-mid">日</div>
+			<div class="layui-input-inline len-short">
+				<select class="pintuan-hour"></select>
+			</div>
+			<div class="layui-form-mid">时</div>
+			<div class="layui-input-inline len-short">
+				<select class="pintuan-minute"></select>
+			</div>
+			<div class="layui-form-mid">分</div>
+		</div>
+		<div class="word-aux">
+			<p>提交订单后，在该时间范围内拼团成功才可购买</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">限制购买：</label>
+		<div class="layui-input-block">
+			<input type="number" name="buy_num" value="1" lay-verify="num" autocomplete="off" class="layui-input len-short">
+		</div>
+		<div class="word-aux">
+			<p>本次活动中一次最多可购买的商品数量，默认为1</p>
+		</div>
+	</div>
+
+	<div class="pintuan-type ordinary layui-form-item">
+		<label class="layui-form-label">团长优惠：</label>
+		<div class="layui-input-block">
+			<input type="checkbox" name="is_promotion" title="团长享受优惠价" lay-skin="primary" lay-filter="is_promotion">
+		</div>
+		<div class="word-aux">
+			<p>开启团长(开团人)优惠后，团长将享受更优惠价格，有助于提高开团率和成团率</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label">活动商品：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+			<button class="layui-btn" onclick="addGoods()">选择商品</button>
+			<span class="goods_num">已选商品（<span id="goods_num" style="color: red">0</span>）</span>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否单独购买：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_single_buy" value="1" title="是">
+			<input type="radio" name="is_single_buy" value="0" title="否" checked>
+		</div>
+	</div>
+
+	<div class="word-aux">
+		<p>说明：设置单独购买,是可以选择不走拼团,直接提交订单购买商品 <a onclick="showDemo()" class="examples text-color">查看示例</a></p>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">是否虚拟成团：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_virtual_buy" value="1" title="是">
+			<input type="radio" name="is_virtual_buy" value="0" title="否" checked>
+		</div>
+	</div>
+
+	<div class="word-aux">
+		<p>说明：虚拟成团则代表在拼团时间结束后,如果还未拼单成功,那么系统将会默认拼团成功。</p>
+	</div>
+
+	<div class="layui-form-item layui-hide">
+		<label class="layui-form-label">是否推荐：</label>
+		<div class="layui-input-inline">
+			<input type="radio" name="is_recommend" value="1" title="是">
+			<input type="radio" name="is_recommend" value="0" title="否" checked>
+		</div>
+	</div>
+
+	<input type="hidden" name="is_virtual_goods" value="0">
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label">活动规则：</label>
+		<div class="layui-input-inline">
+			<textarea name="remark" class="layui-textarea len-long" maxlength="300"></textarea>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backPintuanList()">返回</button>
+	</div>
+
+</div>
+
+<script type="text/html" id="toolbarOperation">
+	<button class="layui-btn layui-btn-primary" lay-event="pintuan-price">拼团价格</button>
+</script>
+<script type="text/html" id="toolbarOperationOne">
+	<button class="layui-btn layui-btn-primary" lay-event="pintuan-price">拼团价格</button>
+	<button class="layui-btn layui-btn-primary" lay-event="pintuan-discounts-price">团长优惠价</button>
+</script>
+<script>
+	var goodsId = {}, selectedGoodsId = [], sku_list = [],is_promotion=0,table;
+	layui.use(['form', 'laydate','carousel'], function() {
+		var form = layui.form,
+			laydate = layui.laydate,
+			repeat_flag = false,
+			currentDate = new Date(),
+			minDate = "";
+
+		var carousel = layui.carousel;
+		currentDate.setDate(currentDate.getDate() + 30);
+		carousel.render({
+			elem: '#carousel',
+			width: '100%',
+			arrow: 'always'
+		});
+		form.render();
+
+		renderTable(sku_list); // 初始化表格
+
+		for (var i = 0; i <= 30; i++) {
+			if (i < 10) {
+				var html = '<option value="' + i + '">0' + i + '</option>';
+			} else {
+				var html = '<option value="' + i + '">' + i + '</option>';
+			}
+			if (i == 1) {
+				var html = '<option value="' + i + '" selected>0' + i + '</option>';
+			}
+			$(".pintuan-day").append(html);
+		}
+		for (var i = 0; i <= 23; i++) {
+			if (i < 10) {
+				var html = '<option value="' + i + '">0' + i + '</option>';
+			} else {
+				var html = '<option value="' + i + '">' + i + '</option>';
+			}
+			$(".pintuan-hour").append(html);
+		}
+		for (var i = 0; i <= 59; i++) {
+			if (i < 10) {
+				var html = '<option value="' + i + '">0' + i + '</option>';
+			} else {
+				var html = '<option value="' + i + '">' + i + '</option>';
+			}
+			$(".pintuan-minute").append(html);
+		}
+
+		form.render('select');
+
+		//开始时间
+		laydate.render({
+			elem: '#start_time', //指定元素
+			type: 'datetime',
+			value: new Date(),
+			done: function(value) {
+				minDate = value;
+				reRender();
+			}
+		});
+
+		//结束时间
+		laydate.render({
+			elem: '#end_time', //指定元素
+			type: 'datetime',
+			value: new Date(currentDate)
+		});
+
+		/**
+		 * 重新渲染结束时间
+		 * */
+		function reRender() {
+			$("#end_time").remove();
+			$(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class = "layui-input" autocomplete="off" readonly><i class=" iconrili iconfont calendar"></i> ');
+			laydate.render({
+				elem: '#end_time',
+				type: 'datetime',
+				min: minDate
+			});
+		}
+
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			time: function(value) {
+				var now_time = (new Date()).getTime();
+				var start_time = (new Date($("#start_time").val())).getTime();
+				var end_time = (new Date(value)).getTime();
+				if (now_time > end_time) {
+					return '结束时间不能小于当前时间!'
+				}
+				if (start_time > end_time) {
+					return '结束时间不能小于开始时间!';
+				}
+			},
+			num: function(value) {
+				if (value < 1 || value % 1 != 0) {
+					return '请输入大于0的正整数！';
+				}
+			},
+			sum: function(value) {
+				if ($('[name="pintuan_type"]:checked').val() == 'ordinary') {
+					if (value < 2 || value % 1 != 0) {
+						return '参团人数不能小于2，且必须是整数！';
+					}
+				}
+			},
+			ladderNum: function(value, item){
+				if ($('[name="pintuan_type"]:checked').val() == 'ladder') {
+					if (value < 2 || value % 1 != 0) {
+						return '参团人数不能小于2，且必须是整数！';
+					}
+					var prevVal = $(item).parents('.pintuan-ladder').prev('.pintuan-ladder').find('input').val();
+					if (prevVal != undefined && parseInt(prevVal) >= parseInt(value)) {
+						return '参团人数不能小于等于上一个阶梯的人数';
+					}
+				}
+			},
+			pintuan_price: function(value, item) {
+				var price = $(item).parents("tr").find(".goods-price").text();
+				if (Number(value) > Number(price)) {
+					return '拼团价格不能大于商品价格';
+				}
+				if (value.trim() == "") {
+					return '拼团价格不能为空';
+				}
+				if (Number(value) <= 0) {
+					return '拼团价格必须大于0';
+				}
+
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '拼团价格最多保留两位小数';
+				}
+			},
+			promotion_price: function(value, item) {
+				var price = $(item).parents("tr").find(".goods-price").text();
+				if (Number(value) > Number(price)) {
+					return '团长优惠价不能大于商品价格';
+				}
+				if (value.trim() == "") {
+					return '团长优惠价不能为空';
+				}
+				if (Number(value) <= 0) {
+					return '团长优惠价必须大于0';
+				}
+
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '团长优惠价最多保留两位小数';
+				}
+			}
+		});
+
+		/**
+		 * 监听团长优惠是否被选中
+		 */
+		form.on('checkbox(is_promotion)', function(data){
+			renderTable(sku_list);
+		});
+
+		form.on('radio(pintuan_type)', function(data){
+			$('.pintuan-type').hide();
+			$('.pintuan-type.' + data.value).show();
+			renderTable(sku_list);
+		});
+
+		$('.add-ladder').click(function () {
+			if ($('.pintuan-ladder').length >= 3) {
+				layer.msg('最多添加三个阶梯');
+				return;
+			}
+			var h = `<div class="layui-form-item pintuan-ladder">
+				<label class="layui-form-label"></label>
+				<div class="layui-input-block">
+					<div class="layui-form-mid">第三级阶梯人数</div>
+					<input type="number" name="pintuan_num_3" value="" lay-verify="required|ladderNum" autocomplete="off" class="layui-input len-short">
+					<div class="layui-form-mid right">人</div>
+					<a href="javascript:;" class="text-color delete">删除</a>
+				</div>
+			</div>`;
+			$(this).parents('.layui-form-item').before(h);
+			renderTable(sku_list);
+		});
+
+		$('body').off('click', '.pintuan-ladder .delete').on('click', '.pintuan-ladder .delete', function () {
+			$(this).parents('.layui-form-item').remove();
+			renderTable(sku_list);
+		});
+
+		/**
+		 * 监听提交
+		 */
+		form.on('submit(save)', function(data){
+
+			if (!Object.keys(goodsId).length) {
+				layer.msg("请选择活动商品！", {icon: 5, anim: 6});
+				return;
+			}
+			data.field.goods_ids = selectedGoodsId.split(',');
+
+			var skuId = [];
+			Object.values(goodsId).forEach(function (item,index) {
+				Object.values(item.sku_id).forEach(function (skuItem,skuIndex) {
+					skuId.push(skuItem.sku);
+				});
+			});
+			data.field.sku_ids = skuId;
+
+			if (data.field.pintuan_type == 'ladder') {
+				data.field.pintuan_num = data.field.pintuan_num_1;
+			}
+
+			var skuLisArr = [];
+			sku_list.forEach(function(item,index) {
+				var sku_detail = {};
+				sku_detail.sku_id = item.sku_id;
+				sku_detail.goods_id = item.goods_id;
+				sku_detail.pintuan_price = item.pintuan_price || 0;
+				sku_detail.pintuan_price_2 = item.pintuan_price_2 || 0;
+				sku_detail.pintuan_price_3 = item.pintuan_price_3 || 0;
+				sku_detail.promotion_price = item.promotion_price || 0;
+				skuLisArr.push(sku_detail);
+			});
+			data.field.sku_list = skuLisArr;
+
+			var day = $(".pintuan-day option:selected").text(),
+				hour = $(".pintuan-hour option:selected").text(),
+				minute = $(".pintuan-minute option:selected").text();
+
+			var pintuan_time = Number(day) * 24 * 60 + Number(hour) * 60 + Number(minute);
+			data.field.pintuan_time = pintuan_time;
+
+			var time = new Date(data.field.end_time).getTime() - new Date(data.field.start_time).getTime();
+			if (time == 0) {
+				layer.msg("拼团有效期不能为0！", {icon: 5, anim: 6});
+				return;
+			}
+			if (time < (pintuan_time * 60 * 1000)) {
+				layer.msg("拼团有效期不能大于活动时长！", {icon: 5, anim: 6});
+				return;
+			}
+
+			data.field.is_promotion = data.field.is_promotion == undefined ? 0 : 1;
+
+			if(repeat_flag) return;
+			repeat_flag = true;
+
+			$.ajax({
+				type: 'POST',
+				dataType: 'JSON',
+				url: ns.url("pintuan://shop/pintuan/add"),
+				data: data.field,
+				async: false,
+				success: function(res){
+					repeat_flag = false;
+
+					if (res.code == 0) {
+						layer.confirm('添加成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续添加'],
+							closeBtn: 0,
+							yes: function(index, layero){
+								location.hash = ns.hash("pintuan://shop/pintuan/lists");
+								layer.close(index);
+							},
+							btn2: function(index, layero) {
+								listenerHash(); // 刷新页面
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			})
+		});
+	});
+
+	// 表格渲染
+	function renderTable(sku_list) {
+		var cols = [[
+			{
+				width: "3%",
+				type: 'checkbox',
+				unresize: 'false'
+			},
+			{
+				field: 'sku_name',
+				title: '商品名称',
+				width: '30%',
+				unresize: 'false',
+				templet: function(data) {
+					var html = '';
+					html += ` <div class="goods-title">
+						<div class="goods-img">
+							<img layer-src src="${data.sku_image ? ns.img(data.sku_image) : ''}" alt="">
+						</div>
+						<p class="multi-line-hiding goods-name" data-goods_id="${data.goods_id}" data-sku_id="${data.sku_id}" title="${data.sku_name}">${data.sku_name}</p>
+					</div>`;
+					return html;
+				}
+			}, {
+				field: 'price',
+				title: '商品价格',
+				unresize: 'false',
+				align: 'right',
+				width: '15%',
+				templet: function(data) {
+					return '<p class="line-hiding" title="'+ data.price +'">￥<span class="goods-price">' + data.price +'</span ></p>';
+				}
+			},  {
+				title: '操作',
+				toolbar: '#operation ',
+				width: '7% ',
+				align: 'right',
+				unresize: 'false '
+			}]
+		];
+		if ($('[name="pintuan_type"]:checked').val() == 'ordinary') {
+			let col = [
+				{
+					title: '拼团价 (元)',
+					unresize: 'false ',
+					align: 'center',
+					templet: '#pintuan_price',
+					width: $('[name="is_promotion"]').is(':checked') ? '25%' : '45%'
+				}
+			];
+			if ($('[name="is_promotion"]').is(':checked')) {
+				col.push({
+					title: '团长价(元)',
+					unresize: 'false',
+					align: 'center',
+					templet: '#promotion_price',
+					width: '20%'
+				})
+			}
+			cols[0].splice(3, 0, ...col);
+		} else if ($('[name="pintuan_type"]:checked').val() == 'ladder') {
+			let col = [
+				{
+					title: '阶梯一 (元)',
+					unresize: 'false ',
+					align: 'center',
+					templet: '#pintuan_price',
+					width: $('.pintuan-ladder').length == 3 ? '15%' : '25%'
+				},
+				{
+					title: '阶梯二 (元)',
+					unresize: 'false ',
+					align: 'center',
+					templet: '#pintuan_price_2',
+					width: $('.pintuan-ladder').length == 3 ? '15%' : '20%'
+				}
+			];
+			if ($('.pintuan-ladder').length == 3) {
+				col.push({
+					title: '阶梯三 (元)',
+					unresize: 'false ',
+					align: 'center',
+					templet: '#pintuan_price_3',
+					width: '15%'
+				})
+			}
+			cols[0].splice(3, 0, ...col);
+		}
+
+		//展示已知数据
+		table = new Table({
+			elem: '#selected_goods_list',
+			page:false,
+			limit:Number.MAX_VALUE,
+			cols: cols,
+			data: sku_list,
+			toolbar: '#toolbarOperation'
+		});
+
+		/**
+		 * 批量操作
+		 */
+		table.toolbar(function(obj) {
+
+			if (obj.data.length < 1) {
+				layer.msg('请选择要操作的数据');
+				return;
+			}
+			switch (obj.event) {
+				case "pintuan-price":
+					editInput(0,obj);
+					break;
+				case "pintuan-discounts-price":
+					editInput(1,obj);
+					break;
+			}
+		});
+	}
+
+	function editInput(textIndex=0,data) {
+		var text = [{
+			name: '拼团价格',
+			value: 'pintuan_price'
+		},{
+			name: '团长优惠价',
+			value: 'promotion_price'
+		}];
+
+		layer.open({
+			type: 1,
+			title:"修改"+text[textIndex].name,
+			area:['600px'],
+			btn:["保存","返回"],
+			content: `
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>${text[textIndex].name}：</label>
+				<div class="layui-input-block">
+					<input type="text" name="bargain_edit_input" lay-verify="required" autocomplete="off" class="layui-input len-mid" placeholder="请输入${text[textIndex].name}">
+				</div>
+			</div>
+		`,
+			yes: function(index, layero){
+				var val = $("input[name='bargain_edit_input']").val();
+				if (!val){
+					layer.msg("请输入" + text[textIndex].name);
+					return false;
+				}
+				data.data.forEach(function (item,index) {
+					sku_list.forEach(function (skuItem,skuIndex) {
+						if (item.sku_id == skuItem.sku_id){
+							sku_list[skuIndex][text[textIndex].value] = val;
+						}
+					})
+				});
+				renderTable(sku_list);
+				layer.closeAll();
+			}
+		});
+	}
+
+	/**
+	 * 添加商品
+	 */
+	function addGoods(){
+		goodsSelect(function (data) {
+
+			let newGoodsId = {};
+			let new_sku_list = [];
+
+			for (var key in data) {
+
+				newGoodsId['goods_'+ data[key].goods_id] = {};
+				newGoodsId['goods_'+ data[key].goods_id].sku_id = {};
+				newGoodsId['goods_'+ data[key].goods_id].spu_id = data[key].goods_id;
+
+				for (var sku in data[key].sku_list) {
+					var item = data[key].sku_list[sku];
+
+					newGoodsId['goods_'+ data[key].goods_id].sku_id['sku_'+item.sku_id]={};
+					newGoodsId['goods_'+ data[key].goods_id].sku_id['sku_'+item.sku_id].sku = item.sku_id;
+					sku_list.forEach((old_item)=>{
+						if(item.sku_id == old_item.sku_id){
+							item.pintuan_price = old_item.pintuan_price;
+							item.pintuan_price_2 = old_item.pintuan_price_2;
+							item.pintuan_price_3 = old_item.pintuan_price_3;
+							item.promotion_price = old_item.promotion_price;
+						}
+					})
+					new_sku_list.push(item);
+				}
+			}
+			goodsId = newGoodsId;
+			sku_list = new_sku_list;
+			renderTable(sku_list);
+
+			$("input[name='sku_ids']").val(JSON.stringify(goodsId));
+
+			var spuId = [];
+			Object.values(goodsId).forEach(function (item,index) {
+				spuId.push(item.spu_id);
+			});
+			selectedGoodsId = spuId.toString();
+			$("#goods_num").html(sku_list.length)
+
+		}, selectedGoodsId);
+	}
+
+	function delRow(obj,id) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].sku_id == parseInt(id)){
+				sku_list.splice(i,1);
+			}
+		}
+
+		Object.values(goodsId).forEach(function (item,index) {
+			delete item.sku_id['sku_'+id];
+			if (!Object.keys(item.sku_id).length){
+				delete goodsId['goods_'+item.spu_id];
+			}
+		});
+
+		var spuId = [];
+		Object.values(goodsId).forEach(function (item,index) {
+			spuId.push(item.spu_id);
+		});
+		selectedGoodsId = spuId.toString();
+		$(obj).parents("tr").remove();
+		$("#goods_num").html(sku_list.length)
+	}
+
+	function bargainPintuanPrice(index,event, key) {
+		for (var i = 0; i < sku_list.length; i++){
+			if (sku_list[i].sku_id == index)
+				sku_list[i][key] = event.srcElement.value;
+		}
+	}
+
+	function backPintuanList() {
+		location.hash = ns.hash("pintuan://shop/pintuan/lists");
+	}
+
+	function showDemo(){
+		layer.open({
+			title: '查看示例',
+			type: 1,
+			area: ['600px', '660px'],
+			content: '<img style="margin:20px 45px;" src="__STATIC__/img/single_buy.png" >',
+		})
+	}
+</script>
+
+<script type="text/html" id="pintuan_price">
+	<input type="number" class="layui-input len-short pintuan-price" value="{{d.pintuan_price ? d.pintuan_price : '' }}" lay-verify="pintuan_price" min="0.00" oninput="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price')" onporpertychange="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price')"/>
+</script>
+
+<script type="text/html" id="pintuan_price_2">
+	<input type="number" class="layui-input len-short pintuan-price" value="{{d.pintuan_price_2 ? d.pintuan_price_2 : '' }}" lay-verify="pintuan_price" min="0.00" oninput="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price_2')" onporpertychange="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price_2')"/>
+</script>
+
+<script type="text/html" id="pintuan_price_3">
+	<input type="number" class="layui-input len-short pintuan-price" value="{{d.pintuan_price_3 ? d.pintuan_price_3 : '' }}" lay-verify="pintuan_price" min="0.00" oninput="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price_3')" onporpertychange="bargainPintuanPrice({{ d.sku_id }},event, 'pintuan_price_3')"/>
+</script>
+
+<script type="text/html" id="promotion_price">
+	<input type="number" class="layui-input len-short promotion-price" value="{{d.promotion_price ? d.promotion_price : '' }}" lay-verify="promotion_price" min="0.00" oninput="bargainPintuanPrice({{ d.sku_id }},event, 'promotion_price')" onporpertychange="bargainPromotionPrice({{ d.sku_id }},event, 'promotion_price')"/>
+</script>
+
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" onclick="delRow(this,{{d.sku_id}})">删除</a>
+	</div>
+</script>

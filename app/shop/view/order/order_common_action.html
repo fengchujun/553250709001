@@ -1,0 +1,272 @@
+<script type="text/javascript">
+var laytpl;
+var form;
+var order_list = [];
+var express_company_list = [];
+var deliyer_list = [];
+var printer_addon_is_exit = '{:addon_is_exit("printer")}';
+var isTradeManaged = false; // 微信小程序是否已开通发货信息管理服务
+
+function reloadList(){
+    {if !empty($order_detail)}
+		listenerHash(); // 刷新页面
+		layer.closeAll();
+	{else/}
+		getOrderList();
+	{/if}
+}
+$(function () {
+	// 获取物流公司
+	$.ajax({
+		type: "post",
+		url: ns.url("shop/express/getShopExpressCompanyList"),
+		dataType: 'json',
+		success: function (res) {
+			if (res.code == 0) {
+				express_company_list = res.data;
+			}
+		}
+	});
+
+	// 获取配送员
+	$.ajax({
+		type: "post",
+		url: ns.url("shop/local/getDeliverList"),
+		dataType: 'json',
+		success: function (res) {
+			if (res.code == 0) {
+				deliyer_list = res.data;
+			}
+		}
+	});
+
+	getOrderShippingIsTradeManaged();
+
+});
+
+//渲染模板引擎
+layui.use(['laytpl','form'], function(){
+    laytpl = layui.laytpl;
+    form = layui.form;
+	form.render();
+    {if !empty($order_detail)} setOrderInfo([{:json_encode($order_detail)}]);{/if}
+});
+
+/**
+** 设置订单信息
+**/
+function setOrderInfo(temp_order_list){
+    var temp = {};
+    temp_order_list.forEach(item => temp[item.order_id] = item);
+    order_list = temp;
+}
+
+/**
+ ** 获取订单信息
+ **/
+function getOrderInfo(order_id){
+    return order_list[order_id];
+}
+
+/**
+ * 订单操作
+ * @param fun
+ * @param order_id
+ */
+function orderAction(fun, order_id){
+    eval(fun+"("+order_id+")");
+}
+
+// 打印发货单
+function printDeliverOrder(order_id) {
+	var url = ns.url("shop/printer/batchprintorder", {request_mode: 'download',order_id: order_id});
+	var LODOP = getLodop();
+	if (LODOP) {
+		LODOP.PRINT_INIT("发货单打印");
+		LODOP.ADD_PRINT_TBURL(5, 10, "770", "95%", url);
+		LODOP.SET_PRINT_STYLEA(0, "HOrient", 3);
+		LODOP.SET_PRINT_STYLEA(0, "VOrient", 3);
+		LODOP.ADD_PRINT_TEXT(590, 680, 130, 22, "页号：第#页/共&页");
+		LODOP.SET_PRINT_STYLEA(0, "ItemType", 2);
+		LODOP.SET_PRINT_STYLEA(0, "Horient", 1);
+		LODOP.SET_PRINT_STYLEA(0, "Vorient", 1);
+		LODOP.SET_SHOW_MODE("MESSAGE_GETING_URL", ""); //该语句隐藏进度条或修改提示信息
+		LODOP.PREVIEW(); //预览
+	}
+}
+
+// 订单备注
+function orderRemark(order_id){
+    var order_info = getOrderInfo(order_id);
+    layer.prompt({
+        formType: 2,
+        value: order_info.remark,
+        title: '卖家备注',
+        area: ['400px', '100px'], //自定义文本域宽高
+        yes: function(index, layero){
+            var value = layero.find(".layui-layer-input").val();
+            if(value.trim().length > 200){
+                layer.msg("备注太长，最多200个字符！");
+                return false;
+            }
+            $.ajax({
+                type: "post",
+                url: ns.url("shop/order/orderRemark"),
+                async: true,
+                dataType: 'json',
+                data: {order_id : order_id, remark : value},
+                success: function (res) {
+                    layer.msg(res.message);
+                    if(res.code == 0){
+                        layer.close(layer.index - 1);
+                        reloadList();
+                    }
+                }
+            })
+        }
+    });
+
+}
+
+// 关闭订单
+var closeRepeat = false;
+function orderClose(order_id){
+    var temp_index = layer.confirm('确定要关闭该订单吗?', function(index) {
+        if (closeRepeat) return;
+        closeRepeat = true;
+		layer.close(index);
+        $.ajax({
+            url: ns.url("shop/order/close"),
+            data: {order_id : order_id},
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                layer.msg(res.message);
+                if(res.code == 0){
+                    layer.close(layer.index - 1);
+                    reloadList();
+                }
+				closeRepeat = false;
+            }
+        });
+    }, function () {
+        layer.close();
+        closeRepeat = false;
+    });
+}
+
+/**
+* 线下支付
+* @param order_id
+*/
+var payRepeat = false;
+function offlinePay(order_id){
+    var order_info = getOrderInfo(order_id);
+    ns.openOperateIframe({
+        url:ns.url("offlinepay://shop/pay/pay", {out_trade_no: order_info.out_trade_no,member_id:order_info.member_id}),
+        title:'线下支付',
+        area:['700px', '500px'],
+        getResFunc:'paySubmit',
+        success:function (res){
+            layer.msg(res.message);
+            if(res.code == 0){
+                reloadList();
+            }
+            payRepeat = false;
+        }
+    })
+}
+
+//线下支付审核
+function offlinePayAudit(order_id){
+    var order_info = getOrderInfo(order_id);
+    window.open(ns.href('offlinepay://shop/pay/lists', {out_trade_no:order_info.out_trade_no}));
+}
+
+/**
+ * 删除订单
+ * @param order_id
+ */
+function orderDelete(order_id){
+    layer.confirm('确定要删除该订单吗?', function(index) {
+		layer.close(index);
+    	$.ajax({
+            url: ns.url("shop/order/delete"),
+            data: {order_id : order_id},
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                layer.msg(res.message);
+                if(res.code == 0){
+                    reloadList();
+                }
+            }
+        });
+    }, function () {
+        layer.close();
+    });
+}
+
+/**
+ * 确认收货
+ * @param order_id
+ * @param type
+ */
+function takeDelivery(order_id, type = 0){
+    var html = "";
+    if(type == 0){
+        html = '确保买家已经收到您的商品，并且与买家协商完毕提前确认收货?';
+    }else{
+        html = '确保买家已经收到您的商品，并且与买家协商完毕提前确认收货?（退款中的订单及虚拟订单无法确认收货）';
+    }
+    layer.confirm(html, function(index) {
+		layer.close(index);
+    	$.ajax({
+            url: ns.url("shop/order/takeDelivery"),
+            data: {order_id : order_id, type : type},
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                layer.msg(res.message);
+                if(res.code == 0){
+                    reloadList();
+                }
+            }
+        });
+    }, function () {
+        layer.close();
+    });
+}
+
+// 打印订单小票
+function printTicket(order_id){
+	$.ajax({
+		type: 'post',
+		dataType: 'json',
+		url: ns.url("shop/order/printTicket"),
+		data: {order_id},
+		success: function (res) {
+			if (res.code != 0) {
+				layer.msg(res.message ? res.message : '小票打印失败');
+			}
+		}
+	});
+}
+
+// 查询小程序是否已开通发货信息管理服务
+function getOrderShippingIsTradeManaged() {
+	$.ajax({
+		type: "post",
+		url: ns.url("shop/order/orderShippingIsTradeManaged"),
+		dataType: 'json',
+		success: function (res) {
+			if (res.code == 0) {
+				isTradeManaged = res.data;
+			}
+		}
+	});
+}
+
+</script>
+<!-- 修改订单价格 -->
+{include file="app/shop/view/order/order_adjust_price.html" /}

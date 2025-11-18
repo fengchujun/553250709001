@@ -1,0 +1,253 @@
+<style>
+    .single-filter-box{display: flex; justify-content: space-between}
+    .item-right select {margin-right: 20px;width: 80px; height: 25px;}
+    .layui-form-label{width: 205px}
+	.layui-form-item{display: flex;justify-content: center;}
+	.layui-form-label{width: auto;}
+	.layui-input-inline textarea{border:1px solid rgba(135,135,135,.2);}
+	.layui-input-block textarea{border:1px solid rgba(135,135,135,.2);}
+	textarea{padding: 6px;box-sizing: border-box;height: 156px;}
+</style>
+
+<div class="single-filter-box">
+    <button class="layui-btn" onclick="addContent()">添加评价</button>
+</div>
+<table id="content_list" lay-filter="content_list"></table>
+<!-- 搜索 -->
+
+<!-- 创建评论库弹出层 -->
+<script type="text/html" id="create_content">
+    <div class="goods-service">
+        <div class="layui-form-item">
+            <label class="layui-form-label">评价内容：</label>
+            <div class="layui-input-inline">
+                <textarea name="content" id="content" cols="30" rows="10" maxlength="150"></textarea>
+            </div>
+        </div>
+        <div class="form-row mid">
+            <input type="hidden" name="stock_id" value="{$stock_id}">
+            <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+            <button class="layui-btn layui-btn-primary" onclick="closeAddStockLayer()">返回</button>
+        </div>
+    </div>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="table-btn">
+        <a class="layui-btn" lay-event="rename">编辑</a>
+        <a class="layui-btn" lay-event="delete">删除</a>
+    </div>
+</script>
+
+<script>
+    var laytpl,save_flag = false;
+    var layer;
+    var form,table,element,repeat_flag = false;
+    layui.use(['form','layer','laytpl' ,'element'], function() {
+        form = layui.form;
+        laytpl = layui.laytpl;
+        var layer = layui.layer;
+        element = layui.element;
+
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+
+        table = new Table({
+            elem: '#content_list',
+            url: ns.url("virtualevaluation://shop/comment/getContents"),
+            where: {
+                'stock_id': {$stock_id}
+            },
+            cols: [
+                [{
+                    title: '评价内容',
+                    unresize: 'false',
+                    width: '35%',
+                    field: 'content'
+                }, {
+                    title: '创建时间',
+                    unresize: 'false',
+                    width: '35%',
+                    templet: function(data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+				    align:'right'
+                }]
+            ]
+        });
+
+        table.tool(function(obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'rename': //重命名
+                    rename(data.id)
+                    break;
+                case 'delete': //删除
+                    deleteContent(data.id);
+                    break;
+            }
+        });
+
+        /**
+         * 保存添加评价库
+         */
+        form.on('submit(save)', function (data) {
+            if (save_flag) return;
+            save_flag = true;
+            var stock_id = $("input[name='stock_id']").val();
+            var content = $("#content").val();
+            if(stock_id ==''){
+                return layer.msg('必备参数不具有');
+            }
+            if(content ==''){
+                return layer.msg('内容不能为空');
+            }
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("virtualevaluation://shop/comment/addcontent"),
+                data: {content:content,stock_id:stock_id},
+                success: function (res) {
+                    save_flag = false;
+					layer.msg(res.message);
+                    listenerHash(); // 刷新页面
+                    layer.closeAll();
+                }
+            })
+        })
+        /**
+         * 保存添加评价库
+         */
+        form.on('submit(editSave)', function (data) {
+            if (save_flag) return;
+            save_flag = true;
+            var content = $("#editcontent").val();
+            var id = $("input[name='id']").val();
+            if(id==''){
+                return layer.msg('必须参数不可少');
+            }
+            if(content==''){
+                return layer.msg('评价不能为空');
+            }
+            $.ajax({
+                type: 'POST',
+                dataType: 'JSON',
+                url: ns.url("virtualevaluation://shop/comment/editcontent"),
+                data: {content:content,id:id},
+                success: function (res) {
+                    save_flag = false;
+					layer.msg(res.message);
+                    listenerHash(); // 刷新页面
+                    layer.closeAll();
+                }
+            })
+        })
+
+    });
+    function closeAddStockLayer() {
+        layer.close(add_stock_layer);
+    }
+
+    /**
+     * 添加
+     */
+    function addContent() {
+        laytpl($("#create_content").html()).render({}, function(html) {
+            add_stock_layer = layer.open({
+                type: 1,
+                title: '添加评价',
+                area: ['500px', '300px'],
+                content: html,
+                success: function(layero, index) {
+                    form.render();
+                }
+            });
+        })
+    }
+
+    function rename(id){
+        $.ajax({
+            url: ns.url("virtualevaluation://shop/comment/getcontentinfo"),
+            data: {
+                id:id
+            },
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                repeat_flag = false;
+                var id = res.data.id;
+                var content = res.data.content;
+                var html = `<div class="layui-form form-wrap">
+						<div class="layui-form-item">
+							<label class="layui-form-label" style="width:auto"><span class="required">*</span>评价内容：</label>
+							<div class="layui-input-block" style="margin-left: 0;">
+							    <input name="id" type="hidden" lay-verify="required" value="`+ id +`" class="layui-input len-mid">
+							    <textarea name="editcontent" id="editcontent" cols="30" rows="10" >`+content+`</textarea>
+
+							</div>
+						</div>
+						<div class="form-row mid">
+                           <button class="layui-btn" lay-submit lay-filter="editSave">保存</button>
+                           <button class="layui-btn layui-btn-primary" onclick="closeAddStockLayer()">返回</button>
+                       </div>
+					</div>`;
+                add_stock_layer=layer.open({
+                    type: 1,
+                    shadeClose: true,
+                    shade: 0.3,
+                    offset: 'auto',
+                    scrollbar: true,
+                    fixed: false,
+                    title: "编辑评价",
+                    area: ['450px', 'auto'],
+                    content: html,
+                });
+            }
+        });
+    }
+
+    /**
+     * 删除
+     */
+    function deleteContent(id){
+        if (repeat_flag) return false;
+        repeat_flag = true;
+
+        layer.confirm('确定要删除该评价吗?', function(index) {
+			layer.close(index);
+            $.ajax({
+                url: ns.url("virtualevaluation://shop/comment/deletecontent"),
+                data: {
+                    id:id
+                },
+                dataType: 'JSON',
+                type: 'POST',
+                success: function(res) {
+                    layer.msg(res.message);
+                    repeat_flag = false;
+
+                    if (res.code == 0) {
+                        table.reload();
+                    }
+                }
+            });
+        }, function () {
+            layer.close();
+            repeat_flag = false;
+        });
+    }
+</script>

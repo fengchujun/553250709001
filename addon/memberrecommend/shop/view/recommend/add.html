@@ -1,0 +1,328 @@
+<style>
+	.coupon-box .layui-form{
+		padding: 0!important;
+	}
+
+	.layui-layer-page .layui-layer-content{
+		overflow: auto !important;
+	}
+
+	.del-btn {
+		cursor: pointer;
+	}
+	.level-equity .layui-input {
+		display: inline-block;
+	}
+	.gods-box table:first-of-type{
+		margin-bottom: 0;
+	}
+	.gods-box table:last-of-type{
+		margin-top: 0;
+		display: block;
+		max-height: 323px;
+		overflow: auto;
+	}
+	.coupon-box .single-filter-box{
+		padding-top: 0;
+	}
+	.coupon-box .select-coupon-btn{
+		margin-top: 10px;
+	}
+	.layui-layer-page .layui-layer-content{
+		overflow-y: scroll!important;
+	}
+	.num-name{display: inline-block}
+</style>
+
+<div class="layui-form">
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-header">
+			<span class="card-title">活动设置</span>
+		</div>
+		<div class="layui-card-body">
+
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+				<div class="layui-input-block">
+					<input type="text" name="recommend_name" lay-verify="required|len" class="layui-input len-long" autocomplete="off" maxlength="40">
+				</div>
+				<div class="word-aux">
+					<p>活动名称最多为25个字符</p>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline len-mid">
+						<input type="text" class="layui-input" name="start_time" lay-verify="required" id="start_time" autocomplete="off" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<span class="layui-form-mid">-</span>
+					<div class="layui-input-inline len-mid end-time">
+						<input type="text" class="layui-input" name="end_time" lay-verify="required|time" id="end_time" autocomplete="off" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<label class="layui-form-label">活动说明：</label>
+				<div class="layui-input-block">
+					<textarea class="layui-textarea len-long" name="remark" maxlength="150"></textarea>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<div class="layui-card card-common card-brief">
+		<div class="layui-card-header">
+			<span class="card-title">规则设置</span>
+		</div>
+		<div class="layui-card-body reward-wrap">
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="required">*</span>邀请人可得奖励：</label>
+				<div class="layui-input-block">
+					<input type="checkbox" name="type" value="point" title="积分" lay-skin="primary" lay-filter="type" lay-verify="type" checked>
+					<input type="checkbox" name="type" value="balance" title="余额" lay-skin="primary" lay-filter="type" lay-verify="type">
+					<input type="checkbox" name="type" value="coupon" title="优惠券" lay-skin="primary" lay-filter="type" lay-verify="type">
+				</div>
+			</div>
+
+			<div class="point-wrap">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励积分：</label>
+					<div class="layui-input-block">
+						<input name="point" value="0" type="number" lay-verify="required|mum" class="layui-input len-short">
+					</div>
+				</div>
+			</div>
+
+			<div class="balance-wrap layui-hide">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励红包：</label>
+					<div class="layui-input-block len-long">
+						<input name="balance" value="0" type="number" lay-verify="" class="layui-input len-short" onchange="detectionNumType(this,'positiveNumber')">
+					</div>
+				</div>
+				<div class="word-aux"><p>红包为储值余额，仅在消费时可用</p></div>
+			</div>
+
+			<div class="coupon-wrap layui-hide">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>奖励优惠券：</label>
+					<div class="layui-input-block">
+						<div id="coupon_list"></div>
+						<div class="word-aux text-color" style="margin-left: 0">
+							<p>活动优惠券发放，不受优惠券自身数量和领取数量的限制</p>
+						</div>
+						<button class="layui-btn" id="select_coupon">选择优惠券</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="max-fetch-wrap">
+				<div class="layui-form-item">
+					<label class="layui-form-label"><span class="required">*</span>邀请奖励上限：</label>
+					<div class="layui-input-block">
+						<input name="max_fetch" value="0" type="number" class="layui-input len-short num-name">
+						人
+						<div class="word-aux text-color" style="margin-left: 0">
+							<p>默认0，为不限制</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+				<button class="layui-btn layui-btn-primary" onclick="back()">返回</button>
+			</div>
+
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="STATIC_JS/coupon_select.js"></script>
+<script>
+    var coupon_id = [], addCoupon,minDate,
+        currentDate = new Date();  //当前时间;
+	var coupon_select = new CouponSelect({
+		tableElem:'#coupon_list',
+		selectElem:'#select_coupon',
+	})
+
+    layui.use(['form', 'laytpl', 'laydate'], function() {
+        var form = layui.form,
+            laytpl = layui.laytpl,
+            laydate = layui.laydate,
+            repeat_flag = false; //防重复标识
+        form.render();
+
+        currentDate.setDate(currentDate.getDate() + 30);   //当前时间+30之后的时间戳
+
+        // 开始时间
+        laydate.render({
+            elem: '#start_time' ,//指定元素
+            type: 'datetime',
+            value: new Date(),
+            done: function(value){
+                minDate = value;
+                reRender();
+            }
+        });
+
+        //结束时间
+        laydate.render({
+            elem: '#end_time' ,//指定元素
+            type: 'datetime',
+            value: new Date(currentDate)
+        });
+
+        /**
+         * 重新渲染结束时间
+         * */
+        function reRender(){
+            $("#end_time").remove();
+            $(".end-time").html('<input type="text" id="end_time" name="end_time" placeholder="请输入结束时间" lay-verify="required|time" class="layui-input len-mid" autocomplete="off"><i class=" iconrili iconfont calendar"></i>');
+            laydate.render({
+                elem: '#end_time',
+                type: 'datetime',
+                min: minDate
+            });
+        }
+
+        form.on('checkbox(type)', function(data) {
+            $('[name="type"]').each(function(){
+                var type = $(this).val();
+                if ($(this).is(':checked')) {
+                    $('.reward-wrap .' + type + '-wrap').removeClass('layui-hide');
+                    if (type == 'point' || type == 'coupon') {
+                        $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|mum');
+                    }
+                    if (type == 'balance') {
+                        $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', 'required|float');
+                    }
+                } else {
+                    $('.reward-wrap .' + type + '-wrap').addClass('layui-hide');
+                    $('.reward-wrap .' + type + '-wrap [lay-verify]').attr('lay-verify', '');
+                }
+            })
+        })
+
+        /**
+         * 监听保存
+         */
+        form.on('submit(save)', function(data) {
+			let coupon_selected_ids = coupon_select.getSelectedData().selectedIds;
+            var type = [];
+            $('.reward-wrap [name="type"]:checked').each(function(){
+                type.push($(this).val());
+            })
+            if ($.inArray('coupon', type) != -1 && coupon_selected_ids.length == 0) {
+                layer.msg('请选择优惠券', {icon: 5});
+                return;
+            }
+
+			if(data.field.max_fetch == ''){
+				layer.msg('请输入邀请奖励上限', {icon: 5});
+				return;
+			}else if (data.field.max_fetch < 0){
+				layer.msg('请输入大于或等于0的整数', {icon: 5});
+				return;
+			}
+
+            data.field.type = type.toString();
+            data.field.coupon = coupon_selected_ids.toString();
+
+            if (repeat_flag) return false;
+            repeat_flag = true;
+
+            $.ajax({
+                url: ns.url("memberrecommend://shop/memberrecommend/add"),
+                data: data.field,
+                dataType: 'JSON', //服务器返回json格式数据
+                type: 'POST', //http请求类型
+                success: function(res) {
+                    repeat_flag = false;
+                    if (res.code == 0) {
+                        layer.confirm('添加成功', {
+                            title:'操作提示',
+                            btn: ['返回列表', '继续添加'],
+                            closeBtn: 0,
+                            yes: function(index, layero){
+                                location.hash = ns.hash("memberrecommend://shop/memberrecommend/lists")
+								layer.close(index);
+                            },
+                            btn2: function(index, layero) {
+								listenerHash(); // 刷新页面
+								layer.close(index);
+                            }
+                        });
+                    }else{
+                        layer.msg(res.message);
+                    }
+                }
+            });
+        });
+
+        /**
+         * 表单验证
+         */
+        form.verify({
+            type: function(){
+                if ($('.reward-wrap [name="type"]:checked').length == 0) {
+                    return '请选择邀请人可得奖励';
+                }
+            },
+            mum: function(value, item){
+            	let reg = ns.getRegexp('>0num');
+                if (!reg.test(value)) {
+                    return '请输入正整数';
+                }
+            },
+            float: function(value, item){
+				let reg = ns.getRegexp('>0float2');
+                if (!reg.test(value)) {
+                    return '请输入大于0的数字，最多保留两位小数';
+                }
+            }
+        });
+    });
+
+    function back(){
+        location.hash = ns.hash("memberrecommend://shop/memberrecommend/lists");
+    }
+	//检测数据类型
+	function detectionNumType(el,type){
+		var value = $(el).val();
+
+		//大于零 且 不是小数
+		if (value < 0 && type == 'integral')
+			$(el).val(0);
+		else if(type == 'integral')
+			$(el).val(Math.round(value));
+
+		//大于1 且 不是小数
+		if (value < 1 && type == 'positiveInteger'){
+			$(el).val(1);
+		} else if (type == 'positiveInteger'){
+			var val = Math.round(value);
+			if(Object.is(val,NaN)){
+				$(el).val(1);
+			}else{
+				$(el).val(val);
+			}
+		}
+
+		//大于零可以是小数
+		if (type == 'positiveNumber'){
+			value = parseFloat(value).toFixed(2);
+			if (value < 0)
+				$(el).val(0);
+			else
+				$(el).val(value);
+		}
+	}
+</script>

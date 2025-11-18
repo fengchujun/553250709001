@@ -1,0 +1,157 @@
+<link rel="stylesheet" href="STATIC_EXT/diyview/css/diyview.css?time=20240316" />
+<link rel="stylesheet" href="FORM_CSS/form.css" />
+<style>
+    .layui-layout-admin .layui-body .body-content{margin: 15px !important;}
+    #diyView{visibility: visible;}
+    .preview-wrap .preview-restore-wrap{visibility: visible;}
+	.edit-attribute{display: block;}
+</style>
+
+<div id="diyView">
+	<!-- 组件列表 -->
+	<div class="component-list">
+		<h3>表单</h3>
+		<div>
+			<input type="text" name="form_name" class="layui-input" placeholder="请输入表单标题" {notempty name="$info"}value="{$info['form_name']}"{/notempty}> 
+		</div>
+		
+		<nav>
+			<h3>组件</h3>
+			<ul>
+				{foreach name="component" item="li" key="li_k"}
+				<li title="{$li.title}" @click="addComponent('{$li.name}')">
+					<img src="__ROOT__/{$li.icon}" data-icon="__ROOT__/{$li.icon}" data-icon-selected="__ROOT__/{$li.icon_selected}" />
+					<span>{$li.title}</span>
+				</li>
+				{/foreach}
+			</ul>
+		</nav>
+	</div>
+
+	<div class="preview-wrap">
+		<div class="preview-restore-wrap">
+			<div class="div-wrap">
+				<div class='diy-view-wrap layui-form'>
+					<div class="preview-block">
+						<div class="order-wrap">
+							<img src="{:img($form_type.head_img)}" class="head-img"/>
+						</div>
+
+						<div class="draggable-wrap" form-type="{$form_type.type}">
+							<div class="draggable-element" :class="{'selected' : index == currIndex}" v-for="(item, index) in list" :key="item.id" @click="currIndex = index">
+								<i class="del" @click="list.splice(index, 1)">x</i>
+								<form-text v-if="item.controller == 'Text'" :value="item.value" :ref="item.id"></form-text>
+								<form-textarea v-if="item.controller == 'Textarea'" :value="item.value" :ref="item.id"></form-textarea>
+								<form-select v-if="item.controller == 'Select'" :value="item.value" :ref="item.id"></form-select>
+								<form-checkbox v-if="item.controller == 'Checkbox'" :value="item.value" :ref="item.id"></form-checkbox>
+								<form-radio v-if="item.controller == 'Radio'" :value="item.value" :ref="item.id"></form-radio>
+								<form-img v-if="item.controller == 'Img'" :value="item.value" :ref="item.id"></form-img>
+								<form-date v-if="item.controller == 'Date'" :value="item.value" :ref="item.id"></form-date>
+								<form-date-limit v-if="item.controller == 'Datelimit'" :value="item.value" :ref="item.id"></form-date-limit>
+								<form-time v-if="item.controller == 'Time'" :value="item.value" :ref="item.id"></form-time>
+								<form-time-limit v-if="item.controller == 'Timelimit'" :value="item.value" :ref="item.id"></form-time-limit>
+								<form-city v-if="item.controller == 'City'" :value="item.value" :ref="item.id"></form-city>
+							</div>
+						</div>
+					</div>
+
+					<div class="edit-attribute" v-if="editData">
+						<form-text-edit v-if="editData.controller == 'Text'" :value="editData"></form-text-edit>
+						<form-textarea-edit v-if="editData.controller == 'Textarea'" :value="editData"></form-textarea-edit>
+						<form-select-edit v-if="editData.controller == 'Select'" :value="editData"></form-select-edit>
+						<form-checkbox-edit v-if="editData.controller == 'Checkbox'" :value="editData"></form-checkbox-edit>
+						<form-radio-edit v-if="editData.controller == 'Radio'" :value="editData"></form-radio-edit>
+						<form-img-edit v-if="editData.controller == 'Img'" :value="editData"></form-img-edit>
+						<form-date-edit v-if="editData.controller == 'Date'" :value="editData"></form-date-edit>
+						<form-date-limit-edit v-if="editData.controller == 'Datelimit'" :value="editData"></form-date-limit-edit>
+						<form-time-edit v-if="editData.controller == 'Time'" :value="editData"></form-time-edit>
+						<form-time-limit-edit v-if="editData.controller == 'Timelimit'" :value="editData"></form-time-limit-edit>
+						<form-city-edit v-if="editData.controller == 'City'" :value="editData"></form-city-edit>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="custom-save">
+		<button class="layui-btn save">保存</button>
+	</div>
+</div>
+
+<script src="STATIC_JS/vue.js"></script>
+<script src="STATIC_EXT/diyview/js/components.js"></script>
+<script src="STATIC_EXT/diyview/js/async_load_css.js"></script>
+<script src="STATIC_EXT/diyview/js/ddsort.js"></script>
+<script src="FORM_JS/form.js"></script>
+<script>
+	var formComponents = JSON.parse('{:json_encode($component)}'),
+		repeat_flag = false;
+
+	$(function() {
+		var height = $(window).height();
+		var commonHeight = height - 214;
+		$(".component-list nav").css("height", (commonHeight + 20) + "px");
+		$(".preview-wrap .preview-restore-wrap .div-wrap").css("height", (commonHeight) + "px");
+		$(".edit-attribute .attr-wrap").css("height", (commonHeight) + "px");
+		$(".edit-attribute-placeholder").css("height", (height - 214) + "px");
+		$(".preview-block").css("min-height", (commonHeight - 120) + "px");
+
+		$("body").off("mousemove", ".component-list ul li").on("mousemove", ".component-list ul li", function() {
+			var icon_selected = $(this).find("img").attr("data-icon-selected");
+			$(this).find("img").attr("src", icon_selected);
+		}).on("mouseout", ".component-list ul li", function() {
+			var icon = $(this).find("img").attr("data-icon");
+			$(this).find("img").attr("src", icon);
+		});
+
+		$('.save').click(function() {
+			var form_name = $('[name="form_name"]').val();
+
+			if (!/[\S]+/.test(form_name)) {
+				layer.msg('请输入表单标题', {
+					icon: 5
+				});
+				return;
+			}
+
+			if (!vue._data.list.length) {
+				layer.msg('您尚未选择任何组件', {
+					icon: 5
+				});
+				return;
+			}
+
+			// 组件内验证
+			if (!vue.verify()) return;
+
+			if (repeat_flag) return;
+			repeat_flag = true;
+
+			$.ajax({
+				type: "post",
+				url: {notempty name = "$info"}ns.url("form://shop/form/editform"),{else /} ns.url("form://shop/form/addform"), {/notempty}
+				data: {
+					{notempty name = "$info"}id: {$info.id},{/notempty}
+					form_name: form_name,
+					form_type: '{$form_type.type}',
+					json_data: JSON.stringify(vue._data.list)
+				},
+				dataType: "JSON",
+				success: function(res) {
+					layer.msg(res.message);
+					if (res.code == 0) {
+						location.hash = ns.hash("form://shop/form/lists");
+					} else {
+						repeat_flag = false;
+					}
+				}
+			});
+		})
+	})
+
+	{notempty name = "$info"}
+	setTimeout(function() {
+		vue._data.list = JSON.parse('{:html_entity_decode($info.json_data)}');
+	}, 300);
+	{/notempty}
+</script>

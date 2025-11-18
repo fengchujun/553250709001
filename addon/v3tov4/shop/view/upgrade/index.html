@@ -1,0 +1,316 @@
+<style>
+	.js-migrate-list {
+		display: none;
+	}
+
+	.progress-bar-wrap .layui-input-block {
+		padding-top: 11px;
+		min-height: initial;
+	}
+
+	.progress-bar {
+		height: 10px;
+		background: #e8e8e8;
+		width: 60%;
+		border-radius: 4px;
+		position: relative;
+	}
+
+	.progress-bar .curr {
+		content: '';
+		background: var(--base-color);
+		display: block;
+		width: 0;
+		height: 10px;
+		border-radius: 4px;
+	}
+
+	.progress-bar .value {
+		position: absolute;
+		right: -70px;
+		top: -3px;
+		line-height: initial;
+	}
+
+	.js-save[disabled] {
+		background: #d2d2d2 !important;
+		cursor: not-allowed;
+	}
+
+	.laytable-cell-1-0-3 {
+    	text-align: right;
+	}
+
+</style>
+
+<div class="layui-collapse tips-wrap">
+	<div class="layui-colla-item">
+		<h2 class="layui-colla-title">操作提示</h2>
+		<ul class="layui-colla-content layui-show">
+			<li>在迁移数据前,首先会备份原数据，SQL文件存放在upload/backup文件夹下</li>
+			<li>迁移数据开始后，请不要关闭当前页面，以免造成未知错误</li>
+			<li>文档参考：<a href="https://www.kancloud.cn/niucloud/niushop_b2c_v4/1852551" target="_blank" class="text-color">v3Tov4迁移数据说明文档</a>
+			</li>
+		</ul>
+	</div>
+</div>
+<div class="layui-form form-wrap">
+
+	<table lay-filter="migrate_list" lay-skin="line" class="js-migrate-list">
+		<thead>
+			<tr>
+				<th lay-data="{checkbox:true,field:'key', width:'5%'}"></th>
+				<th lay-data="{field:'name',width:'20%'}">迁移模块</th>
+				<th lay-data="{field:'introduction',width:'65%'}">描述</th>
+				<th lay-data="{field:'action',width:'10%'}" >迁移说明</th>
+			</tr>
+		</thead>
+		<tbody>
+			{foreach name="$task_class" item="vo" key="k"}
+			{if $vo['is_show']}
+			<tr>
+				<td>{$k}</td>
+				<td>{$vo['name']}</td>
+				<td>{$vo['introduction']}</td>
+				<td>
+					<div class="table-btn">
+						<a class="layui-btn js-select-desc" data-desc='{$vo["desc"]}'>详情</a>
+					</div>
+				</td>
+			</tr>
+			{/if}
+			{/foreach}
+		</tbody>
+	</table>
+
+	{foreach name="$task_class" item="vo" key="k"}
+	<input type="hidden" name="migrate_data" title="{$vo['name']}" value="{$k}" lay-skin="primary">
+	{/foreach}
+
+	<div class="layui-form-item progress-bar-wrap">
+		<label class="layui-form-label mid">迁移进度：</label>
+		<div class="layui-input-block">
+			<div class="progress-bar">
+				<span class="curr"></span>
+				<span class="value">0%</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-row mid">
+		<button class="layui-btn js-save" lay-submit lay-filter="save">迁移</button>
+	</div>
+
+</div>
+
+<script type="text/javascript">
+	var form, table;
+	var index = -1;// 当前页
+	var migrate_data = [];// 已选迁移模块
+	var total = 0;// 总页数
+	var page_size = 0;//每页数量
+
+	var last_table = "";
+	var backup_index = 0;
+	var series = 0;
+	var is_backup_end = 0;// 是否备份完成
+	var repeat_flag = false; //防重复标识
+
+	layui.use(['form', 'table'], function () {
+		form = layui.form;
+		table = layui.table;
+
+		table.init('migrate_list');
+
+		table.on('checkbox(migrate_list)', function (obj) {
+			if (obj.type == "all") {
+				migrate_data = [];
+				if (obj.checked) {
+					$("input[name='migrate_data']").each(function () {
+						migrate_data.push($(this).val());
+					});
+				}
+			} else {
+				if (obj.checked) {
+					migrate_data.push(obj.data.key);
+				} else {
+					for (var i in migrate_data) {
+						if (migrate_data[i] == obj.data.key) migrate_data.splice(i, 1);
+					}
+				}
+			}
+		});
+
+		$("body").off("click", ".js-select-desc").on("click", ".js-select-desc", function () {
+			var desc = $(this).attr("data-desc");
+			layer.open({
+				title: '迁移说明',
+				area: ['900px', '600px'],
+				content: '<pre>' + desc + '</pre>'
+			});
+		});
+
+		form.on("submit(save)", function (data) {
+			if (!migrate_data.length) {
+				layer.msg("请选择要迁移的数据");
+				return false;
+			}
+
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			checkModuleIsUpgrade(function () {
+				execute();
+			});
+
+		})
+	});
+
+	function execute() {
+		if (is_backup_end) {
+			migrate();
+		} else {
+			$(".js-save").text("数据备份中...").attr("disabled", true);
+			backupSql(function (res) {
+				if (res.code >= 0) {
+					$(".js-save").text("数据迁移中...").attr("disabled", true);
+					migrate();
+				}
+			});
+		}
+	}
+
+	/**
+	 * 迁移数据
+	 */
+	function migrate() {
+		$.ajax({
+			url: ns.url("v3tov4://shop/upgrade/index"),
+			dataType: 'JSON',
+			type: 'POST',
+			data: {index: index, 'class': migrate_data.toString()},
+			success: function (res) {
+				if (res.code >= 0) {
+					var data = res.data;
+					index = parseInt(data.index);
+					total = parseInt(data.total);
+					page_size = parseInt(data.page_size);
+					var progress = 0;
+					if (index > -1) {
+						// 进度计算公式：(当前页 * 每页数量) / 总数量(每页数量 * 总页数) * 100
+						progress = parseFloat(((index + 1) * page_size) / (page_size * total) * 100).toFixed(2);
+					}
+
+					$(".progress-bar .curr").css("width", progress + "%");
+					$(".progress-bar .value").text(progress + "%");
+					if ((parseInt(index) + 1) < total) {
+						index++;
+						execute();
+					} else {
+						updateLogStatus();
+						$(".js-save").text("迁移完成").removeAttr("disabled");
+						layer.msg("迁移完成");
+					}
+				} else {
+					layer.msg(res.message);
+				}
+			}
+		});
+	}
+
+	/**
+	 * 数据备份
+	 * @param callback
+	 */
+	function backupSql(callback) {
+		$.ajax({
+			type: 'post',
+			url: ns.url("v3tov4://shop/upgrade/backupSql"),
+			dataType: 'json',
+			data: {
+				last_table: last_table,
+				index: backup_index,
+				series: series
+			},
+			success: function (res) {
+				if (res.code >= 0) {
+					var data = res.data;
+					//判断是否备份完成
+					if (data.is_backup_end) {
+						is_backup_end = data.is_backup_end;
+						if (callback) callback(res);
+					} else {
+						last_table = data.last_table;
+						series = data.series;
+						backup_index = data.index;
+						backupSql(callback);
+					}
+				} else {
+					if (callback) callback(res);
+					is_backup_end = 0;
+					layer.msg("备份发生错误：", res.message);
+				}
+
+			}
+		});
+	}
+
+	/**
+	 * 获取最新的模块迁移状态，防止重复迁移
+	 * @param callback
+	 */
+	function checkModuleIsUpgrade(callback) {
+		$.ajax({
+			type: 'post',
+			url: ns.url("v3tov4://shop/upgrade/checkModuleIsUpgrade"),
+			dataType: 'json',
+			data: {
+				module: migrate_data.toString()
+			},
+			success: function (res) {
+				var data = res.data;
+				var module = [];
+				var message = '';
+				for (var i = 0; i < data.length; i++) {
+					if (data[i].count) {
+						module.push(data[i].title);
+					}
+				}
+				if (module.length) {
+					message = "[ " + module.join("，") + ' ] 数据已迁移成功，确定要重新迁移吗？';
+					var index = layer.confirm(message, {
+						title: '操作提示',
+						// btn: ['返回列表', '继续添加'],
+						closeBtn: 0,
+						yes: function () {
+							if (callback) callback();
+							layer.close(index);
+						}, btn2: function () {
+							repeat_flag = false;
+							layer.close(index);
+						}
+					})
+				} else {
+					if (callback) callback();
+				}
+
+			}
+		});
+	}
+
+	/**
+	 * 更新迁移日志状态
+	 */
+	function updateLogStatus() {
+		$.ajax({
+			type: 'post',
+			url: ns.url("v3tov4://shop/upgrade/updateLogStatus"),
+			dataType: 'json',
+			data: {
+				module: migrate_data.toString()
+			},
+			success: function (res) {
+			}
+		});
+	}
+</script>

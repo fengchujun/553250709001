@@ -1,0 +1,186 @@
+<link rel="stylesheet" type="text/css" href="SECKILL_CSS/goods.css"/>
+
+<div class="layui-form form-wrap main-form">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动名称：</label>
+		<div class="layui-input-block">
+			<input type="text" name="seckill_name" value="{$seckill_info['seckill_name']??''}" lay-verify="required" placeholder="请输入活动名称" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+		<div class="word-aux">
+			<p>活动名称将显示在列表中展示，方便商家管理使用</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label">活动规则说明：</label>
+		<div class="layui-input-block">
+			<textarea name="remark" class="layui-textarea len-long" maxlength="300" placeholder="请输入活动规则说明">{$seckill_info['remark']??''}</textarea>
+		</div>
+		<div class="word-aux">
+			<p>商家对秒杀的补充说明文字，非必填选项</p>
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>活动时间：</label>
+		<div class="layui-inline">
+			<div class="layui-input-inline len-mid">
+				<input type="text" id="start_time" name="start_time" {notempty name="$seckill_info"}value="{:date('Y-m-d H:i:s', $seckill_info.start_time)}"{/notempty} lay-verify="required" autocomplete="off" class="layui-input" readonly>
+				<i class="iconrili iconfont calendar"></i>
+			</div>
+			<span class="layui-form-mid">-</span>
+			<div class="layui-input-inline len-mid end-time">
+				<input type="text" id="end_time" name="end_time" lay-verify="required|time" {notempty name="$seckill_info"}value="{:date('Y-m-d H:i:s', $seckill_info.end_time)}"{/notempty} autocomplete="off" class="layui-input" readonly>
+				<input type="hidden" value="{$seckill_info.end_time??''}" id="old_end_time">
+				<i class="iconrili iconfont calendar"></i>
+			</div>
+		</div>
+		<div class="word-aux">
+			<p>商品只会在活动时间段内的指定场次进行展示</p>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label class="layui-form-label">排序：</label>
+		<div class="layui-input-block">
+			<input type="number" name="sort" value="{$seckill_info['sort']??''}" class="layui-input len-short" placeholder="0" autocomplete="off">
+		</div>
+		<div class="word-aux">商品默认排序号为0，数字越大，排序越靠前，数字重复，则最新添加的靠前。</div>
+	</div>
+
+	<div class="seckill-goods-list">
+		<div class="layui-form-item">
+			<label class="layui-form-label"><span class="required">*</span>参与场次：</label>
+			<div class="layui-input-block time-label-list">
+				<a href="javascript:addSeckillTime();" class="text-color js-add-time">选择场次</a>
+				<ul></ul>
+			</div>
+		</div>
+	</div>
+
+	<div class="layui-form-item goods_list">
+		<label class="layui-form-label"><span class="required">*</span>商品选择：</label>
+		<div class="layui-input-block">
+			<table id="selected_goods_list" lay-filter="selected_goods_list"></table>
+			{if empty($seckill_info) }
+			<button class="layui-btn" onclick="addGoods()">选择商品</button>
+			<span class="goods_num">已选商品（<span id="goods_num" class="text-color">0</span>）</span>
+			{/if}
+		</div>
+	</div>
+	<input type="hidden" name="id" value="{$seckill_info.id??''}">
+	<input type="hidden" name="seckill_time_id" value="{$seckill_info['seckill_time_id']??''}">
+	{notempty name="$time_list"}
+	<input type="hidden" name="time_list" value='{:json_encode($time_list, JSON_UNESCAPED_UNICODE)}'>
+	{/notempty}
+	{notempty name="$seckill_info"}
+	<input type="hidden" name="sku_list" value='{:json_encode($seckill_info.goods_sku, JSON_UNESCAPED_UNICODE)}'>
+	{/notempty}
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backSeckillGoodsList()">返回</button>
+	</div>
+
+</div>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		{if !empty($seckill_info) }
+			{{# if (d.is_select == 1){ }}
+			<a class="layui-btn no-participation">不参与</a>
+			{{# }else{ }}
+			<a class="layui-btn participation">参与</a>
+			{{# } }}
+		{else/}
+			<a class="layui-btn" onclick="delGoods(this,{{d.sku_id}})">删除</a>
+		{/if}
+	</div>
+</script>
+
+<!-- 价格设置 -->
+<script type="text/html" id="seckillPrice">
+	{{# if (d.is_select == 1){ }}
+	<input type="number" class="layui-input len-input " value="{{d.seckill_price}}" onchange="setGoodsSku('seckill_price', {{d.sku_id}}, this)"  min="0"/>
+	{{# }else{ }}
+	<input type="number" class="layui-input len-input" value="{{d.seckill_price}}" onchange="setGoodsSku('seckill_price', {{d.sku_id}}, this)"  min="0"/>
+	{{# } }}
+</script>
+
+<script type="text/html" id="toolbarOperation">
+	<button class="layui-btn layui-btn-primary" lay-event="seckill-purchase">限购</button>
+	<button class="layui-btn layui-btn-primary" lay-event="seckill-price">秒杀价</button>
+	<button class="layui-btn layui-btn-primary" lay-event="seckill-stock">秒杀库存</button>
+</script>
+
+<!-- 库存设置 -->
+<script type="text/html" id="seckillStock">
+
+	{{# if (d.is_select == 1){ }}
+	<input type="number" class="layui-input len-input seckill_stock" value="{{d.seckill_stock}}" onchange="setGoodsSku('seckill_stock', {{d.sku_id}}, this)"  min="0.00"/>
+	{{# }else{ }}
+	<input type="number" class="layui-input len-input seckill_stock" value="{{d.seckill_stock}}" onchange="setGoodsSku('seckill_stock', {{d.sku_id}}, this)"  min="0.00"/>
+	{{# } }}
+
+</script>
+
+<!-- 限购设置 -->
+<script type="text/html" id="maxBuy">
+
+	{{# if (d.is_select == 1){ }}
+	<input type="number" class="layui-input len-input max_buy" value="{{d.max_buy}}" onchange="setGoodsSku('max_buy', {{d.sku_id}}, this)"  min="0"/>
+	{{# }else{ }}
+	<input type="number" class="layui-input len-input max_buy" value="{{d.max_buy}}" onchange="setGoodsSku('max_buy', {{d.sku_id}}, this)"  min="0"/>
+	{{# } }}
+
+</script>
+
+<!--选择场次弹出-->
+<script type="text/html" id="seckillTime">
+	<div class="seckill-box">
+		<table id="seckill_time_list" lay-filter="seckill_time_list"></table>
+	</div>
+</script>
+
+<script type="text/html" id="timecheckbox">
+	{{# if (d.is_select == 1){ }}
+	<input type="checkbox" name="time_checkbox" data-name="{{d.name}}" data-time-start="{{d.seckill_start_time}}" checked  data-time-end="{{d.seckill_end_time}}" data-time-id="{{d.id}}" class="time-select" lay-skin="primary" lay-filter="goods_checkbox">
+	{{# }else{ }}
+	<input type="checkbox" name="time_checkbox" data-name="{{d.name}}" data-time-start="{{d.seckill_start_time}}"  data-time-end="{{d.seckill_end_time}}" data-time-id="{{d.id}}" class="time-select" lay-skin="primary" lay-filter="goods_checkbox">
+	{{# } }}
+</script>
+
+<!-- 添加场次 -->
+<script type="text/html" id="addTime">
+	<div class="layui-form ">
+		<div class="layui-form-item len-mid">
+			<label class="layui-form-label"><span class="required">*</span>秒杀场次名称：</label>
+			<div class="layui-input-block">
+				{{# if(d.name){ }}
+				<input type="text" id="add_time_name" value="{{d.name}}" lay-verify="required" autocomplete="off" class="layui-input len-mid">
+				{{# }else{ }}
+				<input type="text" id="add_time_name" value="" lay-verify="required" autocomplete="off" class="layui-input len-mid">
+				{{# } }}
+			</div>
+		</div>
+
+		<div class="layui-form-item ">
+			<div class="layui-inline">
+				<label class="layui-form-label"><span class="required">*</span>秒杀时间段：</label>
+				<div class="layui-inline">
+					<div class="layui-input-inline">
+						<input type="text" id="add_start_time" value="{{d.seckill_start_time_show ? d.seckill_start_time_show : ''}}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<span class="layui-form-mid">-</span>
+					<div class="layui-input-inline">
+						<input type="text" id="add_end_time" value="{{d.seckill_end_time_show ? d.seckill_end_time_show :''}}" lay-verify="required" class="layui-input">
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script src="SECKILL_JS/goods.js?time=20250103"></script>

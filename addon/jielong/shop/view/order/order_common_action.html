@@ -1,0 +1,42 @@
+<script type="text/javascript">
+var laytpl;
+var form;
+//渲染模板引擎
+layui.use(['laytpl','form'], function(){
+    laytpl = layui.laytpl;
+    form = layui.form;
+	form.render();
+});
+/**
+ * 订单操作
+ * @param fun
+ * @param order_id
+ */
+function orderAction(fun, order_id){
+    eval(fun+"("+order_id+")");
+}
+
+/**
+ * 删除订单
+ * @param order_id
+ */
+function deleteOrder(order_id){
+    layer.confirm('确定要删除该订单吗?', function(index) {
+		layer.close(index);
+        $.ajax({
+            url: ns.url("jielong://shop/order/deleteOrder"),
+            data: {order_id : order_id},
+            dataType: 'JSON',
+            type: 'POST',
+            success: function(res) {
+                layer.msg(res.message);
+                if (res.code == 0) {
+                    location.hash = ns.hash("jielong://shop/order/lists");
+                }
+            }
+        });
+    }, function () {
+        layer.close();
+    });
+}
+</script>

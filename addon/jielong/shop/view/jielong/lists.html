@@ -1,0 +1,384 @@
+<style>
+	.layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+	.layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+</style>
+
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="add()">添加活动</button>
+</div>
+
+<!-- 搜索框 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">活动名称：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="jielong_name" placeholder="请输入活动名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">活动时间：</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="jielong_tab">
+	<ul class="layui-tab-title">
+		<li class="layui-this" data-status="">全部</li>
+		{foreach $jielong_status as $k=>$v}
+		<li data-status="{$k}">{$v}</li>
+		{/foreach}
+	</ul>
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="jielong_list" lay-filter="jielong_list"></table>
+	</div>
+</div>
+
+<!-- 时间 -->
+<script id="time" type="text/html">
+	<div class="layui-elip">开始：{{ns.time_to_date(d.start_time)}}</div>
+	<div class="layui-elip">结束：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarAction">
+	<button class="layui-btn layui-btn-primary" lay-event="delete">批量删除</button>
+	<button class="layui-btn layui-btn-primary" lay-event="close">批量关闭</button>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn text-color" lay-event="extension">推广</a>
+		<a class="layui-btn" lay-event="detail">详情</a>
+		<a class="layui-btn" lay-event="launch">订单列表</a>
+		{{# if(d.status == 0){ }}
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		<a class="layui-btn" lay-event="del">删除</a>
+		{{# }else if(d.status == 1){ }}
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		<a class="layui-btn" lay-event="close">关闭</a>
+		{{# }else{ }}
+		<a class="layui-btn" lay-event="del">删除</a>
+		{{# } }}
+	</div>
+</script>
+
+<!-- 推广 -->
+{include file="app/shop/view/component/promote_show.html"}
+
+<script>
+	var laytpl,form;
+	$(function () {
+		layui.use(['form', 'element', 'laytpl', 'laydate'], function () {
+			laytpl = layui.laytpl;
+			form = layui.form;
+			var table,
+			element = layui.element,
+			laydate = layui.laydate,
+			repeat_flag = false; //防重复标识
+			form.render();
+
+			element.on('tab(jielong_tab)', function () {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: {
+						'status': this.getAttribute('data-status')
+					}
+				});
+			});
+
+			//开始时间
+			laydate.render({
+				elem: '#start_time', //指定元素
+                type: 'datetime'
+			});
+			//结束时间
+			laydate.render({
+				elem: '#end_time', //指定元素
+                type: 'datetime'
+			});
+
+			table = new Table({
+				elem: '#jielong_list',
+				url: ns.url("jielong://shop/jielong/lists"),
+				cols: [
+					[{
+						type: 'checkbox',
+						width: '3%',
+					},{
+						title: '活动名称',
+						unresize: 'false',
+						field: 'jielong_name',
+					}, {
+						field: 'goods_num',
+						title: '商品数',
+						width: '10%',
+						unresize: 'false'
+					}, {
+						field: 'order_num',
+						title: '订单数',
+						width: '10%',
+						unresize: 'false'
+					}, {
+						title: '活动时间',
+						unresize: 'false',
+						width: '20%',
+						templet: '#time'
+					}, {
+						field: 'status_name',
+						title: '状态',
+						unresize: 'false',
+						width: '10%'
+					}, {
+						title: '操作',
+						toolbar: '#operation',
+						unresize: 'false',
+						align : 'right'
+					}]
+				],
+				toolbar: '#toolbarAction'
+			});
+
+			/**
+			 * 搜索功能
+			 */
+			form.on('submit(search)', function (data) {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: data.field
+				});
+			});
+
+			table.on("sort",function (obj) {
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: {
+						order:obj.field,
+						sort:obj.type
+					}
+				});
+			});
+
+			//监听Tab切换
+			element.on('tab(status)', function (data) {
+				var status = $(this).attr("data-status");
+				table.reload({
+					page: {
+						curr: 1
+					},
+					where: {
+						'status': status
+					}
+				});
+			});
+
+			// 监听工具栏操作
+			table.toolbar(function (obj) {
+				var data = obj.data;
+				if(data.length <= 0) return;
+				var jielongIdAll = [];
+				for (var i in data){
+					jielongIdAll.push(data[i].jielong_id);
+				}
+
+				switch (obj.event) {
+					case 'delete':
+						deleteJielongAll(jielongIdAll)
+						break;
+					case 'close':
+						closeJielongAll(jielongIdAll)
+						break;
+				}
+			})
+
+			function deleteJielongAll(data){
+				layer.confirm('确定要删除接龙活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("jielong://shop/jielong/deleteAll"),
+						data: {
+							jielong_id: data
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							table.reload({
+								page: {
+									curr: 1
+								},
+							});
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			function closeJielongAll(data){
+				layer.confirm('确定要关闭接龙活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("jielong://shop/jielong/finishAll"),
+						data: {
+							jielong_id: data
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							table.reload();
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			/**
+			 * 监听工具栏操作
+			 */
+			table.tool(function (obj) {
+				var data = obj.data;
+				switch (obj.event) {
+					case 'detail': //详情
+						location.hash = ns.hash("jielong://shop/jielong/detail", {"jielong_id": data.jielong_id});
+						break;
+					case 'edit': //编辑
+						location.hash = ns.hash("jielong://shop/jielong/edit", {"jielong_id": data.jielong_id});
+						break;
+					case 'del': //删除
+						deleteJielong(data.jielong_id);
+						break;
+					case 'close': //结束
+						closeJielong(data.jielong_id);
+						break;
+					case 'launch': //订单
+						location.hash = ns.hash("jielong://shop/order/lists", {"jielong_id": data.jielong_id});
+						break;
+					case 'extension': //推广
+						extensionJielong(data.jielong_id);
+						break;
+				}
+			});
+
+			/**
+			 * 删除
+			 */
+			function deleteJielong(jielong_id) {
+				layer.confirm('确定要删除该接龙活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("jielong://shop/jielong/delete"),
+						data: {
+							jielong_id: jielong_id
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							if (res.code == 0) {
+								table.reload({
+									page: {
+										curr: 1
+									},
+								});
+							}
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			// 结束
+			function closeJielong(jielong_id) {
+
+				layer.confirm('确定要关闭该接龙活动吗?', function (index) {
+					if (repeat_flag) return;
+					repeat_flag = true;
+					layer.close(index);
+
+					$.ajax({
+						url: ns.url("jielong://shop/jielong/finish"),
+						data: {
+							jielong_id: jielong_id
+						},
+						dataType: 'JSON',
+						type: 'POST',
+						success: function (res) {
+							layer.msg(res.message);
+							repeat_flag = false;
+							if (res.code == 0) {
+								table.reload();
+							}
+						}
+					});
+				}, function () {
+					layer.close();
+					repeat_flag = false;
+				});
+			}
+
+			function extensionJielong(jielong_id){
+				new PromoteShow({
+					url:ns.url("jielong://shop/jielong/poster"),
+					param:{jielong_id:jielong_id},
+				})
+			}
+		});
+
+	});
+	function add() {
+		location.hash = ns.hash("jielong://shop/jielong/add");
+	}
+	function binding() {
+		location.hash = ns.hash("weapp://shop/weapp/setting");
+	}
+
+	//下载图片
+	function download(url) {
+		location.href = ns.url("shop/upload/download", {request_mode: 'download',img_url : encodeURIComponent(url), type : 1});
+	}
+</script>

@@ -1,0 +1,114 @@
+<link rel="stylesheet" href="SHOP_CSS/goods_lists.css">
+<style>
+    .layui-layer-page .layui-layer-content {padding: 20px 30px;}
+    .layui-layout-admin .layui-body .body-content{overflow: hidden;}
+</style>
+
+<div class="layui-tab table-tab" lay-filter="coupon_tab">
+    <div class="layui-tab-content">
+        <!-- 列表 -->
+        <table id="coupon_list" lay-filter="coupon_list"></table>
+    </div>
+</div>
+
+<!-- 时间 -->
+<script id="time" type="text/html">
+    <div class="layui-elip">开始：{{ns.time_to_date(d.start_time)}}</div>
+    <div class="layui-elip">结束：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="operation-wrap" data-coupon-id="{{d.coupon_id}}">
+        <div class="popup-qrcode-wrap" style="display: none">
+            <img class="popup-qrcode-loadimg" src="__STATIC__/loading/loading.gif"/>
+        </div>
+        <div class="table-btn">
+            <a class="layui-btn" lay-event="cat">查看邀请记录</a>
+        </div>
+    </div>
+</script>
+
+<script>
+    var laytpl;
+    layui.use(['form', 'laytpl', 'element'], function () {
+        var table, form = layui.form, element = layui.element, laytpl = layui.laytpl;
+            form.render();
+
+        element.on('tab(coupon_tab)', function () {
+            table.reload({
+                page: {curr: 1},
+                where: {'status': this.getAttribute('lay-id')},
+            })
+        });
+        var coupon_id = {$coupon_id};
+        // 券名称、发起时间、已参与人数/需成团人数、成团截止时间、操作（参与人列表）
+        table = new Table({
+            elem: '#coupon_list',
+            url: ns.url("divideticket://shop/divideticket/operate",{'coupon_id':coupon_id}),
+            cols: [
+                [{
+                    title: '会员昵称',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        var name = '';
+                        if(data.nickname){
+                           name = data.nickname;
+                        }else{
+                            name = data.username;
+                        }
+                        return name;
+                    }
+                }, {
+                    field: 'name',
+                    title: '券名称',
+                    unresize: 'false',
+                    width: '13%'
+                }, {
+                    field: 'start_time',
+                    title: '发起时间',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.start_time);
+                    }
+                }, {
+                    title: '已参与人数/需成团人数',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function (data) {
+                        return data.exist_num + ' / ' + data.num;
+                    }
+                }, {
+                    field: 'end_time',
+                    title: '截止时间',
+                    unresize: 'false',
+                    width: '15%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.end_time);
+                    }
+                }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+				    align:'right'
+                }]
+            ],
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'cat': //运营
+                    location.hash = ns.hash("divideticket://shop/divideticket/groupMember", {"group_id": data.group_id});
+                    break;
+            }
+        });
+
+    });
+
+</script>

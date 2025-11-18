@@ -1,0 +1,255 @@
+<style>
+    .layui-table-view td:last-child>div{overflow: inherit;}
+    .layui-table-box{overflow: inherit;}
+    .layui-table-body{overflow: inherit;}
+    .layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+</style>
+
+<!-- 筛选面板 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">领取时间：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+                        <i class=" iconrili iconfont calendar"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="layui-tab table-tab">
+    <div class="layui-tab-content">
+        <!-- 列表 -->
+        <table id="record_list" lay-filter="record_list"></table>
+    </div>
+</div>
+<!-- 状态 -->
+<script type="text/html" id="status">
+    {{#  if(d.status == 0){  }}
+    未开始
+    {{#  }else if(d.status == 1){  }}
+    进行中
+    {{#  }else if(d.status == -1){  }}
+    已结束
+    {{#  }  }}
+</script>
+
+<script>
+    layui.use(['form' ,'laydate'], function() {
+        var table,
+            form = layui.form,
+            laydate = layui.laydate,
+        repeat_flag = false; //防重复标识
+        form.render();
+
+        //渲染时间
+        laydate.render({
+            elem: '#start_time'
+            ,type: 'datetime'
+            ,change: function(value, date, endDate){
+                $(".date-picker-btn").removeClass("selected");
+            }
+        });
+        laydate.render({
+            elem: '#end_time'
+            ,type: 'datetime'
+            ,change: function(value, date, endDate){
+                $(".date-picker-btn").removeClass("selected");
+            }
+        });
+
+        table = new Table({
+            elem: '#record_list',
+            url: ns.url("birthdaygift://shop/record/lists"),
+            where: {
+                "id": {$activity_id}
+            },
+            cols: [
+                [{
+                    field:'activity_name',
+                    title: '活动名称',
+                    unresize: 'false',
+                    width:'20%'
+                },  {
+                    title: '活动时间',
+                    width:'20%',
+                    unresize: 'false',
+                    templet: function(data){
+                        if (data.activity_time_type == 1){
+                            return '生日当天'
+                        }else if(data.activity_time_type == 2){
+                            return '生日当周(自然周)'
+                        }else if(data.activity_time_type == 3){
+                            return '生日当月(自然月)'
+                        }
+                    }
+                }, {
+                    title: '会员',
+                    width:'20%',
+                    unresize: 'false',
+                    field:'member_name',
+                },{
+                    title: '领取时间',
+                    unresize: 'false',
+                    width:'20%',
+                    templet: function(data){
+                        return ns.time_to_date(data.receive_time)
+                    }
+                }]
+            ]
+
+        });
+
+        /**
+         * 搜索功能
+         */
+        form.on('submit(search)', function(data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+            return false;
+        });
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function(obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'detail': //详情
+                    location.hash = ns.hash("birthdaygift://shop/birthdaygift/detail", {"id": data.id});
+                    break;
+                case 'edit': //编辑
+                    location.hash = ns.hash("birthdaygift://shop/birthdaygift/edit", {"id": data.id});
+                    break;
+                case 'del': //删除
+                    deleteActivity(data.id);
+                    break;
+                case 'close': // 结束
+                    closeActivity(data.id);
+                    break;
+                case 'record'://领取记录
+                    location.hash = ns.hash("birthdaygift://shop/record/lists", {"id": data.id});
+                    break;
+                case 'start'://重新开启
+                    start(data.game_id);
+                    break;
+            }
+        });
+
+        /**
+         * 删除
+         */
+        function deleteActivity(id) {
+            layer.confirm('确定要删除该活动吗?', function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("birthdaygift://shop/birthdaygift/delete"),
+                    data: {
+                        activity_id: id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload({
+                                page: {
+                                    curr: 1
+                                },
+                            });
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+        // 结束
+        function closeActivity(id) {
+
+            layer.confirm('确定要关闭该活动吗?', function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("birthdaygift://shop/birthdaygift/finish"),
+                    data: {
+                        activity_id: id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+        //重新打开
+        function start(game_id) {
+
+            layer.confirm('确定要重启该刮刮乐活动吗?', function(index) {
+                if (repeat_flag) return;
+                repeat_flag = true;
+				layer.close(index);
+
+                $.ajax({
+                    url: ns.url("cards://shop/cards/start"),
+                    data: {
+                        game_id: game_id
+                    },
+                    dataType: 'JSON',
+                    type: 'POST',
+                    success: function(res) {
+                        layer.msg(res.message);
+                        repeat_flag = false;
+                        if (res.code == 0) {
+                            table.reload();
+                        }
+                    }
+                });
+            }, function() {
+                layer.close();
+                repeat_flag = false;
+            });
+        }
+
+    });
+
+    function add() {
+        location.hash = ns.hash("birthdaygift://shop/birthdaygift/add");
+    }
+</script>

@@ -1,0 +1,237 @@
+<div class="layui-form form-wrap">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>套餐名称：</label>
+		<div class="layui-input-inline">
+			<input type="text" name="recharge_name" lay-verify="required" value="{$recharge.data.recharge_name}" autocomplete="off" class="layui-input len-long" maxlength="40">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">封面：</label>
+		<div class="layui-input-inline img-upload">
+			<div class="upload-img-block icon">
+				<div class="upload-img-box {if condition="$recharge.data.cover_img"}hover{/if}">
+					<div class="upload-default" id="img">
+					{if condition="$recharge.data.cover_img"}
+						<div id="preview_img" class="preview_img">
+							<img layer-src src="{:img($recharge.data.cover_img)}"  class="img_prev"/>
+						</div>
+					{else/}
+						<div class="upload">
+							<i class="iconfont iconshangchuan"></i>
+							<p>点击上传</p>
+						</div>
+					{/if}
+					</div>
+					<div class="operation">
+						<div>
+                            <i title="图片预览" class="iconfont iconreview js-preview" style="margin-right: 20px;"></i>
+                            <i title="删除图片" class="layui-icon layui-icon-delete js-delete"></i>
+						</div>
+						
+						<div class="replace_img js-replace">点击替换</div>
+					</div>
+					<input type="hidden" class="layui-input" name="cover_img" value="{$recharge.data.cover_img}" />
+				</div>
+				<!-- <p id="img" class=" {if condition="$recharge.data.cover_img"} replace {else/} no-replace{/if}">替换</p>
+				<input type="hidden" class="layui-input" name="cover_img" value="{$recharge.data.cover_img}" />
+				<i class="del {if condition="$recharge.data.cover_img"}show{/if}">x</i> -->
+			</div>
+		</div>
+	</div>
+	<!--<div class="layui-form-item">-->
+		<!--<label class="layui-form-label">封面：</label>-->
+		<!--<input type="hidden" class="layui-input" name="cover_img" value="{$recharge.data.cover_img}" />-->
+		<!--<div class="layui-input-inline img-upload">-->
+			<!--<div class="upload-img-block icon">-->
+				<!--<div class="upload-img-box" id="redPacket">-->
+					<!--<img src="{:img($recharge.data.cover_img)}" />-->
+				<!--</div>-->
+			<!--</div>-->
+		<!--</div>-->
+	<!--</div>-->
+	<input type="hidden" name="recharge_id" value="{$recharge.data.recharge_id}">
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>面值：</label>
+		<div class="layui-input-inline">
+			<input type="number" name="face_value" lay-verify="required|sum|number" value="{$recharge.data.face_value}" autocomplete="off" class="layui-input len-short" onblur="checkInput(this)">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>价格：</label>
+		<div class="layui-input-inline">
+			<input type="number" name="buy_price" lay-verify="required|sum|number" value="{$recharge.data.buy_price}" autocomplete="off" class="layui-input len-short" onblur="checkInput(this)">
+		</div>
+	</div>
+	
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>赠送积分：</label>
+		<div class="layui-input-inline">
+			<input type="number" name="point" lay-verify="required|num|number" value="{$recharge.data.point}" autocomplete="off" class="layui-input len-short" onblur="checkInput(this)">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label"><span class="required">*</span>赠送成长值：</label>
+		<div class="layui-input-inline">
+			<input type="number" name="growth" lay-verify="required|num|number" value="{$recharge.data.growth}" autocomplete="off" class="layui-input len-short" onblur="checkInput(this)">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">赠送优惠券：</label>
+		<div class="layui-input-block">
+			<div class="coupon-item coupon">
+				<div class="discount-cont">
+					<div><a href="javascript:;" class="text-color" id="select_coupon">选择优惠券</a></div>
+					<div class="word-aux" style="margin-left: 0">
+						<p>活动优惠券发放，不受优惠券自身数量和领取数量的限制</p>
+					</div>
+					<div id="coupon_list"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-row">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" onclick="backMemberRechargeList()">返回</button>
+		<a id="coverImgId"></a>
+	</div>
+</div>
+<script type="text/javascript" src="STATIC_JS/coupon_select.js"></script>
+<script>
+    var laytpl;
+	var saveData = null;
+	var totalUploadNum = 0;
+	var completeUploadNum = 0;
+	var upload;
+	var coupon_select = new CouponSelect({
+		tableElem:'#coupon_list',
+		selectElem:'#select_coupon',
+		selectedIds:'{$recharge.data.coupon_id}',
+	})
+
+	layui.use(['form', 'laytpl'], function() {
+		var form = layui.form,
+			repeat_flag = false; //防重复标识
+	        laytpl = layui.laytpl;
+            form.render();
+		/**
+		 * 表单验证
+		 */
+		form.verify({
+			num: function(value) {
+				if (value < 0 || value % 1 != 0) {
+					return '请输入正整数！';
+				}
+			},
+			number: function (value) {
+				if (value < 0) {
+					return '请输入不小于0的数!'
+				}
+			},
+			sum: function (value) {
+				var arrMen = value.split(".");
+				var val = 0;
+				if (arrMen.length == 2) {
+					val = arrMen[1];
+				}
+				if (val.length > 2) {
+					return '保留小数点后两位'
+				}
+			}
+		});
+
+		upload = new Upload({
+			elem: '#img',
+			auto:false,
+			bindAction:'#coverImgId',
+			callback: function(res) {
+				uploadComplete('cover_img', res.data.pic_path);
+			}
+		});
+
+		function uploadComplete(field, pic_path) {
+			saveData.field[field] = pic_path;
+			completeUploadNum += 1;
+			if(completeUploadNum == totalUploadNum){
+				saveFunc();
+			}
+		}
+
+		function saveFunc(){
+			var data = saveData;
+			// 删除图片
+			if(!data.field.cover_img) upload.delete();
+
+			$.ajax({
+				type: "POST",
+				url: ns.url("memberrecharge://shop/memberrecharge/edit"),
+				data: data.field,
+				dataType: 'JSON',
+				success: function(res){
+					repeat_flag = false;
+
+					if (res.code == 0) {
+						layer.confirm('编辑成功', {
+							title:'操作提示',
+							btn: ['返回列表', '继续操作'],
+							yes: function(index, layero){
+								location.hash = ns.hash("memberrecharge://shop/memberrecharge/lists");
+								layer.close(index);
+							}
+						});
+					}else{
+						layer.msg(res.message);
+					}
+				}
+			});
+		}
+		
+		form.on('submit(save)', function(data){
+			data.field.coupon_id = coupon_select.getSelectedData().selectedIds.toString();
+
+			if (repeat_flag) return false;
+			repeat_flag = true;
+
+			saveData = data;
+			var obj = $("img.img_prev[data-prev='1']");
+			totalUploadNum = obj.length;
+			if(totalUploadNum > 0){
+				obj.each(function(){
+					var actionId = $(this).attr('data-action-id');
+					$(actionId).click();
+				})
+			}else{
+				saveFunc();
+			}
+		});
+		form.on('submit(coupon-search)', function(data) {
+			couponTable.reload({
+				page: {
+					curr: 1
+				},
+				where: data.field
+			})
+		});
+	});
+
+    // 选择优惠
+    $('body').off('click', '.coupon-item .layui-form-checkbox').on('click', '.coupon-item .layui-form-checkbox', function(e){
+        if ($(this).prev('[name="discount_type"]').is(':checked')) {
+            $(this).parents('.coupon-item').find('.discount-cont').removeClass('layui-hide');
+        } else {
+            $(this).parents('.coupon-item').find('.discount-cont').addClass('layui-hide');
+        }
+    })
+
+	function backMemberRechargeList() {
+		location.hash = ns.hash("memberrecharge://shop/memberrecharge/lists");
+	}
+	function checkInput(obj){
+		$(obj).val(Math.abs($(obj).val()));
+	}
+</script>

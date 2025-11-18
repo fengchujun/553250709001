@@ -1,0 +1,192 @@
+<style>
+    .card-common .layui-card-body{padding-top: 0;}
+    .card-common {margin-top: 15px;margin-bottom: 0;box-shadow: initial;}
+    .promotion-view{display:flex;flex-wrap:wrap}
+    .promotion-view-item{width:33.3%;padding-right:10px;box-sizing:border-box;line-height:30px}
+    .todo-list .promotion-stat-item{flex:1;width:0;cursor:pointer}
+    .layui-layout-admin .layui-body .body-content {background: 0 0;padding: 0;}
+    .gift-card-goods span{cursor: pointer; color: var(--base-color);}
+    .layui-tab-title{margin-bottom: 15px;}
+    .layui-layout-admin .single-filter-box.top {padding-top: 0 !important;}
+    .add-way .add-way-item{display: flex;margin: 8px 0;align-items: center;}
+    .add-way .add-way-item input{margin: 0 10px;}
+    .add-way .add-way-item .layui-form-radio{margin-right: 0;}
+    /* 商品列表 */
+    .shop-information-table > p{padding-left: 5px;padding-bottom: 5px;}
+    .shop-information-table table {width: 100%;border: 1px solid rgb(238,238,238);}
+    .shop-information-table .table-body {max-height: 400px;overflow: auto;}
+    .table-trOne{height: 48px;background:rgb(245,245,245) ;}
+    .shop-information-table th{text-align: left;padding-left:28px;box-sizing: border-box;font-weight: 500;color:#333333;}
+    .shop-information-table th:last-child{border:none;}
+    .table-trTow{width:100%;height:60px;border-top:1px solid rgb(238,238,238);}
+    .table-trTow>td{text-align: left;padding-left:28px;box-sizing: border-box;font-weight: 500;color:#333333;border-right:1px solid rgb(238,238,238);}
+    .table-trTow>td:nth-child(5){color:var(--base-color)}
+    /* 卡记录 */
+    .layui-timeline-item{padding-bottom:28px;}
+    .layui-timeline-item:after{overflow: hidden;height: 0;content:"";display: block;clear: both;}
+    .layui-timeline-item:before, hr{background:var(--base-color);margin-left:92px;}
+    .distribution{width:100%;min-height: 50px;background:white;margin-top:15px;padding: 15px;box-sizing: border-box;}
+    .layui-timeline-axis{left:87px;background:var(--base-color);display: flex;align-items: center;justify-content: center;}
+    .layui-timeline-content{float:left;display: inline-block;padding-left:45px;}
+    .layui-time-left{float: left;width:85px;height: 40px;padding: 2px 10px 0 0;box-sizing: border-box;}
+    .layui-timeline{padding-left:60px;}
+    .layui-time-left>p:nth-of-type(1){font-size:14px;color:#333333;text-align: right;}
+    .layui-time-left>p:nth-of-type(2){color:rgb(164,164,164);text-align: right;}
+    .layui-icon-center {width: 40%;height: 40%;border-radius: 50%;background: white;}
+</style>
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">礼品卡信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>卡号：</label>
+				<span>{$detail.card_no}</span>
+            </div>
+            {if $detail.card_type!='virtual'}
+            <div class="promotion-view-item">
+				<label>卡密：</label>
+				<span>{if $detail.card_cdk}{$detail.card_cdk}{else/}--{/if}</span>
+            </div>
+            {/if}
+            <div class="promotion-view-item">
+                <label>卡类型：</label>
+                <span>{if $detail.card_right_type == 'real'}实体卡{else/}电子卡{/if}</span>
+            </div>
+            <div class="promotion-view-item grouping">
+                <label>权益类型：</label>
+                <span>{if $detail.card_right_type == 'goods'}礼品卡{else/}储值卡{/if}</span>
+            </div>
+            {if $detail.card_right_type == 'balance'}
+            <div class="promotion-view-item grouping">
+                <label>储蓄余额：</label>
+                <span>{$detail.balance}</span>
+            </div>
+            {/if}
+            <div class="promotion-view-item">
+                <label>状态：</label>
+                <span>{$detail.status_name}</span>
+            </div>
+            {if $detail.init_member_id > 0 }
+            <div class="promotion-view-item">
+                <label>{if $detail.card_type == 'real'}激活人{else/}购买人{/if}：</label>
+                <span>{$detail.init_member_nickname}</span>
+            </div>
+            {if $detail.card_type=='virtual'}
+            <div class="promotion-view-item">
+				<label>购买订单：</label>
+                <a class="text-color" href="{:href_url('giftcard://shop/order/detail',['order_id'=> $detail['order_id']])}" target="_blank">{$detail.order_no}</a>
+            </div>
+            {/if}
+            <div class="promotion-view-item">
+                <label>{if $detail.card_type == 'real'}激活{else/}购买{/if}时间：</label>
+                <span>{if $detail.card_type == 'real'}{:time_to_date($detail.activate_time)}{else/}{:time_to_date($detail.create_time)}{/if}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>当前持卡人：</label>
+                <span>{$detail.member_nickname}</span>
+            </div>
+            <div class="promotion-view-item">
+                <label>有效期：</label>
+                <span>{if $detail.valid_time == 0}永久{else/}{:time_to_date($detail.valid_time)}{/if}</span>
+            </div>
+	            {if $detail.status != "to_use"&& $detail.use_time && ($detail.status == "expire" || $detail.status == "invalid" || $detail.status == "used")}
+	            <div class="promotion-view-item">
+	                <label>使用时间：</label>
+	                <span>{:date('Y-m-d H:i:s',$detail.use_time)}</span>
+	            </div>
+	            {/if}
+            {/if}
+        </div>
+	</div>
+</div>
+
+<!-- 商品信息 -->
+{if $detail['card_right_type'] == 'goods'}
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">商品信息</span>
+	</div>
+	<div class="layui-card-body shop-information-table">
+        {if $detail.card_right_goods_type == 'all'}
+        <p>礼品卡持卡人兑换时可从以下商品列表中任选{$detail.card_right_goods_count}件</p>
+        {/if}
+        <div class="table-head">
+            <table lay-skin="line">
+                <colgroup>
+                    <col width="80%">
+                    {if $detail.card_right_goods_type == 'all'}
+                    <col width="20%">
+                    {/if}
+                    {if $detail.card_right_goods_type != 'all'}
+                    <col width="10%">
+                    <col width="10%">
+                    {/if}
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr class="table-trOne">
+                        <th lay-data="{field:'product_name', width:200}">商品</th>
+                        <th lay-data="{field:'price'}">价格</th>
+                        {if $detail.card_right_goods_type != 'all'}
+                        <th lay-data="{field:'sale_num'}">数量</th>
+                        {/if}
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div class="table-body">
+            <table lay-skin="line">
+                <colgroup>
+                    <col width="80%">
+                    {if $detail.card_right_goods_type == 'all'}
+                    <col width="20%">
+                    {/if}
+                    {if $detail.card_right_goods_type != 'all'}
+                    <col width="10%">
+                    <col width="10%">
+                    {/if}
+                    <col>
+                </colgroup>
+                <tbody>
+                    {foreach $detail['card_goods_list'] as $list_k => $order_goods_item}
+                    <tr class="table-trTow">
+                        <td>{$order_goods_item.sku_name}</td>
+                        <td>{$order_goods_item.price}</td>
+                        {if $detail.card_right_goods_type != 'all'}
+                        <td>{$order_goods_item.total_num}</td>
+                        {/if}
+                    </tr>
+                    {/foreach}
+                </tbody>
+            </table>
+        </div>
+	</div>
+</div>
+{/if}
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">卡记录</span>
+	</div>
+	<div class="layui-card-body">
+        <ul class="layui-timeline">
+			{foreach name="$card_log_list" item="vo"}
+		  	<li class="layui-timeline-item">
+				<div class="layui-time-left">
+					<p>{:date('Y-m-d', $vo.create_time)}</p>
+					<p>{:date('H:i:s', $vo.create_time)}</p>
+				</div>
+			    <div class="layui-icon layui-timeline-axis">
+					<span class="layui-icon-center"></span>
+				</div>
+			    <div class="layui-timeline-content layui-text">
+			      	<div class="layui-timeline-title">{$vo.remark}</div>
+			    </div>
+		 	</li>
+             {/foreach}
+		</ul>
+	</div>
+</div>

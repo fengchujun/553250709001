@@ -1,0 +1,244 @@
+<style>
+    .layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
+    .layui-layout-admin .table-tab .layui-tab-title{margin-bottom: 15px;}
+</style>
+
+<div class="single-filter-box">
+	<button class="layui-btn" onclick="clickAdd()">添加专题活动</button>
+</div>
+
+<!-- 搜索框 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+	<div class="layui-colla-item">
+		<form class="layui-colla-content layui-form layui-show">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">专题名称：</label>
+					<div class="layui-input-inline">
+						<input type="text" name="topic_name" placeholder="请输入专题名称" autocomplete="off" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">活动时间：</label>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="start_time" placeholder="开始时间" id="start_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+					<div class="layui-form-mid">-</div>
+					<div class="layui-input-inline">
+						<input type="text" class="layui-input" name="end_time" placeholder="结束时间" id="end_time" readonly>
+						<i class=" iconrili iconfont calendar"></i>
+					</div>
+				</div>
+			</div>
+
+			<div class="form-row">
+				<button type="button" class="layui-btn" lay-filter="search" lay-submit>筛选</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-tab table-tab" lay-filter="topic_tab">
+	<ul class="layui-tab-title">
+		<li class="layui-this" data-status="">全部</li>
+		<li data-status="1">未开始</li>
+		<li data-status="2">进行中</li>
+		<li data-status="3">已结束</li>
+	</ul>
+	<div class="layui-tab-content">
+		<!-- 列表 -->
+		<table id="topic_list" lay-filter="topic_list"></table>
+	</div>
+</div>
+
+<!-- 时间 -->
+<script id="time" type="text/html">
+	<div class="layui-elip">开始：{{ns.time_to_date(d.start_time)}}</div>
+	<div class="layui-elip">结束：{{ns.time_to_date(d.end_time)}}</div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarAction">
+	<button class="layui-btn layui-btn-primary" lay-event="delete">批量删除</button>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+	<div class="table-btn">
+		<a class="layui-btn" lay-event="detail">详情</a>
+		<a class="layui-btn" lay-event="edit">编辑</a>
+		<a class="layui-btn" lay-event="delete">删除</a>
+	</div>
+</script>
+
+<script>
+    layui.use(['form', 'element','laydate'], function() {
+        form = layui.form,
+            element = layui.element,
+            laydate = layui.laydate,
+            repeat_flag = false; //防重复标识
+        form.render();
+
+        element.on('tab(topic_tab)', function() {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: {
+                    'status': this.getAttribute('data-status')
+                }
+            });
+        });
+
+        table = new Table({
+            elem: '#topic_list',
+            url: ns.url("topic://shop/topic/lists"),
+            cols: [
+                [{
+					type: 'checkbox',
+					width: '3%',
+				},{
+                    field: 'topic_name',
+                    title: '专题名称',
+                    unresize: 'false',
+                    width: '25%'
+                }, {
+                    title: '活动时间',
+                    unresize: 'false',
+                    width: '20%',
+                    templet: '#time'
+                },  {
+                    title: '状态',
+                    unresize: 'false',
+                    width: '30%',
+                    templet: function (data) {
+                        if(data.status == 1){
+							return '未开始';
+						}else if(data.status == 2){
+                            return '进行中';
+						}else if(data.status == 3){
+                            return '已结束';
+                        }
+                    }
+                }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+					align:'right'
+                }]
+            ],
+			toolbar: '#toolbarAction'
+        });
+
+        //开始时间
+        laydate.render({
+            elem: '#start_time', //指定元素
+            type: 'datetime'
+        });
+        //结束时间
+        laydate.render({
+            elem: '#end_time', //指定元素
+            type: 'datetime'
+        });
+
+		// 监听工具栏操作
+		table.toolbar(function (obj) {
+			var data = obj.data;
+			if(data.length <= 0) return;
+			var topicIdAll = [];
+			for (var i in data){
+				topicIdAll.push(data[i].topic_id);
+			}
+
+			switch (obj.event) {
+				case 'delete':
+					deleteTopicAll(topicIdAll)
+					break;
+			}
+		})
+
+		function deleteTopicAll(data){
+			layer.confirm('确定要删除该专题活动吗?', function (index) {
+				if (repeat_flag) return;
+				repeat_flag = true;
+				layer.close(index);
+				$.ajax({
+					url: ns.url("topic://shop/topic/deleteAll"),
+					data: {topic_id: data},
+					dataType: 'JSON',
+					type: 'POST',
+					success: function (res) {
+						layer.msg(res.message);
+						repeat_flag = false;
+						table.reload({
+							page: {
+								curr: 1
+							},
+						});
+					}
+				});
+			}, function() {
+				layer.close();
+				repeat_flag = false;
+			});
+		}
+
+        /**
+         * 监听工具栏操作
+         */
+        table.tool(function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case 'delete': //删除
+                    layer.confirm('确定要删除该专题活动吗?', function (index) {
+						layer.close(index);
+                        $.ajax({
+                            url: ns.url("topic://shop/topic/delete"),
+                            data: {topic_id: data.topic_id},
+                            dataType: 'JSON',
+                            type: 'POST',
+                            success: function (res) {
+                                layer.msg(res.message);
+                                repeat_flag = false;
+                                if (res.code == 0) {
+									table.reload({
+										page: {
+											curr: 1
+										},
+									});
+                                }
+                            }
+                        });
+                    });
+                    break;
+                case 'edit': //编辑
+                    location.hash = ns.hash("topic://shop/topic/edit?topic_id=" + data.topic_id);
+                    break;
+				case 'detail': //详情
+                    location.hash = ns.hash("topic://shop/topic/detail?topic_id=" + data.topic_id);
+                    break;
+            }
+        });
+
+        layui.use('form', function () {
+            var form = layui.form;
+            form.render();
+
+            form.on();
+        });
+
+        form.on('submit(search)', function (data) {
+            table.reload({
+                page: {
+                    curr: 1
+                },
+                where: data.field
+            });
+        });
+    });
+    function clickAdd() {
+        location.hash = ns.hash("topic://shop/topic/add");
+    }
+</script>

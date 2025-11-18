@@ -1,0 +1,117 @@
+<link rel="stylesheet" href="STATIC_CSS/promotion_detail.css">
+
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">基本信息</span>
+	</div>
+	<div class="layui-card-body">
+		<div class="promotion-view">
+			<div class="promotion-view-item">
+				<label>活动名称：</label>
+				<span>{$bargain_info.bargain_name}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>开始时间：</label>
+				<span>{:date('Y-m-d H:i:s',$bargain_info.start_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>结束时间：</label>
+				<span>{:date('Y-m-d H:i:s',$bargain_info.end_time)}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>购买方式：</label>
+				<span>{if $bargain_info.buy_type == 1} 砍到指定价格 {else/} 任意金额可购买 {/if}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>帮砍金额：</label>
+				<span>{if $bargain_info.bargain_type == 1} 随机金额 {else/} 固定金额 {/if}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>帮砍人数：</label>
+				<span>{$bargain_info.bargain_time} 小时</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>是否允许自己砍价：</label>
+				<span>{if $bargain_info.is_own == 1} 是 {else/} 否 {/if}</span>
+			</div>
+			<div class="promotion-view-item">
+				<label>是否参与分销：</label>
+				<span>{if $bargain_info.is_fenxiao == 1} 参与 {else/} 不参与 {/if}</span>
+			</div>
+
+		</div>
+		<div class="promotion-view">
+			<div class="promotion-view-item-line">
+				<label>活动规则：</label>
+				<span>{$bargain_info.remark}</span>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="layui-card card-common card-brief">
+	<div class="layui-card-header">
+        <span class="card-title">活动商品</span>
+	</div>
+	<div class="layui-card-body">
+		<div class='promotion-view-list'>
+			<table id="promotion_list"></table>
+		</div>
+	</div>
+</div>
+
+<script type='text/html' id="promotion_list_item_box_html">
+	<div class="promotion-list-item-title">
+		<div class="promotion-list-item-title-icon">
+			<img src="{{ ns.img(d.sku_image) }}" alt="">
+		</div>
+		<p class="promotion-list-item-title-name multi-line-hiding">{{ d.sku_name }}</p>
+	</div>
+</script>
+<script>
+	var list = {:json_encode($bargain_info.goods_list, JSON_UNESCAPED_UNICODE)};
+	layui.use('table', function() {
+		new Table({
+			elem: '#promotion_list',
+			cols: [
+                [{
+                    field: 'sku_name',
+                    title: '商品名称',
+                    width: '26%',
+                    unresize: 'false',
+                    templet: "#promotion_list_item_box_html"
+                }, {
+                    field: 'price',
+                    title: '商品价格',
+                    unresize: 'false',
+                    align: 'right',
+                    width: '20%',
+                    templet: function(data) {
+                        return '￥' + data.price;
+                    }
+                }, {
+                    field: 'stock',
+                    title: '库存',
+                    unresize: 'false',
+                    width: '10%',
+                    templet: function(data) {
+                        return data.stock;
+                    }
+                }, {
+                    field: 'first_bargain_price',
+                    title: '首刀金额',
+                    unresize: 'false'
+                }, {
+                    field: 'bargain_stock',
+                    title: '砍价库存',
+                    unresize: 'false'
+                }, {
+                    field: 'floor_price',
+                    title: '底价',
+                    unresize: 'false'
+                }]
+			],
+			data: list
+		});
+	});
+
+</script>

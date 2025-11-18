@@ -1,0 +1,946 @@
+<link rel="stylesheet" href="SHOP_CSS/goods_lists.css">
+<link rel="stylesheet" type="text/css" href="__STATIC__/ext/searchable_select/searchable_select.css" />
+<style>
+	.batch-set-wrap{height: auto;}
+	.layui-input-block textarea{border: 1px solid #D2D2D2;}
+	.layui-input-block textarea:focus{border: 1px solid var(--base-color);}
+    /* 底部btn位置 */
+    .content-box{position: relative;}
+    .footer-btn{width: 100%;position: absolute;left: -20px;bottom: 20px;}
+    .layui-layout-admin .layui-body .body-content{padding-top:15px !important;}
+</style>
+
+<!-- 筛选面板 -->
+<div class="screen layui-collapse" lay-filter="selection_panel">
+    <div class="layui-colla-item">
+        <form class="layui-colla-content layui-form layui-show">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">商品名称：</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="search_text" placeholder="请输入商品名称" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">商品分类：</label>
+                    <div class="layui-input-inline">
+                        {include file="comment/category_select" /}
+                    </div>
+                </div>
+
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">销量：</label>
+                    <div class="layui-input-inline">
+                        <input type="number" name="start_sale" id="start_sale" lay-verify="int" placeholder="最低销量" class="layui-input" autocomplete="off">
+                    </div>
+                    <div class="layui-form-mid">-</div>
+                    <div class="layui-input-inline">
+                        <input type="number" name="end_sale" id="end_sale" lay-verify="int" placeholder="最高销量" class="layui-input" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">商品类型：</label>
+                    <div class="layui-input-inline">
+                        <select name="goods_class" lay-filter="goods_class">
+                            <option value="">全部</option>
+                            <option value="1">实物商品</option>
+                            <option value="2">虚拟商品</option>
+                            {if $virtualcard_exit}<option value="3">电子卡密</option>{/if}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">商品分组：</label>
+                    <div class="layui-input-inline">
+                        <select name="label_id" lay-filter="label_id">
+                            <option value="">全部</option>
+                            {foreach name="$label_list" item="vo"}
+                            <option value="{$vo['id']}">{$vo['label_name']}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">营销活动：</label>
+                    <div class="layui-input-inline">
+                        <select name="promotion_type" lay-filter="promotion_type">
+                            <option value="">全部</option>
+                            {foreach name="$promotion_type" item="vo"}
+                            <option value="{$vo['type']}">{$vo['name']}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="stockalarm" value="{$stockalarm}"/>
+            <input type="hidden" name="goods_state" value="{$goods_state}"/>
+            <div class="form-row">
+                <button class="layui-btn" lay-submit lay-filter="search">筛选</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="layui-tab table-tab" lay-filter="goods_list_tab">
+    <ul class="layui-tab-title">
+        <li {if $goods_state == '' && $stockalarm == 0}class="layui-this"{/if} lay-id="">全部</li>
+        <li {if $goods_state == '1'}class="layui-this"{/if} lay-id="1" data-type="goods_state">销售中</li>
+        <li {if $goods_state == '0'}class="layui-this"{/if} lay-id="0" data-type="goods_state">仓库中</li>
+        <li {if $stockalarm == '1'} class="layui-this"{/if} lay-id="1" data-type="stockalarm">预警中</li>
+    </ul>
+    <div class="layui-tab-content">
+        <!-- 列表 -->
+        <table id="goods_list" lay-filter="goods_list"></table>
+    </div>
+</div>
+
+<!-- 商品信息 -->
+<script type="text/html" id="goods_info">
+    <div class="table-title">
+        <div class="contraction" data-goods-id="{{d.goods_id}}" data-open="0"></div>
+        <div class="title-pic" id="goods_img_{{d.goods_id}}">
+            <img layer-src="{{ns.img(d.goods_image.split(',')[0], 'big')}}" src="{{ns.img(d.goods_image.split(',')[0], 'small')}}"/>
+        </div>
+        <div class="title-content">
+            <a href="javascript:;" class="multi-line-hiding text-color-sub" title="{{d.goods_name}}" lay-event="preview">{{d.goods_name}}</a>
+            {{# if(d.promotion_addon && d.promotion_addon_list){ }}
+            <span class="promotion-addon">
+				{{# for(var i=0;i<d.promotion_addon_list.length;i++){ }}
+				<a href="{{ns.href( d.promotion_addon_list[i].url )}}" target="_blank"><span class="bg-color" title="{{d.promotion_addon_list[i].name}}">{{ d.promotion_addon_list[i].short }}</span></a>
+				{{# } }}
+			</span>
+            {{# } }}
+            {{# if(d.is_consume_discount ==1){ }}
+            <span class="promotion-addon vips_price" data-goods-id="{{d.goods_id}}" data-open="0">
+				<span class="layui-bg-black " title="会员价"><span class="iconfont iconhuiyuan icon">svip</span></span>
+			</span>
+
+            {{# } }}
+        </div>
+    </div>
+</script>
+
+<!-- 操作 -->
+<script type="text/html" id="operation">
+    <div class="operation-wrap" id="goods_id" data-goods-id="{{d.goods_id}}">
+        <div class="popup-qrcode-wrap"><img class="popup-qrcode-loadimg" src="__STATIC__/loading/loading.gif" /></div>
+        <div class="table-btn">
+            <a class="layui-btn" lay-event="batch_set">添加评论</a>
+            <a class="layui-btn" lay-event="batch_add">批量添加</a>
+        </div>
+    </div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="toolbarOperation">
+    <button class="layui-btn layui-btn-primary" lay-event="batch_set">批量评论</button>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="batchOperation">
+    <button class="layui-btn layui-btn-primary" lay-event="batch_set">批量评论</button>
+</script>
+
+<!-- SKU商品列表 -->
+<script type="text/html" id="skuList">
+    <tr class="js-sku-list-{{d.index}}" id="sku_img_{{d.index}}">
+        <td></td>
+        {{#  if (d.member_price_is_exit == 1) {  }}
+        <td colspan="9">
+            {{#  } else {  }}
+        <td colspan="8">
+            {{#  }  }}
+            <ul class="sku-list">
+                {{# for(var i=0;i<d.list.length;i++){ }}
+                <li>
+                    <div class="img-wrap">
+                        <img layer-src src="{{ns.img(d.list[i].sku_image, 'small')}}">
+                    </div>
+                    <div class="info-wrap">
+                        <span class="sku-name">{{d.list[i].sku_name}}</span>
+                        <div>
+                            {{# if(d.list[i].stock_alarm> 0 && d.list[i].stock<=d.list[i].stock_alarm){ }}
+                            <span class="stock" >库存：<label style="color:red;">{{d.list[i].stock}}（库存不足）</label></span>
+                            {{# }else{ }}
+                            <span class="stock">库存：{{d.list[i].stock}}</span>
+                            {{# } }}
+                            <span class="sale_num">销量：{{d.list[i].sale_num}}</span>
+                        </div>
+                    </div>
+                    <div class="prices">
+                        原价: ￥{{d.list[i].price}}
+                        {{# if (d.list[i].member_price_list) { }}
+                        {{#  layui.each(d.list[i].member_price_list, function(index, item){ }}
+                        <p class="vip_price">{{ item.level_name }}: ￥{{ item.member_price }}</p>
+                        {{#  }); }}
+                        {{#  } }}
+                    </div>
+                </li>
+
+                {{# } }}
+            </ul>
+        </td>
+    </tr>
+</script>
+
+<!-- 编辑库存html -->
+<script type="text/html" id="edit_stock">
+    <div class="layui-form" id="edit_stock_block" lay-filter="form">
+        <table class="layui-table" lay-skin="line">
+            <colgroup>
+                <col width="16%">
+                <col width="12%">
+                <col width="12%">
+                <col width="12%">
+                <col width="12%">
+                <col width="12%">
+                <col width="12%">
+                <col width="12%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>sku名称</th>
+                    <th>销售价</th>
+                    <th>划线价</th>
+                    <th>成本价</th>
+                    <th>库存</th>
+                    <th>重量(kg)</th>
+                    <th>体积(m³)</th>
+                    <th>sku编码</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#  layui.each(d, function(index, item){ }}
+                <tr>
+                    <td><input type="hidden" name="sku_list[{{index}}][sku_id]" value="{{ item.sku_id }}" class="layui-input">{{ item.sku_name }}</td>
+                    <td><input type="number" name="sku_list[{{index}}][price]" value="{{ item.price }}" class="layui-input" lay-verify="flo"></td>
+                    <td><input type="number" name="sku_list[{{index}}][market_price]" value="{{ item.market_price }}" class="layui-input" lay-verify="flo"></td>
+                    <td><input type="number" name="sku_list[{{index}}][cost_price]" value="{{ item.cost_price }}" class="layui-input" lay-verify="flo"></td>
+                    <td><input type="number" name="sku_list[{{index}}][stock]" value="{{ item.stock }}" class="layui-input" lay-verify="int"></td>
+                    <td><input type="number" name="sku_list[{{index}}][weight]" value="{{ item.weight }}" class="layui-input" lay-verify="flo"></td>
+                    <td><input type="number" name="sku_list[{{index}}][volume]" value="{{ item.volume }}" class="layui-input" lay-verify="flo"></td>
+                    <td><input type="text" name="sku_list[{{index}}][sku_no]" value="{{ item.sku_no }}" class="layui-input"></td>
+                </tr>
+                {{#  }); }}
+            </tbody>
+        </table>
+
+        <div class="form-row">
+            <button class="layui-btn" lay-submit lay-filter="edit_stock">确定</button>
+            <button class="layui-btn layui-btn-primary" onclick="closeStock()">返回</button>
+        </div>
+    </div>
+</script>
+
+<!-- 批量操作 -->
+<script type="text/html" id="batchSet">
+    <div class="batch-set-wrap">
+        <div class="set-wrap">
+            <div class="content-wrap content-box">
+                <div class="tab-item tab-show group">
+                    <div class="layui-form">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label"><span class="required">*</span>评价时间：</label>
+                            <div class="layui-input-block">
+                                <div class="layui-input-inline">
+                                    <input type="text" name="evaluate_time" id="evaluate_time" placeholder="评价时间" class="layui-input" autocomplete="off" readonly>
+                                    <i class=" iconrili iconfont calendar"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item goods-image-wrap" >
+                            <label class="layui-form-label"><span class="required">*</span>会员头像：</label>
+                            <div class="layui-input-block">
+                                <div class="js-goods-image">+</div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item layui-inline" >
+                            <label class="layui-form-label"><span class="required">*</span>会员昵称：</label>
+                            <div class="layui-input-block">
+                                <input type="hidden" id="test" value="{{d.goods_id}}">
+                                <input type="text" name="member_name" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item layui-inline" >
+                            <label class="layui-form-label"><span class="required">*</span>评价等级：</label>
+                            <div class="layui-input-block">
+                                <div id="test2"></div>
+                            </div>
+                        </div>
+                        <div class="layui-form-item goods-image-wrap" >
+                            <label class="layui-form-label"><span class="required">*</span>评价内容：</label>
+                            <div class="layui-input-block">
+                                <textarea name="content" id="content" cols="30" rows="10" maxlength="150"></textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item goods-image-wrap">
+                            <label class="layui-form-label">评价图：</label>
+                            <div class="layui-input-block">
+                                <!--商品主图项-->
+                                <div class="pj-goods-image">+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-item result">
+                    <img src="SHOP_IMG/success.png">
+                    <div class="text">设置成功</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-wrap footer-btn">
+            <button class="layui-btn layui-btn-primary" onclick="layer.closeAll()">取消</button>
+            <button class="layui-btn" onclick="batchSetting()">保存</button>
+        </div>
+    </div>
+</script>
+
+<!--商品主图列表-->
+<script type="text/html" id="goodsImage">
+    {{# if(d.list.length){ }}
+    {{# for(var i=0;i<d.list.length;i++){ }}
+    <div class="item upload_img_square_item" data-index="{{i}}">
+        <div class="img-wrap">
+            <img src="{{ns.img(d.list[i],'small')}}" layer-src="{{ns.img(d.list[i],'big')}}">
+        </div>
+        <div class="operation">
+            <i title="图片预览" class="iconfont iconreview js-preview"></i>
+            <i title="删除图片" class="layui-icon layui-icon-delete js-delete" data-index="{{i}}"></i>
+            <div class="replace_img" data-index="{{i}}">点击替换</div>
+        </div>
+    </div>
+    {{# } }}
+    {{# if(d.list.length < d.max){ }}
+    <div class="item js-add-goods-image upload_img_square">+</div>
+    {{# } }}
+    {{# }else{ }}
+    <div class="item js-add-goods-image upload_img_square">+</div>
+    {{# } }}
+</script>
+
+<!--选择商品分类-->
+<script type="text/html" id="selectedCategory">
+
+    <div class="category-list">
+
+        <div class="item">
+            <!--后续做搜索-->
+            <ul>
+                {foreach name="$goods_category_list" item="vo"}
+                {{# if(d.category_id_1 == '{$vo['category_id']}' ){ }}
+                <li data-category-id="{$vo['category_id']}" data-commission-rate="{$vo['commission_rate']}" data-level="{$vo['level']}" class="selected">
+                    {{# }else{ }}
+                <li data-category-id="{$vo['category_id']}" data-commission-rate="{$vo['commission_rate']}" data-level="{$vo['level']}">
+                    {{# } }}
+                    <span class="category-name">{$vo['category_name']}</span>
+                    <span class="right-arrow">&gt;</span>
+                </li>
+                {/foreach}
+            </ul>
+        </div>
+
+        <div class="item" data-level="2">
+            <!--后续做搜索-->
+            <ul></ul>
+        </div>
+
+        <div class="item" data-level="3">
+            <!--后续做搜索-->
+            <ul></ul>
+        </div>
+
+    </div>
+
+    <div class="selected-category-wrap">
+        <label>您当前选择的是：</label>
+        <span class="js-selected-category"></span>
+    </div>
+</script>
+
+<script>
+    var member_price_is_exit  ="{$memberprice_is_exit}";
+</script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/ueditor.all.js"> </script>
+<script type="text/javascript" charset="utf-8" src="__STATIC__/ext/ueditor/lang/zh-cn/zh-cn.js"></script>
+<script>
+    var goodsImage = null;
+    var pggoodsImage = null;
+    var laytpl, form, element, table;
+    $(function () {
+        $("body").off("click", ".vips_price").on("click", ".vips_price", function () {
+            var goods_id = $(this).attr("data-goods-id");
+            var open = $(this).attr("data-open");
+            var open_t = $(this).parent().siblings('.contraction').attr("data-open");
+            var tr = $(this).parent().parent().parent().parent().parent();
+            var index = tr.attr("data-index");
+
+            if ((parseInt(open)+parseInt(open_t)) > 0) {
+                $(this).parent().siblings('.contraction').children("span").text("+");
+                $(".js-sku-list-" + index).remove();
+            } else {
+                $(this).parent().siblings('.contraction').children("span").text("-");
+                $.ajax({
+                    url: ns.url("shop/goods/getGoodsSkuList"),
+                    data: {goods_id: goods_id},
+                    dataType: 'JSON',
+                    type: 'POST',
+                    async: false,
+                    success: function (res) {
+                        var list = res.data;
+                        var sku_list = $("#skuList").html();
+                        var data = {
+                            list: list,
+                            index: index,
+                            member_price_is_exit: member_price_is_exit
+                        };
+                        laytpl(sku_list).render(data, function (html) {
+                            tr.after(html);
+                        });
+
+                        layer.photos({
+                            photos: '.img-wrap',
+                            anim: 5
+                        });
+                    }
+                });
+            }
+            $(this).attr("data-open", (open == 0 ? 1 : 0));
+            $(this).parent().siblings('.contraction').attr("data-open", (open == 0 ? 1 : 0))
+        });
+
+        layui.use(['form', 'laytpl', 'element'], function () {
+            form = layui.form;
+            element = layui.element;
+            laytpl = layui.laytpl;
+
+            form.render();
+            refreshTable();
+
+            element.on('tab(goods_list_tab)', function () {
+                var type = this.getAttribute('data-type');
+                $("input[name='goods_state']").val("");
+                if (type) {
+                    if (type == "goods_state") {
+                        $("input[name='stockalarm']").val("");
+                    }
+                    var id = this.getAttribute('lay-id');
+                    $("input[name='" + type + "']").val(id);
+                } else {
+                    $("input[name='stockalarm']").val("");
+                }
+
+                var html = '<button class="layui-btn layui-btn-primary" lay-event="batch_set">批量评价</button>';
+
+                $("#toolbarOperation").html(html);
+                $("#batchOperation").html(html);
+
+                refreshTable();
+
+            });
+
+            // 监听工具栏操作
+            table.tool(function (obj) {
+                var data = obj.data;
+                switch (obj.event) {
+                    case 'batch_set':
+                        laytpl($("#batchSet").html()).render(data, function (html) {
+                        layer.open({
+                            title: "评价设置",
+                            type: 1,
+                            area: ['600px', '750px'],
+                            content: html,
+                            success: function(){
+                                layui.use(['form', 'laydate','rate'], function() {
+                                    var form = layui.form,
+                                        laydate = layui.laydate;
+
+                                    form.render();
+									var myDate = ns.time_to_date(new Date().getTime() / 1000);
+
+                                    laydate.render({
+                                        elem: '#evaluate_time',
+                                        type: 'datetime',
+										max: myDate
+                                    });
+                                    var rate = layui.rate;
+                                    //显示文字
+                                    dengji = '';
+                                    rate.render({
+                                        elem: '#test2'
+                                        ,choose: function(value){
+                                            dengji = value;
+                                        }
+                                        ,text: true //开启文本
+                                    });
+
+                                });
+                                goodsImage = [];
+                                pggoodsImage = [];
+                                //渲染商品主图列表
+                                refreshGoodsImage(goodsImage,1,'js-goods-image');
+
+                                refreshGoodsImage(pggoodsImage,5,'pj-goods-image');
+                            }
+                        });
+                        });
+                        break;
+                        case 'batch_add':
+                            batchAdd(data.goods_id);
+                        break
+                    ;
+                }
+            });
+
+            // 批量操作
+            table.bottomToolbar(function (obj) {
+
+                if (obj.data.length < 1) {
+                    layer.msg('请选择要操作的数据');
+                    return;
+                }
+                var id_array = new Array();
+                for (i in obj.data) id_array.push(obj.data[i].goods_id);
+                switch (obj.event) {
+                    case 'batch_set':
+                        layer.open({
+                            title: "评价设置",
+                            type: 1,
+                            area: ['600px', '750px'],
+                            content: $('#batchSet').html(),
+                            success: function(){
+                                layui.use(['form', 'laydate','rate'], function() {
+                                    var form = layui.form,
+                                        laydate = layui.laydate;
+
+                                    form.render();
+
+                                    laydate.render({
+                                        elem: '#evaluate_time',
+                                        type: 'datetime'
+                                    });
+                                    var rate = layui.rate;
+                                    //显示文字
+                                    dengji = '';
+                                    rate.render({
+                                        elem: '#test2'
+                                        ,choose: function(value){
+                                            dengji = value
+                                        }
+                                        ,text: true //开启文本
+                                    });
+
+                                });
+                                goodsImage = [];
+                                pggoodsImage = [];
+                                //渲染商品主图列表
+                                refreshGoodsImage(goodsImage,1,'js-goods-image');
+
+                                refreshGoodsImage(pggoodsImage,5,'pj-goods-image');
+                            }
+                        });
+                        break;
+                }
+            });
+
+            table.toolbar(function(obj){
+                if (obj.data.length < 1) {
+                    layer.msg('请选择要操作的数据');
+                    return;
+                }
+                var id_array = new Array();
+                for (i in obj.data) id_array.push(obj.data[i].goods_id);
+                switch (obj.event) {
+                    case 'batch_set':
+                        layer.open({
+                            title: "评价设置",
+                            type: 1,
+                            area: ['600px', '750px'],
+                            content: $('#batchSet').html(),
+                            success: function(){
+                                layui.use(['form', 'laydate','rate'], function() {
+                                    var form = layui.form,
+                                        laydate = layui.laydate;
+
+                                    form.render();
+
+                                    laydate.render({
+                                        elem: '#evaluate_time',
+                                        type: 'datetime'
+                                    });
+
+                                });
+                                var rate = layui.rate;
+                                //显示文字
+                                dengji = 5;
+                                rate.render({
+                                    elem: '#test2'
+									,value: 5 //初始值
+									// ,text: true //开启文本
+                                    // ,choose: function(value){
+                                    //     dengji = value
+                                    // },
+                                });
+
+                                goodsImage = [];
+                                pggoodsImage = [];
+                                //渲染商品主图列表
+                                refreshGoodsImage(goodsImage,1,'js-goods-image');
+
+                                refreshGoodsImage(pggoodsImage,5,'pj-goods-image');
+
+                            }
+                        });
+                        break;
+                }
+            });
+
+            // 搜索功能
+            form.on('submit(search)', function (data) {
+                table.reload({
+                    page: {
+                        curr: 1
+                    },
+                    where: data.field
+                });
+                return false;
+            });
+
+            // 验证
+            form.verify({
+                int: function (value) {
+                    if (value < 0) {
+                        return '销量不能小于0!'
+                    }
+                    if (value % 1 != 0) {
+                        return '销量不能为小数!'
+                    }
+                },
+            })
+
+        });
+
+    });
+
+    /**
+     * 刷新表格列表
+     */
+    function refreshTable() {
+        var cols = [
+            [{
+                type: 'checkbox',
+                unresize: 'false',
+                width: '3%'
+            }, {
+                title: '商品信息',
+                unresize: 'false',
+                width: '31%',
+                templet: '#goods_info'
+            }, {
+                field: 'price',
+                title: '价格',
+                unresize: 'false',
+                width: '7%',
+                align: 'right',
+                templet: function (data) {
+                    return '￥' + data.price;
+                }
+            },{
+                field: 'sale_num',
+                title: '销量',
+                unresize: 'false',
+                width: '4%',
+                sort: true
+            },{
+                field: 'evaluate',
+                title: '评价数',
+                unresize: 'false',
+                width: '5%',
+            }, {
+                field: 'success_evaluate_num',
+                title: '审核通过',
+                unresize: 'false',
+                width: '5%',
+                }, {
+                field: 'fail_evaluate_num',
+                unresize:'false',
+                title: `审核未通过`,
+                width: '5%',
+                align: 'center',
+            }, {
+                title: '创建时间',
+                unresize: 'false',
+                width: '12%',
+                templet: function (data) {
+                    return ns.time_to_date(data.create_time);
+                }
+            }, {
+                title: '状态',
+                unresize: 'false',
+                width: '9%',
+                templet: function (data) {
+                    var str = '';
+                    if (data.goods_state == 1) {
+                        str = '销售中';
+                    } else if (data.goods_state == 0) {
+                        str = '仓库中';
+                    }
+                    return str;
+                }
+            }, {
+                title: '操作',
+                toolbar: '#operation',
+                unresize: 'false',
+			    align:'right'
+            }]
+        ];
+
+        if(member_price_is_exit == 1){
+            cols = [
+                [{
+                    type: 'checkbox',
+                    unresize: 'false',
+                    width: '3%'
+                }, {
+                    title: '商品信息',
+                    unresize: 'false',
+                    width: '33%',
+                    templet: '#goods_info'
+                }, {
+                    field: 'price',
+                    title: '价格',
+                    unresize: 'false',
+                    width: '7%',
+                    align: 'right',
+                    templet: function (data) {
+                        return '￥' + data.price;
+                    }
+                }, {
+                    field: 'sale_num',
+                    title: '销量',
+                    unresize: 'false',
+                    width: '4%',
+                    sort: true
+                }, {
+                    field: 'evaluate',
+                    title: '评价数',
+                    unresize: 'false',
+                    width: '5%',
+                },{
+                    field: 'success_evaluate_num',
+                    title: '审核通过',
+                    unresize: 'false',
+                    width: '5%',
+                },{
+                    field: 'fail_evaluate_num',
+                    unresize:'false',
+                    title: `审核未通过`,
+                    width: '5%',
+                    align: 'center',
+                }, {
+                    title: '创建时间',
+                    unresize: 'false',
+                    width: '12%',
+                    templet: function (data) {
+                        return ns.time_to_date(data.create_time);
+                    }
+                }, {
+                        title: '状态',
+                        unresize: 'false',
+                        width: '6%',
+                        templet: function (data) {
+                            var str = '';
+                            if (data.goods_state == 1) {
+                                str = '销售中';
+                            } else if (data.goods_state == 0) {
+                                str = '仓库中';
+                            }
+                            return str;
+                        }
+                    }, {
+                    title: '操作',
+                    toolbar: '#operation',
+                    unresize: 'false',
+			        align:'right'
+                }]
+            ];
+        }
+
+        table = new Table({
+            id: 'goods_list',
+            elem: '#goods_list',
+            url: ns.url("virtualevaluation://shop/comment/goodslists"),
+            cols: cols,
+            toolbar: '#toolbarOperation',
+            bottomToolbar: "#batchOperation",
+            where: {
+                search_text: $("input[name='search_text']").val(),
+                goods_state: $("input[name='goods_state']").val(),
+                start_sale: $("input[name='start_sale']").val(),
+                end_sale: $("input[name='end_sale']").val(),
+                category_id: $("input[name='category_id']").val(),
+                goods_class: $("select[name='goods_class'] option:checked").val(),
+                label_id: $("select[name='label_id'] option:checked").val(),
+                promotion_type: $("select[name='promotion_type'] option:checked").val(),
+                stockalarm: $("input[name='stockalarm']").val()
+            }
+        });
+    }
+
+    function closeStock() {
+        layer.close(layer_stock);
+    }
+
+    // 批量设置
+    var setSub = false;
+    function batchSetting(){
+        var id_array = new Array(),
+            setType = $('.batch-set-wrap .tab-wrap .active').attr('data-type'),
+            checkedData = table.checkStatus('goods_list').data,
+            field = {}
+        var goods_id = $("#test").val();
+
+        for (i in checkedData) id_array.push(checkedData[i].goods_id);
+        if (id_array.toString()==''){
+            id_array = goods_id;
+        }
+		
+		field.evaluate_time = $("input[name='evaluate_time']").val();
+		field.member_headimg = goodsImage;
+		field.member_name = $("input[name='member_name']").val();
+		field.content = $("#content").val();
+		field.dengji = dengji;
+		field.pingjia_img = pggoodsImage;
+				
+		if(field.evaluate_time ==''){
+			layer.msg('请输入时间');
+			return false
+		}else if(field.member_headimg==''){
+			layer.msg('请选择头像');
+			return false
+		}else if(field.member_name==''){
+			layer.msg('请输入昵称');
+			return false
+		}else if(field.content==''){
+			layer.msg('请输入内容');
+			return false
+		}else if(field.dengji==''){
+			layer.msg('请选择等级');
+			return false
+		}
+        if (setSub) return;
+        setSub = true;
+
+        $.ajax({
+            type: "POST",
+            url: ns.url("virtualevaluation://shop/comment/setting"),
+            data: {
+                'type': setType,
+                'goods_ids': id_array.toString(),
+                'field' : JSON.stringify(field)
+            },
+            dataType: 'JSON',
+            success: function (res) {
+                setSub = false;
+                if (res.code >= 0) {
+                    $('.batch-set-wrap .footer-wrap').hide();
+                    $('.batch-set-wrap .content-wrap .tab-item.result').addClass('tab-show').siblings('.tab-item').removeClass('tab-show');
+                    table.reload();
+                } else {
+                    layer.msg(res.message);
+                }
+            }
+        })
+    }
+
+    // 监听单元格编辑
+    $(".layui-colla-title").on("click", function(){
+        if($(".layui-colla-title>i").hasClass("layui-icon-down") === false && $(".layui-colla-title>i").hasClass("layui-icon-up") === false){
+            $(".layui-colla-title .put-open").html("展开");
+        }else if($(".layui-colla-title>i").hasClass("layui-icon-down") === true){
+            $(".layui-colla-title .put-open").html("展开");
+        }else if($(".layui-colla-title>i").hasClass("layui-icon-up") === true){
+            $(".layui-colla-title .put-open").html("收起");
+        }
+    });
+
+    /***
+     * @param imgArr 存储图片集合
+     * @param imgMax 最大图片数量
+     * @param imgDom 图片dom
+     */
+    function refreshGoodsImage(imgArr,imgMax,imgDom) {
+
+        var goods_image_template = $("#goodsImage").html();
+        var data = {
+            list: imgArr,
+            max: imgMax
+        };
+        var imageDom = "." + imgDom;
+
+        laytpl(goods_image_template).render(data, function (html) {
+
+            $(imageDom).html(html);
+
+            $(imageDom).find(".js-add-goods-image").click(function (){
+                openAlbum(function (data) {
+                    for (var i = 0; i < data.length; i++) {
+                        if (imgArr.length < imgMax) imgArr.push(data[i].pic_path);
+                    }
+                    refreshGoodsImage(imgArr,imgMax,imgDom);
+                }, imgMax);
+            });
+
+            //加载图片放大
+            loadImgMagnify();
+
+            if (imgArr.length) {
+
+                //预览
+                $(imageDom).find('.js-preview').click(function () {
+                    $(this).parent().prev().find("img").click();
+                });
+
+                //图片删除
+                $(imageDom).find('.js-delete').click(function () {
+                    var index = $(this).attr("data-index");
+                    imgArr.splice(index, 1);
+                    refreshGoodsImage(imgArr,imgMax,imgDom);
+                });
+
+                //图片替换
+                $(imageDom).find('.replace_img').click(function () {
+                    var index = $(this).attr("data-index");
+                    openAlbum(function (data) {
+                        imgArr[index] = data[0].pic_path;
+                        refreshGoodsImage(imgArr,imgMax,imgDom);
+                    }, 1);
+                });
+            }
+        });
+    }
+
+    function  batchAdd(goods_id){
+        location.hash = ns.hash("virtualevaluation://shop/comment/batchadd?goods_id=" + goods_id)
+    }
+
+</script>
+<script>
+    layui.use(['form', 'laydate','rate'], function() {
+        var form = layui.form;
+        var laydate = layui.laydate;
+        form.render();
+        laydate.render({
+            elem: '#evaluate_time',
+            type: 'datetime'
+        });
+
+    });
+</script>

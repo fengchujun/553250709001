@@ -1,0 +1,4 @@
+.screen{margin-bottom: 15px;}
+.contraction span{cursor: pointer;display: inline-block;width: 17px;height: 17px;text-align: center;line-height: 14px;user-select: none;}
+.screen .layui-colla-content .goods-category-container .layui-input{width: 240px !important;}
+.layui-layout-admin .layui-form-item .layui-input-inline{background-color: #fff;}
