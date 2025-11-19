@@ -103,21 +103,35 @@ class Config extends BaseApi
         }
 
         $diy_view = new DiyViewModel();
-        $diy_style = $diy_view->getStyleConfig($this->site_id)[ 'data' ][ 'value' ];
 
-        // 底部导航 - 根据用户标签返回不同配置
+        // 根据用户标签返回不同的主题配置
         if ($member_label == '1') {
-            // member_label = 1 的用户，使用特定的底部导航配置
-            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
-            // 这里可以自定义修改 $diy_bottom_nav 的内容
+            // member_label = 1 的用户，使用商务蓝主题
+            $theme_model = new \app\model\diy\Theme();
+            $theme_info = $theme_model->getInfo([['name', '=', 'blue']], 'id,title,name,main_color,aux_color')['data'];
+            if (!empty($theme_info)) {
+                $diy_style = $theme_info;
+            } else {
+                // 如果没有找到，使用默认配置
+                $diy_style = $diy_view->getStyleConfig($this->site_id)[ 'data' ][ 'value' ];
+            }
         } elseif ($member_label == '2') {
-            // member_label = 2 的用户，使用另一种底部导航配置
-            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
-            // 这里可以自定义修改 $diy_bottom_nav 的内容
+            // member_label = 2 的用户，使用樱花粉主题
+            $theme_model = new \app\model\diy\Theme();
+            $theme_info = $theme_model->getInfo([['name', '=', 'pink']], 'id,title,name,main_color,aux_color')['data'];
+            if (!empty($theme_info)) {
+                $diy_style = $theme_info;
+            } else {
+                // 如果没有找到，使用默认配置
+                $diy_style = $diy_view->getStyleConfig($this->site_id)[ 'data' ][ 'value' ];
+            }
         } else {
-            // 未登录或其他标签的用户，使用默认配置
-            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
+            // 未登录或其他标签的用户，使用默认主题配置
+            $diy_style = $diy_view->getStyleConfig($this->site_id)[ 'data' ][ 'value' ];
         }
+
+        // 底部导航配置（所有用户统一）
+        $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
 
         // 插件存在性
         $addon = new \app\model\system\Addon();
