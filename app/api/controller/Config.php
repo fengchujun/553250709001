@@ -82,12 +82,42 @@ class Config extends BaseApi
      */
     public function init()
     {
+        // 获取用户标签（如果已登录）
+        $member_label = '';
+        $member_info = null;
+        if (!empty($this->params['token'])) {
+            $check_result = $this->checkToken();
+            if ($check_result['code'] == 0 && !empty($this->member_id)) {
+                // 获取会员信息
+                $member_model = new \app\model\member\Member();
+                $member_info = $member_model->getInfo([
+                    ['member_id', '=', $this->member_id],
+                    ['site_id', '=', $this->site_id]
+                ], 'member_id,member_label,member_label_name');
+
+                if (!empty($member_info)) {
+                    // member_label 格式可能是 ",1," 或 "1" 或 "1,2"
+                    $member_label = trim($member_info['member_label'], ',');
+                }
+            }
+        }
 
         $diy_view = new DiyViewModel();
         $diy_style = $diy_view->getStyleConfig($this->site_id)[ 'data' ][ 'value' ];
 
-        // 底部导航
-        $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
+        // 底部导航 - 根据用户标签返回不同配置
+        if ($member_label == '1') {
+            // member_label = 1 的用户，使用特定的底部导航配置
+            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
+            // 这里可以自定义修改 $diy_bottom_nav 的内容
+        } elseif ($member_label == '2') {
+            // member_label = 2 的用户，使用另一种底部导航配置
+            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
+            // 这里可以自定义修改 $diy_bottom_nav 的内容
+        } else {
+            // 未登录或其他标签的用户，使用默认配置
+            $diy_bottom_nav = $diy_view->getBottomNavConfig($this->site_id)[ 'data' ][ 'value' ];
+        }
 
         // 插件存在性
         $addon = new \app\model\system\Addon();
@@ -131,6 +161,7 @@ class Config extends BaseApi
             'store_config' => $this->store_data[ 'config' ],
             'map_config' => $map_config,
             'wechat_config_status' => $wechat_config_status,
+            'member_label' => $member_label, // 返回用户标签，前端可以根据此字段做判断
         ];
 
         if (!empty($this->store_data[ 'store_info' ])) {

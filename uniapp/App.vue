@@ -226,6 +226,8 @@
 							this.$store.commit('setToken', res.data.token);
 							this.getMemberInfo()
 							this.$store.dispatch('getCartNumber');
+							// 登录成功后重新初始化配置（带token获取个性化数据）
+							this.$store.dispatch('init');
 						}
 					}
 				});
