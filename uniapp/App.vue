@@ -50,9 +50,12 @@
 				}
 			});
 
-			this.$store.dispatch('init');
+			// 存储到store中 - 必须在 init() 之前设置 token
+			// 优先恢复 token，确保 init 接口请求时能带上 token
+			if (uni.getStorageSync('token')) {
+				this.$store.commit('setToken', uni.getStorageSync('token'));
+			}
 
-			// 存储到store中
 
 			// 主题风格
 			if (uni.getStorageSync('themeStyle')) {
@@ -99,14 +102,14 @@
 				this.$store.commit('setCopyright', uni.getStorageSync('copyright'));
 			}
 
+			// 调用 init 接口（此时 token 已经设置好，可以获取个性化配置）
+			this.$store.dispatch('init');
+
 			// 地址配置
 			if (uni.getStorageSync('mapConfig')) {
 				this.$store.commit('setMapConfig', uni.getStorageSync('mapConfig'));
 			}
 
-			if (uni.getStorageSync('token')) {
-				this.$store.commit('setToken', uni.getStorageSync('token'));
-			}
 
 			// 会员信息
 			if (uni.getStorageSync('memberInfo')) {
