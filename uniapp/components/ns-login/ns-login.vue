@@ -555,19 +555,22 @@
 								else this.$util.loginComplete('/pages/member/index/index',{},'redirectTo')
 							}
 							this.cancelCompleteInfo();
-							
+
 							setTimeout(() => {
 								uni.hideLoading();
 							}, 1000);
 						} else if (res.data == 'MEMBER_NOT_EXIST') {
 							this.getRegisterConfig(() => {
 								uni.hideLoading();
+								// 如果开启第三方注册，且强制绑定手机号，则打开完善信息弹窗
 								if (this.registerConfig.third_party == 1 && this.registerConfig.bind_mobile == 1) {
 									this.openCompleteInfoPop();
 								} else if (this.registerConfig.third_party == 0) {
+									// 如果关闭第三方注册，跳转到登录页
 									this.toLogin();
 								} else {
-									this.openCompleteInfoPop();
+									// 如果开启第三方注册，且不强制绑定手机号，则自动注册（使用默认昵称和头像）
+									this.autoRegisterWithDefault(data);
 								}
 							});
 						} else {
@@ -581,6 +584,54 @@
 						uni.hideLoading();
 						this.$util.showToast({
 							title: '登录失败'
+						});
+					}
+				});
+			},
+			/**
+			 * 使用默认昵称和头像自动注册
+			 */
+			autoRegisterWithDefault(data) {
+				uni.showLoading({
+					title: '注册中'
+				});
+				// 使用一个默认昵称（随机生成）和默认头像
+				let registerData = Object.assign({}, data, {
+					nickName: '微信用户' + Math.random().toString(36).substr(2, 6),
+					avatarUrl: ''  // 空头像，后端会使用默认头像
+				});
+				uni.setStorageSync('authInfo', registerData);
+				if (uni.getStorageSync('source_member')) registerData.source_member = uni.getStorageSync('source_member');
+
+				this.$api.sendRequest({
+					url: '/api/login/auth',
+					data: registerData,
+					success: res => {
+						if (res.code >= 0) {
+							this.$store.commit('setToken', res.data.token);
+							this.getMemberInfo();
+							this.$store.dispatch('getCartNumber');
+							if (res.data.is_register){
+								this.$store.commit('setCanReceiveRegistergiftInfo',{status: true,path:this.$util.openRegisterRewardPath('/pages/index/index')});
+								this.$util.loginComplete('/pages/index/index','redirectTo');
+							}else{
+								if(this.url) this.$util.loginComplete(this.url,{},'redirectTo');
+								else this.$util.loginComplete('/pages/member/index/index',{},'redirectTo')
+							}
+							setTimeout(() => {
+								uni.hideLoading();
+							}, 1000);
+						} else {
+							uni.hideLoading();
+							this.$util.showToast({
+								title: res.message
+							});
+						}
+					},
+					fail: () => {
+						uni.hideLoading();
+						this.$util.showToast({
+							title: '注册失败'
 						});
 					}
 				});
