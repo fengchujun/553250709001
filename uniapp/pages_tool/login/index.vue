@@ -217,6 +217,35 @@
 					}
 				});
 			},
+			/**
+
+			 * 获取会员信息
+
+			 */
+
+			getMemberInfo(callback) {
+
+				this.$api.sendRequest({
+
+					url: '/api/member/info',
+
+					success: (res) => {
+
+						if (res.code >= 0) {
+
+							// 登录成功，存储会员信息
+
+							this.$store.commit('setMemberInfo', res.data);
+
+							if (callback) callback();
+
+						}
+
+					}
+
+				});
+
+			},
 		},
 	}
 </script>
