@@ -50,9 +50,9 @@
 			<view class="btn_view">
 				<button type="primary" @click="login" class="login-btn color-base-border color-base-bg">登录</button>
 				<!-- #ifdef MP -->
-				<!-- <button open-type="getPhoneNumber" class="auth-login color-base-border" v-if="Number(registerConfig.third_party)" @getphonenumber="mobileAuthLogin">
-					<text class="color-base-text color-base-border">一键授权手机号快捷登录</text>
-				</button> -->
+				<button open-type="getPhoneNumber" class="auth-login color-base-border" v-if="Number(registerConfig.third_party)" @getphonenumber="mobileAuthLogin">
+					<text class="color-base-text color-base-border">一键授权手机号登录</text>
+				</button>
 				<!-- #endif -->
 			</view>
 			<view class="regisiter-agreement" v-if="registerConfig.agreement_show">
@@ -330,11 +330,16 @@
 			},
 			mobileAuthLogin(e) {
 				if (e.detail.errMsg == 'getPhoneNumber:ok') {
+					uni.showLoading({
+						title: '登录中'
+					});
+
 					var data = {
 						iv: e.detail.iv,
-						encryptedData: e.detail.encryptedData
+						encryptedData: e.detail.encryptedData,
+						code: e.detail.code
 					};
-					if (Object.keys(this.authInfo).length) {
+					if (this.authInfo && Object.keys(this.authInfo).length) {
 						Object.assign(data, this.authInfo);
 						if (this.authInfo.nickName) data.nickname = this.authInfo.nickName;
 						if (this.authInfo.avatarUrl) data.headimg = this.authInfo.avatarUrl;
@@ -363,10 +368,14 @@
 									} else {
 										this.$util.loginComplete('/pages/member/index',{},this.redirect);
 									}
+									setTimeout(() => {
+										uni.hideLoading();
+									}, 500);
 								})
 
 							} else {
 								this.isSub = false;
+								uni.hideLoading();
 								this.$util.showToast({
 									title: res.message
 								});
@@ -374,10 +383,15 @@
 						},
 						fail: res => {
 							this.isSub = false;
+							uni.hideLoading();
 							this.$util.showToast({
-								title: 'request:fail'
+								title: '登录失败，请重试'
 							});
 						}
+					});
+				} else {
+					this.$util.showToast({
+						title: '取消授权将无法快速登录'
 					});
 				}
 			},
