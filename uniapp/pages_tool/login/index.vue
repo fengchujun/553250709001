@@ -162,7 +162,6 @@
 								this.$store.dispatch('init');
 
 								this.getMemberInfo(() => {
-									uni.hideLoading();
 
 									if (res.data.is_register == 1 || res.data.can_receive_registergift == 1) {
 										let back = this.back ? this.back : '/pages/index/index';
@@ -177,6 +176,9 @@
 									} else {
 										this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
 									}
+									setTimeout(() => {
+										uni.hideLoading();
+									}, 500);
 								});
 							} else {
 								uni.hideLoading();
