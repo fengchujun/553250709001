@@ -11,7 +11,7 @@
 			<view class="btn quick-login" v-if="$util.isWeiXin() && wechatConfigStatus && registerConfig && Number(registerConfig.third_party)" @click="quickLogin">快捷登录/注册</view>
 			<!-- #endif -->
 			<!-- #ifdef MP-WEIXIN -->
-			<view class="btn quick-login" v-if="registerConfig && Number(registerConfig.third_party)" @click="quickLogin">快捷登录/注册</view>
+			<button open-type="getPhoneNumber" class="btn quick-login" v-if="registerConfig && Number(registerConfig.third_party)" @getphonenumber="quickLoginWithPhone">一键授权手机号登录</button>
 			<!-- #endif -->
 			<view class="btn" :class="isQuickLogin ? '':'quick-login'" @click="toLogin('mobile')" v-if="registerConfig.login.indexOf('mobile') != -1">手机号登录</view>
 			<view class="btn" :class="isQuickLogin ? '':'quick-login'" @click="toLogin('account')" v-if="registerConfig.login.indexOf('mobile') == -1 && registerConfig.login.indexOf('username') != -1">账号密码登录</view>
@@ -127,6 +127,73 @@
 				}
 				this.$refs.login.open(this.back,true);
 			},
+			// 一键授权手机号快捷登录
+			quickLoginWithPhone(e) {
+				// 检查是否同意协议
+				if(this.registerConfig.agreement_show && !this.isAgree){
+					this.$util.showToast({title:'请先阅读并同意协议'})
+					return;
+				}
+
+				if (e.detail.errMsg == 'getPhoneNumber:ok') {
+					uni.showLoading({
+						title: '登录中'
+					});
+
+					let authData = uni.getStorageSync('authInfo');
+					let data = {
+						iv: e.detail.iv,
+						encryptedData: e.detail.encryptedData,
+						code: e.detail.code
+					};
+
+					if (authData) Object.assign(data, authData);
+					if (uni.getStorageSync('source_member')) data.source_member = uni.getStorageSync('source_member');
+
+					this.$api.sendRequest({
+						url: '/api/tripartite/mobileauth',
+						data,
+						success: res => {
+							if (res.code >= 0) {
+								this.$store.commit('setToken', res.data.token);
+								this.$store.dispatch('getCartNumber');
+								this.getMemberInfo(() => {
+									if (res.data.can_receive_registergift == 1) {
+										let back = this.back ? this.back : '/pages/index/index';
+										this.$store.commit('setCanReceiveRegistergiftInfo', {
+											status: true,
+											path: this.$util.openRegisterRewardPath(back)
+										});
+									}
+									if (this.back != '') {
+										this.$util.loginComplete(this.back, {}, 'redirectTo');
+									} else {
+										this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
+									}
+									setTimeout(() => {
+										uni.hideLoading();
+									}, 500);
+								});
+							} else {
+								uni.hideLoading();
+								this.$util.showToast({
+									title: res.message
+								});
+							}
+						},
+						fail: () => {
+							uni.hideLoading();
+							this.$util.showToast({
+								title: '登录失败，请重试'
+							});
+						}
+					});
+				} else {
+					this.$util.showToast({
+						title: '取消授权将无法快速登录'
+					});
+				}
+			},
 			toLogin(loginMode){
 				this.$util.redirectTo('/pages_tool/login/login',{loginMode:loginMode})
 			},
@@ -150,4 +217,22 @@
 
 <style lang="scss">
 	@import './public/css/common.scss';
+
+	// button 元素样式重置，确保和 view 表现一致
+	.login-area {
+		button.btn {
+			margin: 0 auto 30rpx;
+			padding: 0;
+			border: 2rpx solid var(--base-color);
+			border-radius: 44rpx;
+			line-height: 88rpx;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			&::after {
+				border: none;
+			}
+		}
+	}
 </style>
