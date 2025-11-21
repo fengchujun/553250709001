@@ -32,52 +32,21 @@
 
 					<!-- #ifdef MP -->
 					<view class="head">
-						<text class="title">
-							欢迎使用快捷登录
-							<template v-if="forceBindingMobileControl">，需绑定手机号</template>
-						</text>
+						<text class="title">欢迎使用快捷登录</text>
 						<text class="color-tip tips">
-							系统已为您准备好默认头像和昵称，您可以直接点击"确认登录"，也可以自定义修改
+							点击下方按钮，授权手机号即可快速登录
 						</text>
 						<text class="iconfont icon-close color-tip" @click="cancelCompleteInfo"></text>
 					</view>
-					<!-- #ifdef MP-WEIXIN -->
-					<view class="item-wrap">
-						<text class="label">头像</text>
-						<button open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
-							<image :src="avatarUrl ? avatarUrl : $util.getDefaultImage().head" @error="avatarUrl = $util.getDefaultImage().head" mode="aspectFill"/>
-							<text class="iconfont icon-right color-tip"></text>
-						</button>
-						<text class="color-tip tips-small">（可选）点击更换头像</text>
-					</view>
-					<view class="item-wrap">
-						<text class="label">昵称</text>
-						<input type="nickname" placeholder="请输入昵称" v-model="nickName" @blur="blurNickName" maxlength="50" />
-						<text class="color-tip tips-small">（可选）点击修改昵称</text>
-					</view>
-					<!-- #endif  -->
 
-					<!-- #ifdef MP-ALIPAY -->
-					<view class="item-wrap">
-						<text class="label">头像</text>
-						<button open-type="getAuthorize" scope="userInfo" @getAuthorize="aliappGetUserinfo" :plain="true" class="border-0">
-							<image :src="avatarUrl ? avatarUrl : $util.getDefaultImage().head" @error="avatarUrl = $util.getDefaultImage().head" mode="aspectFill"/>
-							<text class="iconfont icon-right color-tip"></text>
+					<!-- 一键授权手机号快捷登录 -->
+					<view class="phone-auth-wrap">
+						<button open-type="getPhoneNumber" class="phone-auth-btn color-base-bg" @getphonenumber="quickLoginWithPhone">
+							<text>一键授权手机号登录</text>
 						</button>
+						<text class="tips-text">授权后将使用您的手机号自动注册并登录</text>
 					</view>
-					<view class="item-wrap">
-						<text class="label">昵称</text>
-						<input type="nickname" placeholder="请输入昵称" v-model="nickName" @blur="blurNickName" maxlength="50" />
-					</view>
-					<!-- #endif  -->
-					<view class="item-wrap" v-if="forceBindingMobileControl">
-						<text class="label">手机号</text>
-						<button open-type="getPhoneNumber" :plain="true" class="auth-login border-0" @getphonenumber="getPhoneNumber">
-							<text class="mobile" v-if="formData.mobile">{{ formData.mobile }}</text>
-							<text class="color-base-text" v-else>获取手机号</text>
-						</button>
-					</view>
-					<button type="default" class="save-btn color-base-bg" @click="saveMp" :disabled="isDisabled">确认登录</button>
+
 					<!-- #endif  -->
 				</view>
 			</uni-popup>
@@ -272,18 +241,6 @@
 			},
 			openCompleteInfoPop() {
 				this.getRegisterConfig();
-
-				// 自动生成默认昵称和头像
-				if (!this.nickName) {
-					this.nickName = '微信用户' + Math.random().toString(36).substr(2, 6);
-				}
-				if (!this.avatarUrl) {
-					this.avatarUrl = this.$util.getDefaultImage().head;
-				}
-
-				// #ifdef H5
-				if (!this.storeToken) this.getCaptchaConfig();
-				// #endif
 
 				this.$refs.completeInfoPopup.open(() => {
 					this.$store.commit('setBottomNavHidden', false); //显示底部导航
@@ -499,6 +456,69 @@
 					this.$util.showToast({
 						title: '为了保证您账户的统一性，取消授权将无法为您提供服务'
 					})
+				}
+			},
+			// 一键授权手机号快捷登录
+			quickLoginWithPhone(e) {
+				if (e.detail.errMsg == 'getPhoneNumber:ok') {
+					uni.showLoading({
+						title: '登录中'
+					});
+
+					let authData = uni.getStorageSync('authInfo');
+					let data = {
+						iv: e.detail.iv,
+						encryptedData: e.detail.encryptedData,
+						code: e.detail.code
+					};
+
+					if (authData) Object.assign(data, authData);
+					if (uni.getStorageSync('source_member')) data.source_member = uni.getStorageSync('source_member');
+
+					this.$api.sendRequest({
+						url: '/api/tripartite/mobileauth',
+						data,
+						success: res => {
+							if (res.code >= 0) {
+								this.$store.commit('setToken', res.data.token);
+								this.getMemberInfo();
+								this.$store.dispatch('getCartNumber');
+								this.cancelCompleteInfo();
+
+								if (res.data.is_register) {
+									// 新用户注册成功
+									this.$store.commit('setCanReceiveRegistergiftInfo', {
+										status: true,
+										path: this.$util.openRegisterRewardPath('/pages/index/index')
+									});
+									this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
+								} else {
+									// 老用户直接登录
+									if (this.url) this.$util.loginComplete(this.url, {}, 'redirectTo');
+									else this.$util.loginComplete('/pages/member/index/index', {}, 'redirectTo');
+								}
+
+								setTimeout(() => {
+									uni.hideLoading();
+								}, 1000);
+							} else {
+								uni.hideLoading();
+								this.$util.showToast({
+									title: res.message
+								});
+							}
+						},
+						fail: () => {
+							uni.hideLoading();
+							this.$util.showToast({
+								title: '登录失败，请重试'
+							});
+						}
+					});
+				} else {
+					this.$util.showToast({
+						title: '取消授权将无法登录'
+					});
 				}
 			},
 			// 微信小程序强制绑定手机号
@@ -801,6 +821,37 @@
 				background-color: #07c160;
 				color: #fff;
 				margin: 40rpx auto 20rpx;
+			}
+
+			.phone-auth-wrap {
+				padding: 60rpx 0 40rpx;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+
+				.phone-auth-btn {
+					width: 500rpx;
+					height: 88rpx;
+					line-height: 88rpx;
+					border-radius: 44rpx;
+					color: #fff;
+					font-size: 32rpx;
+					text-align: center;
+					margin: 0;
+					padding: 0;
+					border: none;
+
+					text {
+						color: #fff;
+					}
+				}
+
+				.tips-text {
+					margin-top: 30rpx;
+					font-size: 24rpx;
+					color: #999;
+					text-align: center;
+				}
 			}
 		}
 	}
