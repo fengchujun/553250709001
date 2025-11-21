@@ -33,13 +33,11 @@
 					<!-- #ifdef MP -->
 					<view class="head">
 						<text class="title">
-							获取您的昵称、头像
-							<template v-if="forceBindingMobileControl">、手机号</template>
+							欢迎使用快捷登录
+							<template v-if="forceBindingMobileControl">，需绑定手机号</template>
 						</text>
 						<text class="color-tip tips">
-							获取用户头像、昵称
-							<template v-if="forceBindingMobileControl">、手机号</template>
-							完善个人资料，主要用于向用户提供具有辨识度的用户中心界面
+							系统已为您准备好默认头像和昵称，您可以直接点击"确认登录"，也可以自定义修改
 						</text>
 						<text class="iconfont icon-close color-tip" @click="cancelCompleteInfo"></text>
 					</view>
@@ -50,10 +48,12 @@
 							<image :src="avatarUrl ? avatarUrl : $util.getDefaultImage().head" @error="avatarUrl = $util.getDefaultImage().head" mode="aspectFill"/>
 							<text class="iconfont icon-right color-tip"></text>
 						</button>
+						<text class="color-tip tips-small">（可选）点击更换头像</text>
 					</view>
 					<view class="item-wrap">
 						<text class="label">昵称</text>
 						<input type="nickname" placeholder="请输入昵称" v-model="nickName" @blur="blurNickName" maxlength="50" />
+						<text class="color-tip tips-small">（可选）点击修改昵称</text>
 					</view>
 					<!-- #endif  -->
 
@@ -77,7 +77,7 @@
 							<text class="color-base-text" v-else>获取手机号</text>
 						</button>
 					</view>
-					<button type="default" class="save-btn" @click="saveMp" :disabled="isDisabled">保存</button>
+					<button type="default" class="save-btn color-base-bg" @click="saveMp" :disabled="isDisabled">确认登录</button>
 					<!-- #endif  -->
 				</view>
 			</uni-popup>
@@ -157,8 +157,9 @@
 		computed: {
 			// 控制按钮是否禁用
 			isDisabled() {
+				// 移除昵称的必填验证，允许用户使用默认昵称直接保存
 				// #ifdef MP-WEIXIN
-				if (this.nickName.length == 0) return true;
+				// if (this.nickName.length == 0) return true;
 				// #endif
 
 				// 强制绑定手机号验证
@@ -271,6 +272,14 @@
 			},
 			openCompleteInfoPop() {
 				this.getRegisterConfig();
+
+				// 自动生成默认昵称和头像
+				if (!this.nickName) {
+					this.nickName = '微信用户' + Math.random().toString(36).substr(2, 6);
+				}
+				if (!this.avatarUrl) {
+					this.avatarUrl = this.$util.getDefaultImage().head;
+				}
 
 				// #ifdef H5
 				if (!this.storeToken) this.getCaptchaConfig();
@@ -562,15 +571,12 @@
 						} else if (res.data == 'MEMBER_NOT_EXIST') {
 							this.getRegisterConfig(() => {
 								uni.hideLoading();
-								// 如果开启第三方注册，且强制绑定手机号，则打开完善信息弹窗
-								if (this.registerConfig.third_party == 1 && this.registerConfig.bind_mobile == 1) {
+								// 如果开启第三方注册，则打开完善信息弹窗（已预填充默认昵称和头像）
+								if (this.registerConfig.third_party == 1) {
 									this.openCompleteInfoPop();
 								} else if (this.registerConfig.third_party == 0) {
 									// 如果关闭第三方注册，跳转到登录页
 									this.toLogin();
-								} else {
-									// 如果开启第三方注册，且不强制绑定手机号，则自动注册（使用默认昵称和头像）
-									this.autoRegisterWithDefault(data);
 								}
 							});
 						} else {
@@ -584,54 +590,6 @@
 						uni.hideLoading();
 						this.$util.showToast({
 							title: '登录失败'
-						});
-					}
-				});
-			},
-			/**
-			 * 使用默认昵称和头像自动注册
-			 */
-			autoRegisterWithDefault(data) {
-				uni.showLoading({
-					title: '注册中'
-				});
-				// 使用一个默认昵称（随机生成）和默认头像
-				let registerData = Object.assign({}, data, {
-					nickName: '微信用户' + Math.random().toString(36).substr(2, 6),
-					avatarUrl: ''  // 空头像，后端会使用默认头像
-				});
-				uni.setStorageSync('authInfo', registerData);
-				if (uni.getStorageSync('source_member')) registerData.source_member = uni.getStorageSync('source_member');
-
-				this.$api.sendRequest({
-					url: '/api/login/auth',
-					data: registerData,
-					success: res => {
-						if (res.code >= 0) {
-							this.$store.commit('setToken', res.data.token);
-							this.getMemberInfo();
-							this.$store.dispatch('getCartNumber');
-							if (res.data.is_register){
-								this.$store.commit('setCanReceiveRegistergiftInfo',{status: true,path:this.$util.openRegisterRewardPath('/pages/index/index')});
-								this.$util.loginComplete('/pages/index/index','redirectTo');
-							}else{
-								if(this.url) this.$util.loginComplete(this.url,{},'redirectTo');
-								else this.$util.loginComplete('/pages/member/index/index',{},'redirectTo')
-							}
-							setTimeout(() => {
-								uni.hideLoading();
-							}, 1000);
-						} else {
-							uni.hideLoading();
-							this.$util.showToast({
-								title: res.message
-							});
-						}
-					},
-					fail: () => {
-						uni.hideLoading();
-						this.$util.showToast({
-							title: '注册失败'
 						});
 					}
 				});
@@ -654,16 +612,14 @@
 			},
 			// 微信小程序保存数据
 			saveMp() {
+				// 如果昵称为空，使用默认昵称
 				if (this.nickName.length == 0) {
-					this.$util.showToast({
-						title: '请输入昵称'
-					});
-					return;
+					this.nickName = '微信用户' + Math.random().toString(36).substr(2, 6);
 				}
 				let authData = uni.getStorageSync('authInfo');
 				if (authData) Object.assign(authData, {
 					nickName: this.nickName,
-					avatarUrl: this.headImg
+					avatarUrl: this.headImg ? this.headImg : ''  // 如果没有上传头像，使用空字符串，后端会使用默认头像
 				});
 				uni.setStorageSync('authInfo', authData);
 
@@ -766,11 +722,20 @@
 				display: flex;
 				align-items: center;
 				padding: 16rpx 0;
+				flex-wrap: wrap;
 
 				.label {
 					font-size: $font-size-toolbar;
 					margin-right: 40rpx;
 					width: 100rpx;
+				}
+
+				.tips-small {
+					width: 100%;
+					font-size: 24rpx;
+					color: #999;
+					margin-top: 8rpx;
+					padding-left: 140rpx;
 				}
 
 				button {
