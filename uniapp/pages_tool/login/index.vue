@@ -157,22 +157,26 @@
 							if (res.code >= 0) {
 								this.$store.commit('setToken', res.data.token);
 								this.$store.dispatch('getCartNumber');
+
+								// 登录成功后重新初始化配置（获取个性化主题）
+								this.$store.dispatch('init');
+
 								this.getMemberInfo(() => {
-									if (res.data.can_receive_registergift == 1) {
+									uni.hideLoading();
+
+									if (res.data.is_register == 1 || res.data.can_receive_registergift == 1) {
 										let back = this.back ? this.back : '/pages/index/index';
 										this.$store.commit('setCanReceiveRegistergiftInfo', {
 											status: true,
 											path: this.$util.openRegisterRewardPath(back)
 										});
 									}
+
 									if (this.back != '') {
 										this.$util.loginComplete(this.back, {}, 'redirectTo');
 									} else {
 										this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
 									}
-									setTimeout(() => {
-										uni.hideLoading();
-									}, 500);
 								});
 							} else {
 								uni.hideLoading();
