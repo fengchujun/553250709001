@@ -481,28 +481,26 @@
 						success: res => {
 							if (res.code >= 0) {
 								this.$store.commit('setToken', res.data.token);
+								this.getMemberInfo();
 								this.$store.dispatch('getCartNumber');
+								this.cancelCompleteInfo();
 
-								// 登录成功后重新初始化配置（获取个性化主题）
-								this.$store.dispatch('init');
+								if (res.data.is_register) {
+									// 新用户注册成功
+									this.$store.commit('setCanReceiveRegistergiftInfo', {
+										status: true,
+										path: this.$util.openRegisterRewardPath('/pages/index/index')
+									});
+									this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
+								} else {
+									// 老用户直接登录
+									if (this.url) this.$util.loginComplete(this.url, {}, 'redirectTo');
+									else this.$util.loginComplete('/pages/member/index/index', {}, 'redirectTo');
+								}
 
-								this.getMemberInfo(() => {
+								setTimeout(() => {
 									uni.hideLoading();
-									this.cancelCompleteInfo();
-
-									if (res.data.is_register == 1 || res.data.can_receive_registergift == 1) {
-										// 新用户注册成功
-										this.$store.commit('setCanReceiveRegistergiftInfo', {
-											status: true,
-											path: this.$util.openRegisterRewardPath('/pages/index/index')
-										});
-										this.$util.loginComplete('/pages/index/index', {}, 'redirectTo');
-									} else {
-										// 老用户直接登录
-										if (this.url) this.$util.loginComplete(this.url, {}, 'redirectTo');
-										else this.$util.loginComplete('/pages/member/index/index', {}, 'redirectTo');
-									}
-								});
+								}, 1000);
 							} else {
 								uni.hideLoading();
 								this.$util.showToast({
